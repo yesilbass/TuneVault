@@ -7,6 +7,7 @@ module com.example.tunevaultfx {
     requires com.fasterxml.jackson.databind;
     requires com.fasterxml.jackson.core;
     requires com.fasterxml.jackson.annotation;
+    requires java.sql;
 
     exports com.example.tunevaultfx.app;
     opens com.example.tunevaultfx.app to com.fasterxml.jackson.databind, javafx.fxml;
@@ -34,6 +35,7 @@ module com.example.tunevaultfx {
 
     exports com.example.tunevaultfx.session;
     opens com.example.tunevaultfx.session to com.fasterxml.jackson.databind, javafx.fxml;
+
     exports com.example.tunevaultfx.musicplayer;
     opens com.example.tunevaultfx.musicplayer to com.fasterxml.jackson.databind, javafx.fxml;
 }

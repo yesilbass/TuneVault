@@ -1,4 +1,4 @@
-package com.example.tunevaultfx.db;
+package com.example.tunevaultfx.util;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
