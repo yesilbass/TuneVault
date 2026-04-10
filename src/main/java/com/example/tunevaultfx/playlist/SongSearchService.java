@@ -7,7 +7,7 @@ import javafx.collections.ObservableList;
  * Handles searching and filtering songs based on user input.
  * Used by the playlists page search panel.
  */
-public class SongSearch {
+public class SongSearchService {
 
     public ObservableList<Song> filterSongs(ObservableList<Song> sourceSongs, String searchText) {
         ObservableList<Song> results = FXCollections.observableArrayList();

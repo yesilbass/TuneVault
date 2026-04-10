@@ -10,42 +10,66 @@
             style="-fx-background-color: linear-gradient(to bottom right, #0f172a, #1e293b);">
 
     <top>
-        <HBox alignment="CENTER_LEFT" spacing="20" style="-fx-padding: 20;">
-            <Label text="Song Details"
-                   style="-fx-text-fill: white; -fx-font-size: 28px; -fx-font-weight: bold;" />
+        <HBox alignment="CENTER_LEFT" spacing="12" style="-fx-padding: 20;">
+            <Button text="Back to Main Menu"
+                    onAction="#handleBackToMainMenu"
+                    prefWidth="150" prefHeight="38"
+                    style="-fx-background-color: #3b82f6; -fx-text-fill: white; -fx-background-radius: 20;" />
+
             <Button text="Back to Playlists"
                     onAction="#handleBack"
-                    style="-fx-background-color: #3b82f6; -fx-text-fill: white; -fx-background-radius: 20;" />
+                    prefWidth="140" prefHeight="38"
+                    style="-fx-background-color: #64748b; -fx-text-fill: white; -fx-background-radius: 20;" />
+
+            <StackPane HBox.hgrow="ALWAYS" alignment="CENTER">
+                <Label text="Song Details"
+                       style="-fx-text-fill: white; -fx-font-size: 28px; -fx-font-weight: bold;" />
+            </StackPane>
+
+            <Region prefWidth="302" />
         </HBox>
     </top>
 
     <center>
         <VBox alignment="CENTER" spacing="20" style="-fx-padding: 30;">
-            <VBox alignment="CENTER" spacing="15"
-                  maxWidth="550"
-                  style="-fx-background-color: white; -fx-background-radius: 20; -fx-padding: 30;">
+            <children>
+                <VBox alignment="CENTER" spacing="15"
+                      maxWidth="550"
+                      style="-fx-background-color: white; -fx-background-radius: 20; -fx-padding: 30;">
+                    <children>
+                        <Region prefWidth="200" prefHeight="200"
+                                style="-fx-background-color: #dbeafe; -fx-background-radius: 20;" />
 
-                <Region prefWidth="200" prefHeight="200"
-                        style="-fx-background-color: #dbeafe; -fx-background-radius: 20;" />
+                        <Label fx:id="titleLabel"
+                               text="Song Title"
+                               wrapText="true"
+                               style="-fx-font-size: 28px; -fx-font-weight: bold;" />
 
-                <Label fx:id="titleLabel"
-                       text="Song Title"
-                       style="-fx-font-size: 28px; -fx-font-weight: bold;" />
+                        <Label fx:id="artistLabel"
+                               text="Artist"
+                               wrapText="true"
+                               style="-fx-font-size: 18px; -fx-text-fill: #475569;" />
 
-                <Label fx:id="artistLabel"
-                       text="Artist"
-                       style="-fx-font-size: 18px; -fx-text-fill: #475569;" />
+                        <Label fx:id="albumLabel"
+                               text="Album: -"
+                               wrapText="true"
+                               style="-fx-font-size: 16px; -fx-text-fill: #64748b;" />
 
-                <Label fx:id="albumLabel"
-                       text="Album: -"
-                       style="-fx-font-size: 16px; -fx-text-fill: #64748b;" />
+                        <Label fx:id="durationLabel"
+                               text="Duration: -"
+                               style="-fx-font-size: 16px; -fx-text-fill: #64748b;" />
 
-                <Label fx:id="durationLabel"
-                       text="Duration: -"
-                       style="-fx-font-size: 16px; -fx-text-fill: #64748b;" />
-            </VBox>
+                        <Button fx:id="likeButton"
+                                text="Like ♡"
+                                onAction="#handleLike"
+                                prefWidth="130" prefHeight="40"
+                                style="-fx-background-color: #f59e0b; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 20;" />
+                    </children>
+                </VBox>
+            </children>
         </VBox>
     </center>
+
     <bottom>
         <fx:include source="mini-player.fxml" />
     </bottom>

@@ -11,11 +11,16 @@
 
     <top>
         <HBox alignment="CENTER_LEFT" spacing="20" style="-fx-padding: 20;">
-            <Label text="Wrapped"
-                   style="-fx-text-fill: white; -fx-font-size: 28px; -fx-font-weight: bold;" />
             <Button text="Back to Menu"
                     onAction="#handleBackToMenu"
                     style="-fx-background-color: #3b82f6; -fx-text-fill: white; -fx-background-radius: 20;" />
+
+            <StackPane HBox.hgrow="ALWAYS" alignment="CENTER">
+                <Label text="Wrapped"
+                       style="-fx-text-fill: white; -fx-font-size: 28px; -fx-font-weight: bold;" />
+            </StackPane>
+
+            <Region prefWidth="120" />
         </HBox>
     </top>
 

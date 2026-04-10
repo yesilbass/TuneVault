@@ -1,6 +1,6 @@
 package com.example.tunevaultfx.controllers;
 
-import com.example.tunevaultfx.core.MusicPlayerService;
+import com.example.tunevaultfx.musicplayer.MusicPlayerController;
 import com.example.tunevaultfx.core.Song;
 import com.example.tunevaultfx.session.SessionManager;
 import com.example.tunevaultfx.user.UserProfile;
@@ -34,7 +34,7 @@ public class NowPlayingPageController {
 
     @FXML private Slider progressSlider;
 
-    private final MusicPlayerService player = MusicPlayerService.getInstance();
+    private final MusicPlayerController player = MusicPlayerController.getInstance();
 
     @FXML
     public void initialize() {

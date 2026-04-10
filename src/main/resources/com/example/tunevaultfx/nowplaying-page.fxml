@@ -6,82 +6,106 @@
 <BorderPane xmlns="http://javafx.com/javafx/21"
             xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="com.example.tunevaultfx.controllers.NowPlayingPageController"
-            prefWidth="900" prefHeight="650"
+            prefWidth="950" prefHeight="700"
             style="-fx-background-color: linear-gradient(to bottom right, #0f172a, #1e293b);">
 
     <top>
-        <HBox alignment="CENTER_LEFT" spacing="20" style="-fx-padding: 20;">
-            <Label text="Now Playing"
-                   style="-fx-text-fill: white; -fx-font-size: 28px; -fx-font-weight: bold;" />
+        <HBox alignment="CENTER_LEFT" spacing="12" style="-fx-padding: 20;">
             <Button text="Back to Menu"
                     onAction="#handleBackToMenu"
+                    prefWidth="120" prefHeight="38"
                     style="-fx-background-color: #3b82f6; -fx-text-fill: white; -fx-background-radius: 20;" />
+
             <Button text="Back to Playlists"
                     onAction="#handleBackToPlaylists"
+                    prefWidth="135" prefHeight="38"
                     style="-fx-background-color: #64748b; -fx-text-fill: white; -fx-background-radius: 20;" />
+
+            <StackPane HBox.hgrow="ALWAYS" alignment="CENTER">
+                <Label text="Now Playing"
+                       style="-fx-text-fill: white; -fx-font-size: 28px; -fx-font-weight: bold;" />
+            </StackPane>
+
+            <Region prefWidth="267" />
         </HBox>
     </top>
 
     <center>
         <VBox alignment="CENTER" spacing="20" style="-fx-padding: 30;">
-            <VBox alignment="CENTER" spacing="15"
-                  maxWidth="550"
-                  style="-fx-background-color: white; -fx-background-radius: 20; -fx-padding: 30;">
+            <children>
+                <VBox alignment="CENTER" spacing="15"
+                      maxWidth="560"
+                      style="-fx-background-color: white; -fx-background-radius: 20; -fx-padding: 30;">
 
-                <Region prefWidth="200" prefHeight="200"
-                        style="-fx-background-color: #dbeafe; -fx-background-radius: 20;" />
+                    <Region prefWidth="220" prefHeight="220"
+                            style="-fx-background-color: #dbeafe; -fx-background-radius: 20;" />
 
-                <Label fx:id="titleLabel"
-                       text="No song playing"
-                       style="-fx-font-size: 26px; -fx-font-weight: bold;" />
-                <Label fx:id="artistLabel"
-                       text=""
-                       style="-fx-font-size: 18px; -fx-text-fill: #475569;" />
-                <Label fx:id="albumLabel"
-                       text="Album: -"
-                       style="-fx-font-size: 16px; -fx-text-fill: #64748b;" />
+                    <Label fx:id="titleLabel"
+                           text="No song playing"
+                           wrapText="true"
+                           style="-fx-font-size: 26px; -fx-font-weight: bold;" />
 
-                <Slider fx:id="progressSlider" prefWidth="400" />
-                <Label fx:id="timeLabel"
-                       text="0:00 / 0:00"
-                       style="-fx-font-size: 14px; -fx-text-fill: #64748b;" />
+                    <Label fx:id="artistLabel"
+                           text=""
+                           wrapText="true"
+                           style="-fx-font-size: 18px; -fx-text-fill: #475569;" />
 
-                <HBox alignment="CENTER" spacing="12">
-                    <Button fx:id="shuffleButton"
-                            text="Shuffle Off"
-                            onAction="#handleShuffle"
-                            style="-fx-background-color: #475569; -fx-text-fill: white; -fx-background-radius: 20;" />
+                    <Label fx:id="albumLabel"
+                           text="Album: -"
+                           wrapText="true"
+                           style="-fx-font-size: 16px; -fx-text-fill: #64748b;" />
 
-                    <Button text="Previous"
-                            onAction="#handlePrevious"
-                            style="-fx-background-color: #1d4ed8; -fx-text-fill: white; -fx-background-radius: 20;" />
+                    <VBox alignment="CENTER" spacing="8">
+                        <Slider fx:id="progressSlider" prefWidth="420" />
+                        <Label fx:id="timeLabel"
+                               text="0:00 / 0:00"
+                               style="-fx-font-size: 14px; -fx-text-fill: #64748b;" />
+                    </VBox>
 
-                    <Button fx:id="playPauseButton"
-                            text="Play"
-                            onAction="#handlePlayPause"
-                            style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-background-radius: 20;" />
+                    <HBox alignment="CENTER" spacing="12">
+                        <Button fx:id="shuffleButton"
+                                text="Shuffle Off"
+                                onAction="#handleShuffle"
+                                prefWidth="100"
+                                style="-fx-background-color: #475569; -fx-text-fill: white; -fx-background-radius: 20;" />
 
-                    <Button text="Next"
-                            onAction="#handleNext"
-                            style="-fx-background-color: #1d4ed8; -fx-text-fill: white; -fx-background-radius: 20;" />
+                        <Button text="Previous"
+                                onAction="#handlePrevious"
+                                prefWidth="90"
+                                style="-fx-background-color: #1d4ed8; -fx-text-fill: white; -fx-background-radius: 20;" />
 
-                    <Button fx:id="loopButton"
-                            text="Loop Off"
-                            onAction="#handleLoop"
-                            style="-fx-background-color: #475569; -fx-text-fill: white; -fx-background-radius: 20;" />
-                </HBox>
+                        <Button fx:id="playPauseButton"
+                                text="Play"
+                                onAction="#handlePlayPause"
+                                prefWidth="90"
+                                style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-background-radius: 20;" />
 
-                <HBox alignment="CENTER" spacing="12">
-                    <Button fx:id="likeButton"
-                            text="Like ♡"
-                            onAction="#handleLike"
-                            style="-fx-background-color: #f59e0b; -fx-text-fill: white; -fx-background-radius: 20;" />
+                        <Button text="Next"
+                                onAction="#handleNext"
+                                prefWidth="90"
+                                style="-fx-background-color: #1d4ed8; -fx-text-fill: white; -fx-background-radius: 20;" />
 
-                    <Button text="Add to Playlist"
-                            onAction="#handleAddToPlaylist"
-                            style="-fx-background-color: #8b5cf6; -fx-text-fill: white; -fx-background-radius: 20;" />
-                </HBox>
-            </VBox>
+                        <Button fx:id="loopButton"
+                                text="Loop Off"
+                                onAction="#handleLoop"
+                                prefWidth="100"
+                                style="-fx-background-color: #475569; -fx-text-fill: white; -fx-background-radius: 20;" />
+                    </HBox>
+
+                    <HBox alignment="CENTER" spacing="12">
+                        <Button fx:id="likeButton"
+                                text="Like ♡"
+                                onAction="#handleLike"
+                                prefWidth="120"
+                                style="-fx-background-color: #f59e0b; -fx-text-fill: white; -fx-background-radius: 20;" />
+
+                        <Button text="Add to Playlist"
+                                onAction="#handleAddToPlaylist"
+                                prefWidth="140"
+                                style="-fx-background-color: #8b5cf6; -fx-text-fill: white; -fx-background-radius: 20;" />
+                    </HBox>
+                </VBox>
+            </children>
         </VBox>
     </center>
 </BorderPane>

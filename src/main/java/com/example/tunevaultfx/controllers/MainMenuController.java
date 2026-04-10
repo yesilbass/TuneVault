@@ -8,13 +8,15 @@ import javafx.scene.Node;
 import javafx.scene.control.Label;
 
 import java.io.IOException;
+
 /**
  * Controls the main menu screen.
  * Handles navigation from the home screen to the app's main features.
  */
 public class MainMenuController {
 
-    @FXML private Label welcomeLabel;
+    @FXML
+    private Label welcomeLabel;
 
     @FXML
     public void initialize() {

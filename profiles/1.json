@@ -12,11 +12,6 @@
       "album" : "Afterglow",
       "durationSeconds" : 205
     }, {
-      "title" : "Falling Lights",
-      "artist" : "Aria Bloom",
-      "album" : "Open Skies",
-      "durationSeconds" : 240
-    }, {
       "title" : "Velvet Skies",
       "artist" : "Luna Hart",
       "album" : "Moon Hotel",
@@ -31,6 +26,11 @@
       "artist" : "The Lanes",
       "album" : "Reflection",
       "durationSeconds" : 201
+    }, {
+      "title" : "Falling Lights",
+      "artist" : "Aria Bloom",
+      "album" : "Open Skies",
+      "durationSeconds" : 240
     } ],
     "Chill Mix" : [ {
       "title" : "Midnight Echo",
@@ -95,6 +95,21 @@
       "artist" : "Pulse City",
       "album" : "Night Run",
       "durationSeconds" : 197
+    }, {
+      "title" : "Blue Static",
+      "artist" : "The Satellites",
+      "album" : "City Radio",
+      "durationSeconds" : 188
+    }, {
+      "title" : "Falling Lights",
+      "artist" : "Aria Bloom",
+      "album" : "Open Skies",
+      "durationSeconds" : 240
+    }, {
+      "title" : "Midnight Echo",
+      "artist" : "Nova Lane",
+      "album" : "Afterglow",
+      "durationSeconds" : 205
     } ]
   }
 }

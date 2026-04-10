@@ -9,7 +9,7 @@ import javafx.collections.ObservableList;
  * Builds summary information for the selected playlist,
  * such as song count, total duration, and the list of songs.
  */
-public class PlaylistSongSelection {
+public class PlaylistSelectionService {
 
     public PlaylistSummary buildSummary(UserProfile profile, String playlistName) {
         if (profile == null || playlistName == null) {

@@ -1,7 +1,7 @@
 package com.example.tunevaultfx.playlist;
 
 import com.example.tunevaultfx.core.DemoLibrary;
-import com.example.tunevaultfx.core.MusicPlayerService;
+import com.example.tunevaultfx.musicplayer.MusicPlayerController;
 import com.example.tunevaultfx.core.Song;
 import com.example.tunevaultfx.session.SessionManager;
 import com.example.tunevaultfx.user.UserProfile;
@@ -13,12 +13,14 @@ import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
+import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.layout.VBox;
 
 import java.io.IOException;
 import java.util.Optional;
+
 /**
  * Controls the playlists page UI.
  * Handles playlist selection, song search, and button actions,
@@ -26,24 +28,32 @@ import java.util.Optional;
  */
 public class PlaylistsPageController {
 
-    @FXML private ListView<String> playlistListView;
-    @FXML private ListView<Song> playlistSongsListView;
-    @FXML private ListView<Song> searchResultsListView;
+    @FXML
+    private ListView<String> playlistListView;
+    @FXML
+    private ListView<Song> playlistSongsListView;
+    @FXML
+    private ListView<Song> searchResultsListView;
 
-    @FXML private Label selectedPlaylistLabel;
-    @FXML private Label songCountLabel;
-    @FXML private Label totalDurationLabel;
+    @FXML
+    private Label selectedPlaylistLabel;
+    @FXML
+    private Label songCountLabel;
+    @FXML
+    private Label totalDurationLabel;
 
-    @FXML private TextField searchSongsField;
-    @FXML private VBox searchSongsPanel;
+    @FXML
+    private TextField searchSongsField;
+    @FXML
+    private VBox searchSongsPanel;
 
     private final ObservableList<String> playlistNames = FXCollections.observableArrayList();
     private final ObservableList<Song> allLibrarySongs = FXCollections.observableArrayList();
 
-    private final MusicPlayerService player = MusicPlayerService.getInstance();
+    private final MusicPlayerController player = MusicPlayerController.getInstance();
     private final PlaylistService playlistService = new PlaylistService();
-    private final SongSearch songSearchService = new SongSearch();
-    private final PlaylistSongSelection playlistSelectionService = new PlaylistSongSelection();
+    private final SongSearchService songSearchService = new SongSearchService();
+    private final PlaylistSelectionService playlistSelectionService = new PlaylistSelectionService();
 
     private UserProfile profile;
 
@@ -56,6 +66,7 @@ public class PlaylistsPageController {
 
         allLibrarySongs.setAll(DemoLibrary.getSongs());
         searchResultsListView.setItems(allLibrarySongs);
+        searchResultsListView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 
         loadPlaylistNames();
         setupInitialPlaylistSelection();
@@ -112,13 +123,7 @@ public class PlaylistsPageController {
         );
 
         searchResultsListView.setCellFactory(listView ->
-                new PlayableSongCell(song -> {
-                    ObservableList<Song> queue = FXCollections.observableArrayList(searchResultsListView.getItems());
-                    int index = queue.indexOf(song);
-                    if (index >= 0) {
-                        player.playQueue(queue, index, "");
-                    }
-                })
+                new PlayableSongCell(song -> player.playSingleSong(song))
         );
     }
 
@@ -243,24 +248,40 @@ public class PlaylistsPageController {
     @FXML
     private void handleAddSelectedSearchSong() {
         String selectedPlaylist = playlistListView.getSelectionModel().getSelectedItem();
-        Song selectedSong = searchResultsListView.getSelectionModel().getSelectedItem();
+        ObservableList<Song> selectedSongs = searchResultsListView.getSelectionModel().getSelectedItems();
 
         if (selectedPlaylist == null) {
             AlertUtil.info("No Playlist Selected", "Please select a playlist first.");
             return;
         }
 
-        if (selectedSong == null) {
-            AlertUtil.info("No Song Selected", "Please select a song from search results.");
+        if (selectedSongs == null || selectedSongs.isEmpty()) {
+            AlertUtil.info("No Songs Selected", "Please select one or more songs from search results.");
             return;
         }
 
-        if (!playlistService.addSongToPlaylist(profile, selectedPlaylist, selectedSong)) {
-            AlertUtil.info("Already Added", "That song is already in the playlist.");
-            return;
+        int addedCount = 0;
+        int duplicateCount = 0;
+
+        for (Song song : selectedSongs) {
+            boolean added = playlistService.addSongToPlaylist(profile, selectedPlaylist, song);
+            if (added) {
+                addedCount++;
+            } else {
+                duplicateCount++;
+            }
         }
 
         updateSelectedPlaylist();
+
+        if (addedCount > 0 && duplicateCount > 0) {
+            AlertUtil.info("Songs Added",
+                    "Added " + addedCount + " song(s). " + duplicateCount + " were already in the playlist.");
+        } else if (addedCount > 0) {
+            AlertUtil.info("Songs Added", "Added " + addedCount + " song(s) to the playlist.");
+        } else {
+            AlertUtil.info("No New Songs Added", "All selected songs were already in the playlist.");
+        }
     }
 
     @FXML
