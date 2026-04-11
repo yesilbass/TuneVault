@@ -1,6 +1,6 @@
-package com.example.tunevaultfx.user;
+package com.example.tunevaultfx.db;
 
-import com.example.tunevaultfx.db.DBConnection;
+import com.example.tunevaultfx.user.User;
 import com.example.tunevaultfx.util.PasswordUtil;
 
 import java.sql.Connection;

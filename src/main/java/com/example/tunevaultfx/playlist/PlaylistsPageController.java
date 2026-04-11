@@ -1,8 +1,8 @@
 package com.example.tunevaultfx.playlist;
 
-import com.example.tunevaultfx.core.DemoLibrary;
-import com.example.tunevaultfx.musicplayer.MusicPlayerController;
 import com.example.tunevaultfx.core.Song;
+import com.example.tunevaultfx.db.SongDAO;
+import com.example.tunevaultfx.musicplayer.MusicPlayerController;
 import com.example.tunevaultfx.session.SessionManager;
 import com.example.tunevaultfx.user.UserProfile;
 import com.example.tunevaultfx.util.AlertUtil;
@@ -30,26 +30,32 @@ public class PlaylistsPageController {
 
     @FXML
     private ListView<String> playlistListView;
+
     @FXML
     private ListView<Song> playlistSongsListView;
+
     @FXML
     private ListView<Song> searchResultsListView;
 
     @FXML
     private Label selectedPlaylistLabel;
+
     @FXML
     private Label songCountLabel;
+
     @FXML
     private Label totalDurationLabel;
 
     @FXML
     private TextField searchSongsField;
+
     @FXML
     private VBox searchSongsPanel;
 
     private final ObservableList<String> playlistNames = FXCollections.observableArrayList();
     private final ObservableList<Song> allLibrarySongs = FXCollections.observableArrayList();
 
+    private final SongDAO songDAO = new SongDAO();
     private final MusicPlayerController player = MusicPlayerController.getInstance();
     private final PlaylistService playlistService = new PlaylistService();
     private final SongSearchService songSearchService = new SongSearchService();
@@ -64,7 +70,8 @@ public class PlaylistsPageController {
             return;
         }
 
-        allLibrarySongs.setAll(DemoLibrary.getSongs());
+        loadSongsFromDatabase();
+
         searchResultsListView.setItems(allLibrarySongs);
         searchResultsListView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 
@@ -75,6 +82,15 @@ public class PlaylistsPageController {
         setupDoubleClickDetails();
         updateSelectedPlaylist();
         hideSearchPanel();
+    }
+
+    private void loadSongsFromDatabase() {
+        try {
+            allLibrarySongs.setAll(songDAO.getAllSongs());
+        } catch (Exception e) {
+            e.printStackTrace();
+            AlertUtil.info("Database Error", "Could not load songs from the database.");
+        }
     }
 
     private void loadPlaylistNames() {
@@ -97,9 +113,10 @@ public class PlaylistsPageController {
                 .selectedItemProperty()
                 .addListener((obs, oldVal, newVal) -> updateSelectedPlaylist());
 
-        searchSongsField.textProperty()
-                .addListener((obs, oldVal, newVal) ->
-                        searchResultsListView.setItems(songSearchService.filterSongs(allLibrarySongs, newVal)));
+        searchSongsField.textProperty().addListener((obs, oldVal, newVal) -> {
+            ObservableList<Song> filtered = songSearchService.filterSongs(allLibrarySongs, newVal);
+            searchResultsListView.setItems(filtered);
+        });
     }
 
     private void setupSongCells() {
@@ -123,7 +140,7 @@ public class PlaylistsPageController {
         );
 
         searchResultsListView.setCellFactory(listView ->
-                new PlayableSongCell(song -> player.playSingleSong(song))
+                new PlayableSongCell(player::playSingleSong)
         );
     }
 
@@ -160,6 +177,7 @@ public class PlaylistsPageController {
     @FXML
     private void handleShowSearchSongs() {
         String selectedPlaylist = playlistListView.getSelectionModel().getSelectedItem();
+
         if (selectedPlaylist == null) {
             AlertUtil.info("No Playlist Selected", "Please select a playlist first.");
             return;
@@ -211,6 +229,12 @@ public class PlaylistsPageController {
     @FXML
     private void handleDeletePlaylist() {
         String selected = playlistListView.getSelectionModel().getSelectedItem();
+
+        if (playlistService.isProtectedPlaylist(selected)) {
+            AlertUtil.info("Protected Playlist", "Liked Songs cannot be deleted.");
+            return;
+        }
+
         if (selected == null) {
             AlertUtil.info("No Playlist Selected", "Please select a playlist to delete.");
             return;
@@ -248,14 +272,15 @@ public class PlaylistsPageController {
     @FXML
     private void handleAddSelectedSearchSong() {
         String selectedPlaylist = playlistListView.getSelectionModel().getSelectedItem();
-        ObservableList<Song> selectedSongs = searchResultsListView.getSelectionModel().getSelectedItems();
+        ObservableList<Song> selectedSongs =
+                FXCollections.observableArrayList(searchResultsListView.getSelectionModel().getSelectedItems());
 
         if (selectedPlaylist == null) {
             AlertUtil.info("No Playlist Selected", "Please select a playlist first.");
             return;
         }
 
-        if (selectedSongs == null || selectedSongs.isEmpty()) {
+        if (selectedSongs.isEmpty()) {
             AlertUtil.info("No Songs Selected", "Please select one or more songs from search results.");
             return;
         }
@@ -275,8 +300,10 @@ public class PlaylistsPageController {
         updateSelectedPlaylist();
 
         if (addedCount > 0 && duplicateCount > 0) {
-            AlertUtil.info("Songs Added",
-                    "Added " + addedCount + " song(s). " + duplicateCount + " were already in the playlist.");
+            AlertUtil.info(
+                    "Songs Added",
+                    "Added " + addedCount + " song(s). " + duplicateCount + " were already in the playlist."
+            );
         } else if (addedCount > 0) {
             AlertUtil.info("Songs Added", "Added " + addedCount + " song(s) to the playlist.");
         } else {

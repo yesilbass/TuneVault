@@ -2,7 +2,7 @@ package com.example.tunevaultfx.controllers.auth;
 
 import com.example.tunevaultfx.session.SessionManager;
 import com.example.tunevaultfx.user.User;
-import com.example.tunevaultfx.user.UserDAO;
+import com.example.tunevaultfx.db.UserDAO;
 import com.example.tunevaultfx.util.SceneUtil;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;

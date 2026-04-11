@@ -106,11 +106,6 @@ public class MiniPlayerController {
     }
 
     @FXML
-    private void handleOpenNowPlaying(ActionEvent event) throws IOException {
-        SceneUtil.switchScene((Node) event.getSource(), "nowplaying-page.fxml");
-    }
-
-    @FXML
     private void handleOpenCurrentPlaylist(ActionEvent event) throws IOException {
         String playlistName = player.getCurrentSourcePlaylistName();
         if (playlistName == null || playlistName.isBlank()) {
@@ -122,14 +117,13 @@ public class MiniPlayerController {
     }
 
     @FXML
-    private void handleOpenSongDetails() throws IOException {
+    private void handleOpenNowPlaying(javafx.scene.input.MouseEvent event) throws IOException {
         Song song = player.getCurrentSong();
         if (song == null) {
             return;
         }
 
-        SessionManager.setSelectedSong(song);
-        SceneUtil.switchScene(miniSongLabel, "song-details-page.fxml");
+        SceneUtil.switchScene((Node) event.getSource(), "nowplaying-page.fxml");
     }
 
     private void updateMiniPlaylistLink() {
@@ -146,17 +140,24 @@ public class MiniPlayerController {
     }
 
     private void updateMiniLikeButton() {
-        miniLikeButton.setText(player.isCurrentSongLiked() ? "♥" : "♡");
-    }
+        boolean liked = player.isCurrentSongLiked();
 
+        miniLikeButton.setText(liked ? "♥" : "♡");
+        miniLikeButton.setStyle(liked
+                ? "-fx-background-color: #ef4444; -fx-text-fill: white; -fx-font-size: 20px; -fx-font-weight: bold; -fx-background-radius: 21;"
+                : "-fx-background-color: #e2e8f0; -fx-text-fill: #475569; -fx-font-size: 20px; -fx-font-weight: bold; -fx-background-radius: 21;");
+    }
     private void updateMiniModeButtons() {
+        miniShuffleButton.setText("🔀");
+        miniLoopButton.setText("↻");
+
         miniShuffleButton.setStyle(player.isShuffleEnabled()
-                ? "-fx-background-color: rgba(255,255,255,0.15); -fx-text-fill: white; -fx-font-size: 16px; -fx-border-color: transparent; -fx-background-radius: 10;"
-                : "-fx-background-color: transparent; -fx-text-fill: white; -fx-font-size: 16px; -fx-border-color: transparent; -fx-background-radius: 10;");
+                ? "-fx-background-color: #fef3c7; -fx-text-fill: #1DB954; -fx-font-size: 18px; -fx-font-weight: bold; -fx-background-radius: 21;"
+                : "-fx-background-color: #e2e8f0; -fx-text-fill: #334155; -fx-font-size: 18px; -fx-font-weight: bold; -fx-background-radius: 21;");
 
         miniLoopButton.setStyle(player.isLoopEnabled()
-                ? "-fx-background-color: rgba(255,255,255,0.15); -fx-text-fill: white; -fx-font-size: 16px; -fx-border-color: transparent; -fx-background-radius: 10;"
-                : "-fx-background-color: transparent; -fx-text-fill: white; -fx-font-size: 16px; -fx-border-color: transparent; -fx-background-radius: 10;");
+                ? "-fx-background-color: #e2e8f0; -fx-text-fill: #1DB954; -fx-font-size: 18px; -fx-font-weight: bold; -fx-background-radius: 21;"
+                : "-fx-background-color: #e2e8f0; -fx-text-fill: #334155; -fx-font-size: 18px; -fx-font-weight: bold; -fx-background-radius: 21;");
     }
 
     private void updateMiniTime() {

@@ -16,23 +16,35 @@ import javafx.scene.control.Slider;
 
 import java.io.IOException;
 import java.util.Optional;
+
 /**
  * Controls the full now playing screen.
  * Displays the current song and provides playback controls.
  */
 public class NowPlayingPageController {
 
-    @FXML private Label titleLabel;
-    @FXML private Label artistLabel;
-    @FXML private Label albumLabel;
-    @FXML private Label timeLabel;
+    @FXML
+    private Label titleLabel;
+    @FXML
+    private Label artistLabel;
+    @FXML
+    private Label albumLabel;
+    @FXML
+    private Label timeLabel;
 
-    @FXML private Button playPauseButton;
-    @FXML private Button likeButton;
-    @FXML private Button shuffleButton;
-    @FXML private Button loopButton;
+    @FXML
+    private Button playPauseButton;
+    @FXML
+    private Button likeButton;
+    @FXML
+    private Button shuffleButton;
+    @FXML
+    private Button loopButton;
+    @FXML
+    private Button addToPlaylistButton;
 
-    @FXML private Slider progressSlider;
+    @FXML
+    private Slider progressSlider;
 
     private final MusicPlayerController player = MusicPlayerController.getInstance();
 
@@ -42,7 +54,7 @@ public class NowPlayingPageController {
         artistLabel.textProperty().bind(player.currentArtistProperty());
 
         playPauseButton.textProperty().bind(
-                Bindings.when(player.playingProperty()).then("Pause").otherwise("Play")
+                Bindings.when(player.playingProperty()).then("⏸").otherwise("▶")
         );
 
         player.currentSongProperty().addListener((obs, oldVal, newVal) -> {
@@ -61,6 +73,16 @@ public class NowPlayingPageController {
 
         player.shuffleEnabledProperty().addListener((obs, oldVal, newVal) -> updateModeButtons());
         player.loopEnabledProperty().addListener((obs, oldVal, newVal) -> updateModeButtons());
+
+        if (addToPlaylistButton != null) {
+            addToPlaylistButton.setStyle(
+                    "-fx-background-color: #e2e8f0; " +
+                            "-fx-text-fill: #475569; " +
+                            "-fx-font-size: 22px; " +
+                            "-fx-font-weight: bold; " +
+                            "-fx-background-radius: 22;"
+            );
+        }
 
         refreshSongInfo();
         refreshTime();
@@ -143,7 +165,12 @@ public class NowPlayingPageController {
         if (song == null) {
             albumLabel.setText("Album: -");
         } else {
-            albumLabel.setText("Album: " + song.album());
+            String album = song.album();
+            if (album == null || album.isBlank()) {
+                albumLabel.setText("Album: -");
+            } else {
+                albumLabel.setText("Album: " + album);
+            }
         }
     }
 
@@ -157,12 +184,20 @@ public class NowPlayingPageController {
     }
 
     private void refreshLikeButton() {
-        likeButton.setText(player.isCurrentSongLiked() ? "Liked ♥" : "Like ♡");
+        likeButton.setText(player.isCurrentSongLiked() ? "♥" : "♡");
     }
 
     private void updateModeButtons() {
-        shuffleButton.setText(player.isShuffleEnabled() ? "Shuffle On" : "Shuffle Off");
-        loopButton.setText(player.isLoopEnabled() ? "Loop On" : "Loop Off");
+        shuffleButton.setText("🔀");
+        loopButton.setText("↻");
+
+        shuffleButton.setStyle(player.isShuffleEnabled()
+                ? "-fx-background-color: #fef3c7; -fx-text-fill: #1DB954; -fx-font-size: 18px; -fx-font-weight: bold; -fx-background-radius: 21;"
+                : "-fx-background-color: #e2e8f0; -fx-text-fill: #334155; -fx-font-size: 18px; -fx-font-weight: bold; -fx-background-radius: 21;");
+
+        loopButton.setStyle(player.isLoopEnabled()
+                ? "-fx-background-color: #e2e8f0; -fx-text-fill: #1DB954; -fx-font-size: 18px; -fx-font-weight: bold; -fx-background-radius: 21;"
+                : "-fx-background-color: #e2e8f0; -fx-text-fill: #334155; -fx-font-size: 18px; -fx-font-weight: bold; -fx-background-radius: 21;");
     }
 
     private String formatTime(int totalSeconds) {

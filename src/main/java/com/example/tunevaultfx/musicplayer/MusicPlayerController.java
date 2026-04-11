@@ -1,10 +1,16 @@
 package com.example.tunevaultfx.musicplayer;
 
 import com.example.tunevaultfx.core.Song;
+import com.example.tunevaultfx.db.ListeningEventDAO;
+import com.example.tunevaultfx.playlist.PlaylistService;
+import com.example.tunevaultfx.session.SessionManager;
 import com.example.tunevaultfx.user.UserLibraryService;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
-import javafx.beans.property.*;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.StringProperty;
 import javafx.collections.ObservableList;
 import javafx.util.Duration;
 
@@ -23,30 +29,79 @@ public class MusicPlayerController {
     private final PlaybackQueue queue = new PlaybackQueue();
     private final ShuffleManager shuffleManager = new ShuffleManager();
     private final UserLibraryService libraryService = new UserLibraryService();
+    private final ListeningEventDAO listeningEventDAO = new ListeningEventDAO();
+    private final ListeningSessionTracker sessionTracker = new ListeningSessionTracker(listeningEventDAO);
 
+    private final PlaybackLifecycleService lifecycleService;
+    private final PlaybackNavigator playbackNavigator;
     private final Timeline timeline;
 
     private MusicPlayerController() {
+        PlaybackLifecycleService.PlayerRuntime lifecycleRuntime = new PlaybackLifecycleService.PlayerRuntime() {
+            @Override
+            public void setPlaying(boolean playing) {
+                MusicPlayerController.this.setPlaying(playing);
+            }
+
+            @Override
+            public void loadCurrentQueueSong() {
+                MusicPlayerController.this.loadCurrentQueueSong();
+            }
+
+            @Override
+            public void startSessionForCurrentSong() {
+                MusicPlayerController.this.startSessionForCurrentSong();
+            }
+        };
+
+        PlaybackNavigator.PlayerRuntime navigatorRuntime = new PlaybackNavigator.PlayerRuntime() {
+            @Override
+            public void setPlaying(boolean playing) {
+                MusicPlayerController.this.setPlaying(playing);
+            }
+
+            @Override
+            public void loadCurrentQueueSong() {
+                MusicPlayerController.this.loadCurrentQueueSong();
+            }
+
+            @Override
+            public void startSessionForCurrentSong() {
+                MusicPlayerController.this.startSessionForCurrentSong();
+            }
+
+            @Override
+            public void stopPlayer() {
+                MusicPlayerController.this.stop();
+            }
+        };
+
+        lifecycleService = new PlaybackLifecycleService(
+                state,
+                queue,
+                shuffleManager,
+                sessionTracker,
+                lifecycleRuntime
+        );
+
+        playbackNavigator = new PlaybackNavigator(
+                state,
+                queue,
+                shuffleManager,
+                sessionTracker,
+                navigatorRuntime
+        );
+
         timeline = new Timeline(new KeyFrame(Duration.seconds(1), e -> tick()));
         timeline.setCycleCount(Timeline.INDEFINITE);
     }
 
     public void playQueue(ObservableList<Song> songs, int index) {
-        playQueue(songs, index, "");
+        lifecycleService.playQueue(songs, index, "");
     }
 
     public void playQueue(ObservableList<Song> songs, int index, String playlistName) {
-        if (songs == null || songs.isEmpty() || index < 0 || index >= songs.size()) {
-            return;
-        }
-
-        queue.setQueue(songs, index, playlistName);
-        state.setCurrentSourcePlaylistName(queue.getSourcePlaylistName());
-
-        resetShuffleStateIfNeeded();
-        loadCurrentQueueSong();
-        state.setCurrentSecond(0);
-        setPlaying(true);
+        lifecycleService.playQueue(songs, index, playlistName);
     }
 
     /**
@@ -54,17 +109,7 @@ public class MusicPlayerController {
      * This is used for Search Songs so search is not treated like a playlist.
      */
     public void playSingleSong(Song song) {
-        if (song == null) {
-            return;
-        }
-
-        queue.setSingleSong(song);
-        state.setCurrentSourcePlaylistName("");
-
-        resetShuffleStateIfNeeded();
-        state.setCurrentSong(song);
-        state.setCurrentSecond(0);
-        setPlaying(true);
+        lifecycleService.playSingleSong(song);
     }
 
     public void togglePlayPause() {
@@ -75,61 +120,11 @@ public class MusicPlayerController {
     }
 
     public void next() {
-        if (queue.isEmpty()) {
-            stop();
-            return;
-        }
-
-        if (state.isShuffleEnabled()) {
-            handleNextInShuffleMode();
-            return;
-        }
-
-        if (!queue.isContinuousPlayback()) {
-            if (state.isLoopEnabled()) {
-                state.setCurrentSecond(0);
-                setPlaying(true);
-            } else {
-                stop();
-            }
-            return;
-        }
-
-        if (queue.moveNextSequential(state.isLoopEnabled())) {
-            loadCurrentQueueSong();
-            state.setCurrentSecond(0);
-            setPlaying(true);
-        } else {
-            stop();
-        }
+        playbackNavigator.next();
     }
 
     public void previous() {
-        if (queue.isEmpty()) {
-            return;
-        }
-
-        if (state.getCurrentSecond() > 3) {
-            state.setCurrentSecond(0);
-            return;
-        }
-
-        if (state.isShuffleEnabled()) {
-            handlePreviousInShuffleMode();
-            return;
-        }
-
-        if (!queue.isContinuousPlayback()) {
-            state.setCurrentSecond(0);
-            return;
-        }
-
-        if (queue.movePreviousSequential(state.isLoopEnabled())) {
-            loadCurrentQueueSong();
-            state.setCurrentSecond(0);
-        } else {
-            state.setCurrentSecond(0);
-        }
+        playbackNavigator.previous();
     }
 
     public void seek(int second) {
@@ -142,56 +137,20 @@ public class MusicPlayerController {
     }
 
     public void stop() {
+        lifecycleService.stop();
         timeline.stop();
-        state.clear();
-        queue.clear();
-        shuffleManager.reset();
     }
 
     public void onSongRemovedFromPlaylist(String playlistName, Song removedSong) {
-        if (removedSong == null || queue.isEmpty()) {
-            return;
-        }
-
-        if (playlistName == null || !playlistName.equals(queue.getSourcePlaylistName())) {
-            return;
-        }
-
-        int removedIndex = queue.indexOf(removedSong);
-        if (removedIndex == -1) {
-            return;
-        }
-
-        boolean removedCurrent = state.getCurrentSong() != null && state.getCurrentSong().equals(removedSong);
-
-        queue.removeAt(removedIndex);
-
-        if (queue.isEmpty()) {
-            stop();
-            return;
-        }
-
-        if (removedCurrent) {
-            if (removedIndex < queue.size()) {
-                queue.setCurrentIndex(removedIndex);
-            } else {
-                queue.setCurrentIndex(queue.size() - 1);
-            }
-
-            loadCurrentQueueSong();
-            state.setCurrentSecond(0);
-            setPlaying(true);
-        } else if (removedIndex < queue.getCurrentIndex()) {
-            queue.setCurrentIndex(queue.getCurrentIndex() - 1);
-        }
-
-        if (state.isShuffleEnabled()) {
-            shuffleManager.createShuffleOrderStartingFrom(queue.size(), queue.getCurrentIndex());
-        }
+        lifecycleService.onSongRemovedFromPlaylist(playlistName, removedSong);
     }
 
     public void toggleLikeCurrentSong() {
-        libraryService.toggleLike(state.getCurrentSong());
+        if (state.getCurrentSong() == null) {
+            return;
+        }
+
+        new PlaylistService().toggleLikeSong(state.getCurrentSong());
     }
 
     public boolean isCurrentSongLiked() {
@@ -235,67 +194,10 @@ public class MusicPlayerController {
         }
 
         state.setCurrentSecond(state.getCurrentSecond() + 1);
+        sessionTracker.tick(SessionManager.getCurrentUsername(), state.getCurrentSong());
 
         if (state.getCurrentSecond() >= state.getCurrentDuration()) {
             next();
-        }
-    }
-
-    private void handleNextInShuffleMode() {
-        if (!queue.isContinuousPlayback()) {
-            if (state.isLoopEnabled()) {
-                state.setCurrentSecond(0);
-                setPlaying(true);
-            } else {
-                stop();
-            }
-            return;
-        }
-
-        Integer nextIndex = shuffleManager.nextIndex(
-                queue.size(),
-                queue.getCurrentIndex(),
-                state.isLoopEnabled()
-        );
-
-        if (nextIndex == null) {
-            stop();
-            return;
-        }
-
-        queue.setCurrentIndex(nextIndex);
-        loadCurrentQueueSong();
-        state.setCurrentSecond(0);
-        setPlaying(true);
-    }
-
-    private void handlePreviousInShuffleMode() {
-        if (!queue.isContinuousPlayback()) {
-            state.setCurrentSecond(0);
-            return;
-        }
-
-        Integer previousIndex = shuffleManager.previousIndex(
-                queue.size(),
-                queue.getCurrentIndex(),
-                state.isLoopEnabled()
-        );
-
-        if (previousIndex == null) {
-            state.setCurrentSecond(0);
-            return;
-        }
-
-        queue.setCurrentIndex(previousIndex);
-        loadCurrentQueueSong();
-        state.setCurrentSecond(0);
-    }
-
-    private void resetShuffleStateIfNeeded() {
-        shuffleManager.reset();
-
-        if (state.isShuffleEnabled() && !queue.isEmpty() && queue.getCurrentIndex() >= 0) {
-            shuffleManager.createShuffleOrderStartingFrom(queue.size(), queue.getCurrentIndex());
         }
     }
 
@@ -303,6 +205,10 @@ public class MusicPlayerController {
         Song song = queue.getCurrentSong();
         state.setCurrentSong(song);
         state.setCurrentSourcePlaylistName(queue.getSourcePlaylistName());
+    }
+
+    private void startSessionForCurrentSong() {
+        sessionTracker.startSession(SessionManager.getCurrentUsername(), state.getCurrentSong());
     }
 
     public Song getCurrentSong() {

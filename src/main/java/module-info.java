@@ -38,4 +38,8 @@ module com.example.tunevaultfx {
 
     exports com.example.tunevaultfx.musicplayer;
     opens com.example.tunevaultfx.musicplayer to com.fasterxml.jackson.databind, javafx.fxml;
+    exports com.example.tunevaultfx.wrapped;
+    opens com.example.tunevaultfx.wrapped to com.fasterxml.jackson.databind, javafx.fxml;
+    exports com.example.tunevaultfx.db;
+    opens com.example.tunevaultfx.db to com.fasterxml.jackson.databind, javafx.fxml;
 }

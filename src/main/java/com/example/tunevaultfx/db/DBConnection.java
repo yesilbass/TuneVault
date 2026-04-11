@@ -8,7 +8,7 @@ public final class DBConnection {
     private static final String DEFAULT_URL =
             "jdbc:mysql://localhost:3306/tune_vault_db?serverTimezone=America/New_York&useSSL=false&allowPublicKeyRetrieval=true";
     private static final String DEFAULT_USER = "root";
-    private static final String DEFAULT_PASSWORD = "";
+    private static final String DEFAULT_PASSWORD = "mysqlpassword";
 
     private DBConnection() {}
 
@@ -20,7 +20,7 @@ public final class DBConnection {
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
         } catch (ClassNotFoundException e) {
-            throw new SQLException("MySQL JDBC driver not found. Make sure mysql-connector-j is added to pom.xml.", e);
+            throw new SQLException("MySQL JDBC driver not found.", e);
         }
 
         return DriverManager.getConnection(url, user, password);
