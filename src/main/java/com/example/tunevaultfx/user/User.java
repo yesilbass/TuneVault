@@ -39,16 +39,4 @@ public class User {
     public String getPassword() {
         return password;
     }
-
-    public String toFileString() {
-        return username + "," + email + "," + password;
-    }
-
-    public static User fromFileString(String line) {
-        String[] parts = line.split(",", -1);
-        if (parts.length != 3) {
-            return null;
-        }
-        return new User(parts[0], parts[1], parts[2]);
-    }
 }
