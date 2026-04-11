@@ -1,5 +1,6 @@
 package com.example.tunevaultfx.controllers.auth;
 
+import com.example.tunevaultfx.db.UserDAO;
 import com.example.tunevaultfx.util.SceneUtil;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -8,25 +9,41 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 
 import java.io.IOException;
+import java.sql.SQLException;
+
 /**
  * Controls the forgot password page.
- * Handles actions related to password recovery.
+ * Checks whether the entered email exists in the database
+ * and displays a recovery-style message.
  */
 public class ForgotPasswordPageController {
 
     @FXML private TextField emailField;
     @FXML private Label statusLabel;
 
+    private final UserDAO userDAO = new UserDAO();
+
     @FXML
-    private void handleSubmit() {
+    private void handleRecoverPassword(ActionEvent event) {
         String email = emailField.getText().trim();
 
-        if (email.isEmpty()) {
+        if (email.isBlank()) {
             statusLabel.setText("Please enter your email.");
             return;
         }
 
-        statusLabel.setText("Password reset feature is not connected yet.");
+        try {
+            boolean exists = userDAO.emailRegistered(email);
+
+            if (exists) {
+                statusLabel.setText("Email found. Password recovery instructions would be sent here.");
+            } else {
+                statusLabel.setText("No account found with that email.");
+            }
+        } catch (SQLException e) {
+            statusLabel.setText("Database error. Please try again.");
+            e.printStackTrace();
+        }
     }
 
     @FXML

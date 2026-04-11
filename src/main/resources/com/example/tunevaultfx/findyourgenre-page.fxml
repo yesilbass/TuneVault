@@ -6,76 +6,93 @@
 <BorderPane xmlns="http://javafx.com/javafx/21"
             xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="com.example.tunevaultfx.findyourgenre.FindYourGenrePageController"
-            prefWidth="900" prefHeight="650"
+            prefWidth="1280.0" prefHeight="820.0"
+            minWidth="1180.0" minHeight="780.0"
             style="-fx-background-color: linear-gradient(to bottom right, #0f172a, #1e293b);">
 
     <top>
-        <HBox alignment="CENTER_LEFT" spacing="20" style="-fx-padding: 20;">
-            <Button text="Back to Menu"
-                    onAction="#handleBackToMenu"
-                    prefWidth="120" prefHeight="38"
-                    style="-fx-background-color: #3b82f6; -fx-text-fill: white; -fx-background-radius: 20;" />
+        <HBox alignment="CENTER_LEFT" spacing="20" style="-fx-padding: 20 24 18 24;">
+            <children>
+                <Button text="Back to Menu"
+                        onAction="#handleBackToMenu"
+                        prefWidth="120" prefHeight="38"
+                        style="-fx-background-color: #3b82f6; -fx-text-fill: white; -fx-background-radius: 20;" />
 
-            <StackPane HBox.hgrow="ALWAYS" alignment="CENTER">
-                <Label text="Find Your Genre"
-                       style="-fx-text-fill: white; -fx-font-size: 28px; -fx-font-weight: bold;" />
-            </StackPane>
+                <StackPane HBox.hgrow="ALWAYS" alignment="CENTER">
+                    <Label text="Find Your Genre"
+                           style="-fx-text-fill: white; -fx-font-size: 28px; -fx-font-weight: bold;" />
+                </StackPane>
 
-            <Region prefWidth="120" />
+                <Region prefWidth="120" />
+            </children>
         </HBox>
     </top>
 
     <center>
-        <VBox alignment="CENTER" spacing="20" style="-fx-padding: 30;">
-            <VBox spacing="15"
-                  alignment="CENTER"
-                  style="-fx-background-color: white; -fx-background-radius: 20; -fx-padding: 30;"
-                  maxWidth="650">
-                <children>
-                    <Label fx:id="progressLabel"
-                           text="Question 1 of 4"
-                           style="-fx-font-size: 16px; -fx-text-fill: #64748b;" />
+        <VBox alignment="CENTER" spacing="20" style="-fx-padding: 30 24 36 24;">
+            <children>
+                <VBox spacing="15"
+                      alignment="CENTER"
+                      style="-fx-background-color: white; -fx-background-radius: 20; -fx-padding: 30;"
+                      maxWidth="720"
+                      prefWidth="720">
+                    <children>
+                        <Label fx:id="progressLabel"
+                               text="Question 1 of 4"
+                               style="-fx-font-size: 16px; -fx-text-fill: #64748b;" />
 
-                    <Label fx:id="questionLabel"
-                           wrapText="true"
-                           text="Question goes here"
-                           style="-fx-font-size: 24px; -fx-font-weight: bold;" />
+                        <Label fx:id="questionLabel"
+                               wrapText="true"
+                               text="Question goes here"
+                               maxWidth="560"
+                               style="-fx-font-size: 24px; -fx-font-weight: bold;" />
 
-                    <Button fx:id="answerButton1"
-                            text="Answer 1"
-                            onAction="#handleAnswer1"
-                            maxWidth="400"
-                            style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-background-radius: 20;" />
+                        <Button fx:id="answerButton1"
+                                text="Answer 1"
+                                onAction="#handleAnswer1"
+                                maxWidth="460"
+                                prefWidth="460"
+                                prefHeight="42"
+                                style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-background-radius: 20;" />
 
-                    <Button fx:id="answerButton2"
-                            text="Answer 2"
-                            onAction="#handleAnswer2"
-                            maxWidth="400"
-                            style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-background-radius: 20;" />
+                        <Button fx:id="answerButton2"
+                                text="Answer 2"
+                                onAction="#handleAnswer2"
+                                maxWidth="460"
+                                prefWidth="460"
+                                prefHeight="42"
+                                style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-background-radius: 20;" />
 
-                    <Button fx:id="answerButton3"
-                            text="Answer 3"
-                            onAction="#handleAnswer3"
-                            maxWidth="400"
-                            style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-background-radius: 20;" />
+                        <Button fx:id="answerButton3"
+                                text="Answer 3"
+                                onAction="#handleAnswer3"
+                                maxWidth="460"
+                                prefWidth="460"
+                                prefHeight="42"
+                                style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-background-radius: 20;" />
 
-                    <Button fx:id="answerButton4"
-                            text="Answer 4"
-                            onAction="#handleAnswer4"
-                            maxWidth="400"
-                            style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-background-radius: 20;" />
+                        <Button fx:id="answerButton4"
+                                text="Answer 4"
+                                onAction="#handleAnswer4"
+                                maxWidth="460"
+                                prefWidth="460"
+                                prefHeight="42"
+                                style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-background-radius: 20;" />
 
-                    <Label fx:id="resultLabel"
-                           text=""
-                           style="-fx-font-size: 26px; -fx-font-weight: bold; -fx-text-fill: #111827;" />
+                        <Label fx:id="resultLabel"
+                               text=""
+                               style="-fx-font-size: 26px; -fx-font-weight: bold; -fx-text-fill: #111827;" />
 
-                    <Button fx:id="restartButton"
-                            text="Restart Quiz"
-                            visible="false"
-                            onAction="#handleRestartQuiz"
-                            style="-fx-background-color: #f59e0b; -fx-text-fill: white; -fx-background-radius: 20;" />
-                </children>
-            </VBox>
+                        <Button fx:id="restartButton"
+                                text="Restart Quiz"
+                                visible="false"
+                                onAction="#handleRestartQuiz"
+                                prefWidth="180"
+                                prefHeight="40"
+                                style="-fx-background-color: #f59e0b; -fx-text-fill: white; -fx-background-radius: 20;" />
+                    </children>
+                </VBox>
+            </children>
         </VBox>
     </center>
 

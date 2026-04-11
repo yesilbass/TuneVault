@@ -1,29 +1,43 @@
 package com.example.tunevaultfx.playlist;
 
 import com.example.tunevaultfx.core.Song;
+import com.example.tunevaultfx.db.ListeningEventDAO;
+import com.example.tunevaultfx.db.UserProfileDAO;
 import com.example.tunevaultfx.session.SessionManager;
 import com.example.tunevaultfx.user.UserProfile;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+
+import java.sql.SQLException;
+
 /**
  * Handles playlist operations such as creating, deleting,
  * adding songs, and removing songs.
+ * Uses database-backed updates instead of rewriting the whole profile.
  */
 public class PlaylistService {
 
+    private final UserProfileDAO userProfileDAO = new UserProfileDAO();
+
     public boolean createPlaylist(UserProfile profile, String name) {
-        if (profile == null || name == null) {
+        if (profile == null || name == null || name.isBlank()) {
             return false;
         }
 
-        String trimmed = name.trim();
-        if (trimmed.isEmpty() || profile.getPlaylists().containsKey(trimmed)) {
+        if (profile.getPlaylists().containsKey(name)) {
             return false;
         }
 
-        profile.getPlaylists().put(trimmed, FXCollections.observableArrayList());
-        SessionManager.saveCurrentProfile();
-        return true;
+        try {
+            boolean created = userProfileDAO.createPlaylist(profile.getUsername(), name);
+            if (created) {
+                profile.getPlaylists().put(name, FXCollections.observableArrayList());
+            }
+            return created;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     public boolean deletePlaylist(UserProfile profile, String playlistName) {
@@ -31,17 +45,16 @@ public class PlaylistService {
             return false;
         }
 
-        if ("Liked Songs".equals(playlistName)) {
+        try {
+            boolean deleted = userProfileDAO.deletePlaylist(profile.getUsername(), playlistName);
+            if (deleted) {
+                profile.getPlaylists().remove(playlistName);
+            }
+            return deleted;
+        } catch (SQLException e) {
+            e.printStackTrace();
             return false;
         }
-
-        if (!profile.getPlaylists().containsKey(playlistName)) {
-            return false;
-        }
-
-        profile.getPlaylists().remove(playlistName);
-        SessionManager.saveCurrentProfile();
-        return true;
     }
 
     public boolean addSongToPlaylist(UserProfile profile, String playlistName, Song song) {
@@ -49,14 +62,25 @@ public class PlaylistService {
             return false;
         }
 
-        ObservableList<Song> songs = profile.getPlaylists().get(playlistName);
-        if (songs == null || songs.contains(song)) {
+        ObservableList<Song> playlistSongs = profile.getPlaylists().get(playlistName);
+        if (playlistSongs == null) {
             return false;
         }
 
-        songs.add(song);
-        SessionManager.saveCurrentProfile();
-        return true;
+        if (playlistSongs.contains(song)) {
+            return false;
+        }
+
+        try {
+            boolean added = userProfileDAO.addSongToPlaylist(profile.getUsername(), playlistName, song);
+            if (added) {
+                playlistSongs.add(song);
+            }
+            return added;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     public boolean removeSongFromPlaylist(UserProfile profile, String playlistName, Song song) {
@@ -64,15 +88,44 @@ public class PlaylistService {
             return false;
         }
 
-        ObservableList<Song> songs = profile.getPlaylists().get(playlistName);
-        if (songs == null) {
+        ObservableList<Song> playlistSongs = profile.getPlaylists().get(playlistName);
+        if (playlistSongs == null) {
             return false;
         }
 
-        boolean removed = songs.remove(song);
-        if (removed) {
-            SessionManager.saveCurrentProfile();
+        try {
+            boolean removed = userProfileDAO.removeSongFromPlaylist(profile.getUsername(), playlistName, song);
+            if (removed) {
+                playlistSongs.remove(song);
+            }
+            return removed;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
         }
-        return removed;
+    }
+
+    public void toggleLikeSong(Song song) {
+        UserProfile profile = SessionManager.getCurrentUserProfile();
+        if (profile == null || song == null) {
+            return;
+        }
+
+        boolean wasLiked = profile.isLiked(song);
+
+        try {
+            userProfileDAO.toggleLike(profile.getUsername(), song);
+            profile.toggleLike(song);
+
+            if (!wasLiked) {
+                new ListeningEventDAO().recordLike(profile.getUsername(), song);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public boolean isProtectedPlaylist(String playlistName) {
+        return "Liked Songs".equals(playlistName);
     }
 }

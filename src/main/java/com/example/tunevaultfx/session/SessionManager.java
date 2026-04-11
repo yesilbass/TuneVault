@@ -1,12 +1,12 @@
 package com.example.tunevaultfx.session;
 
 import com.example.tunevaultfx.core.Song;
+import com.example.tunevaultfx.db.UserProfileDAO;
 import com.example.tunevaultfx.user.UserProfile;
-import com.example.tunevaultfx.user.UserProfileStore;
 
 /**
- * Manages the current logged-in user and their loaded profile.
- * Provides shared access to session-related app state.
+ * Manages the current logged-in user and shared session state.
+ * Now loads and saves profile data from the database.
  */
 public class SessionManager {
 
@@ -15,12 +15,19 @@ public class SessionManager {
     private static String requestedPlaylistToOpen;
     private static Song selectedSong;
 
+    private static final UserProfileDAO userProfileDAO = new UserProfileDAO();
+
     private SessionManager() {
     }
 
     public static void startSession(String username) {
         currentUsername = username;
-        currentUserProfile = UserProfileStore.loadProfile(username);
+        try {
+            currentUserProfile = userProfileDAO.loadProfile(username);
+        } catch (Exception e) {
+            e.printStackTrace();
+            currentUserProfile = new UserProfile(username);
+        }
     }
 
     public static void logout() {
@@ -39,9 +46,9 @@ public class SessionManager {
     }
 
     public static void saveCurrentProfile() {
-        if (currentUserProfile != null) {
-            UserProfileStore.saveProfile(currentUserProfile);
-        }
+        // Intentionally left blank for playlist/song changes.
+        // Playlist and liked-song updates now write directly to the database
+        // through PlaylistService and UserProfileDAO.
     }
 
     public static void requestPlaylistToOpen(String playlistName) {

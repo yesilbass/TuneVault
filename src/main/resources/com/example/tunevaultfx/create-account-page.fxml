@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-        <?import javafx.geometry.Insets?>
-        <?import javafx.scene.control.*?>
-        <?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
 
 <AnchorPane prefHeight="500.0" prefWidth="800.0"
             xmlns="http://javafx.com/javafx/21"
@@ -16,30 +16,54 @@
               AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
 
             <children>
-                <Label text="Create Account" style="-fx-text-fill: white; -fx-font-size: 30px; -fx-font-weight: bold;" />
+                <Label text="Create Account"
+                       style="-fx-text-fill: white; -fx-font-size: 30px; -fx-font-weight: bold;" />
 
                 <VBox maxWidth="360.0" spacing="10.0"
                       style="-fx-background-color: white; -fx-background-radius: 18; -fx-padding: 30;">
                     <children>
-                        <Label text="Username" style="-fx-text-fill: #334155; -fx-font-size: 13px; -fx-font-weight: bold;" />
-                        <TextField fx:id="usernameField" promptText="Enter username" prefHeight="40.0"
+                        <Label text="Username"
+                               style="-fx-text-fill: #334155; -fx-font-size: 13px; -fx-font-weight: bold;" />
+                        <TextField fx:id="usernameField"
+                                   promptText="Enter username"
+                                   prefHeight="40.0"
                                    style="-fx-background-radius: 10; -fx-border-radius: 10; -fx-border-color: #cbd5e1;" />
 
-                        <Label text="Email" style="-fx-text-fill: #334155; -fx-font-size: 13px; -fx-font-weight: bold;" />
-                        <TextField fx:id="emailField" promptText="Enter email" prefHeight="40.0"
+                        <Label text="Email"
+                               style="-fx-text-fill: #334155; -fx-font-size: 13px; -fx-font-weight: bold;" />
+                        <TextField fx:id="emailField"
+                                   promptText="Enter email"
+                                   prefHeight="40.0"
                                    style="-fx-background-radius: 10; -fx-border-radius: 10; -fx-border-color: #cbd5e1;" />
 
-                        <Label text="Password" style="-fx-text-fill: #334155; -fx-font-size: 13px; -fx-font-weight: bold;" />
-                        <PasswordField fx:id="passwordField" promptText="Enter password" prefHeight="40.0"
+                        <Label text="Password"
+                               style="-fx-text-fill: #334155; -fx-font-size: 13px; -fx-font-weight: bold;" />
+                        <PasswordField fx:id="passwordField"
+                                       promptText="Enter password"
+                                       prefHeight="40.0"
                                        style="-fx-background-radius: 10; -fx-border-radius: 10; -fx-border-color: #cbd5e1;" />
 
-                        <Button text="Create Account" onAction="#handleCreateAccount" prefHeight="40.0"
+                        <Label text="Confirm Password"
+                               style="-fx-text-fill: #334155; -fx-font-size: 13px; -fx-font-weight: bold;" />
+                        <PasswordField fx:id="confirmPasswordField"
+                                       promptText="Confirm password"
+                                       prefHeight="40.0"
+                                       style="-fx-background-radius: 10; -fx-border-radius: 10; -fx-border-color: #cbd5e1;" />
+
+                        <Button text="Create Account"
+                                onAction="#handleCreateAccount"
+                                prefHeight="40.0"
                                 style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 10;" />
 
-                        <Button text="Back to Login" onAction="#handleBackToLogin" prefHeight="40.0"
+                        <Button text="Back to Login"
+                                onAction="#handleBackToLogin"
+                                prefHeight="40.0"
                                 style="-fx-background-color: #64748b; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 10;" />
 
-                        <Label fx:id="statusLabel" text="" wrapText="true" style="-fx-text-fill: #dc2626; -fx-font-size: 12px;" />
+                        <Label fx:id="statusLabel"
+                               text=""
+                               wrapText="true"
+                               style="-fx-text-fill: #dc2626; -fx-font-size: 12px;" />
                     </children>
                     <padding>
                         <Insets top="30.0" right="30.0" bottom="30.0" left="30.0" />
