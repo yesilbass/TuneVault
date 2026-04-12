@@ -1,4 +1,4 @@
-package com.example.tunevaultfx.controllers;
+package com.example.tunevaultfx.mainmenu;
 
 import com.example.tunevaultfx.session.SessionManager;
 import com.example.tunevaultfx.util.SceneUtil;

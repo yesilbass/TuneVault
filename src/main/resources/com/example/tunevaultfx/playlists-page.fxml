@@ -140,7 +140,7 @@
                             </children>
                         </HBox>
 
-                        <Label text="Select one or more songs to add"
+                        <Label text="Search songs and click to add or remove"
                                style="-fx-text-fill: #64748b; -fx-font-size: 14px;" />
 
                         <TextField fx:id="searchSongsField"
@@ -152,12 +152,6 @@
                                   VBox.vgrow="ALWAYS"
                                   prefHeight="420.0"
                                   style="-fx-background-radius: 12; -fx-border-radius: 12;" />
-
-                        <Button text="Add Selected"
-                                onAction="#handleAddSelectedSearchSong"
-                                prefWidth="170.0"
-                                prefHeight="44.0"
-                                style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 22;" />
                     </children>
                 </VBox>
 

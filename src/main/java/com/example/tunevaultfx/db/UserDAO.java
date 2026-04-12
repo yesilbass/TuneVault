@@ -8,18 +8,12 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-/**
- * Handles database operations related to user accounts.
- * Used for checking existing users, creating accounts, and authenticating login.
- */
 public class UserDAO {
 
     public boolean usernameExists(String username) throws SQLException {
         String sql = "SELECT 1 FROM app_user WHERE username = ? LIMIT 1";
-
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-
             stmt.setString(1, username);
 
             try (ResultSet rs = stmt.executeQuery()) {
@@ -29,11 +23,9 @@ public class UserDAO {
     }
 
     public boolean emailExists(String email) throws SQLException {
-        String sql = "SELECT 1 FROM app_user WHERE email = ? LIMIT 1";
-
+        String sql = "SELECT 1 FROM app_user WHERE LOWER(email) = LOWER(?) LIMIT 1";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-
             stmt.setString(1, email);
 
             try (ResultSet rs = stmt.executeQuery()) {
@@ -44,26 +36,29 @@ public class UserDAO {
 
     public boolean createUser(String username, String email, String password) throws SQLException {
         String sql = "INSERT INTO app_user (username, email, password_hash) VALUES (?, ?, ?)";
-
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-
             stmt.setString(1, username);
-            stmt.setString(2, email);
+            stmt.setString(2, email.toLowerCase());
             stmt.setString(3, PasswordUtil.hashPassword(password));
-
             return stmt.executeUpdate() == 1;
         }
     }
 
-    public User authenticateUser(String username, String password) throws SQLException {
-        String sql = "SELECT user_id, username, email FROM app_user WHERE username = ? AND password_hash = ? LIMIT 1";
+    public User authenticateUser(String loginInput, String password) throws SQLException {
+        String sql = """
+                SELECT user_id, username, email
+                FROM app_user
+                WHERE (username = ? OR LOWER(email) = LOWER(?))
+                  AND password_hash = ?
+                LIMIT 1
+                """;
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setString(1, username);
-            stmt.setString(2, PasswordUtil.hashPassword(password));
+            stmt.setString(1, loginInput);
+            stmt.setString(2, loginInput);
+            stmt.setString(3, PasswordUtil.hashPassword(password));
 
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
@@ -76,6 +71,16 @@ public class UserDAO {
                 }
                 return null;
             }
+        }
+    }
+
+    public boolean updatePasswordByEmail(String email, String newPassword) throws SQLException {
+        String sql = "UPDATE app_user SET password_hash = ? WHERE LOWER(email) = LOWER(?)";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, PasswordUtil.hashPassword(newPassword));
+            stmt.setString(2, email);
+            return stmt.executeUpdate() == 1;
         }
     }
 

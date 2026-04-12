@@ -1,8 +1,8 @@
-package com.example.tunevaultfx.controllers.auth;
+package com.example.tunevaultfx.auth;
 
+import com.example.tunevaultfx.db.UserDAO;
 import com.example.tunevaultfx.session.SessionManager;
 import com.example.tunevaultfx.user.User;
-import com.example.tunevaultfx.db.UserDAO;
 import com.example.tunevaultfx.util.SceneUtil;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -16,8 +16,7 @@ import java.sql.SQLException;
 
 /**
  * Controls the login page.
- * Reads login input, validates the user through the database,
- * and opens the main menu when login is successful.
+ * Supports login with either username or email.
  */
 public class LoginPageController {
 
@@ -29,19 +28,21 @@ public class LoginPageController {
 
     @FXML
     private void handleLogin(ActionEvent event) throws IOException {
-        String username = usernameField.getText().trim();
-        String password = passwordField.getText();
+        clearStatus();
 
-        if (username.isBlank() || password.isBlank()) {
-            statusLabel.setText("Please enter both username and password.");
+        String loginInput = safeTrim(usernameField.getText());
+        String password = passwordField.getText() == null ? "" : passwordField.getText();
+
+        if (loginInput.isBlank() || password.isBlank()) {
+            showError("Please enter your username/email and password.");
             return;
         }
 
         try {
-            User user = userDAO.authenticateUser(username, password);
+            User user = userDAO.authenticateUser(loginInput, password);
 
             if (user == null) {
-                statusLabel.setText("Invalid username or password.");
+                showError("Invalid credentials.");
                 return;
             }
 
@@ -49,8 +50,8 @@ public class LoginPageController {
             SceneUtil.switchScene((Node) event.getSource(), "main-menu.fxml");
 
         } catch (SQLException e) {
-            statusLabel.setText("Database error. Please try again.");
             e.printStackTrace();
+            showError("A database error occurred. Please try again.");
         }
     }
 
@@ -72,5 +73,18 @@ public class LoginPageController {
     @FXML
     private void handleForgotPasswordPage(ActionEvent event) throws IOException {
         openForgotPasswordPage(event);
+    }
+
+    private String safeTrim(String value) {
+        return value == null ? "" : value.trim();
+    }
+
+    private void clearStatus() {
+        statusLabel.setText("");
+    }
+
+    private void showError(String message) {
+        statusLabel.setStyle("-fx-text-fill: #dc2626; -fx-font-size: 12px;");
+        statusLabel.setText(message);
     }
 }

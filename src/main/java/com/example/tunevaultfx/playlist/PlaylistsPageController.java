@@ -1,8 +1,13 @@
 package com.example.tunevaultfx.playlist;
 
-import com.example.tunevaultfx.core.Song;
 import com.example.tunevaultfx.db.SongDAO;
+import javafx.animation.FadeTransition;
+import javafx.geometry.Insets;
+import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
+import javafx.util.Duration;
 import com.example.tunevaultfx.musicplayer.MusicPlayerController;
+import com.example.tunevaultfx.core.Song;
 import com.example.tunevaultfx.session.SessionManager;
 import com.example.tunevaultfx.user.UserProfile;
 import com.example.tunevaultfx.util.AlertUtil;
@@ -11,12 +16,12 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
-import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextInputDialog;
-import javafx.scene.layout.VBox;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -30,25 +35,20 @@ public class PlaylistsPageController {
 
     @FXML
     private ListView<String> playlistListView;
-
     @FXML
     private ListView<Song> playlistSongsListView;
-
     @FXML
     private ListView<Song> searchResultsListView;
 
     @FXML
     private Label selectedPlaylistLabel;
-
     @FXML
     private Label songCountLabel;
-
     @FXML
     private Label totalDurationLabel;
 
     @FXML
     private TextField searchSongsField;
-
     @FXML
     private VBox searchSongsPanel;
 
@@ -56,6 +56,7 @@ public class PlaylistsPageController {
     private final ObservableList<Song> allLibrarySongs = FXCollections.observableArrayList();
 
     private final SongDAO songDAO = new SongDAO();
+
     private final MusicPlayerController player = MusicPlayerController.getInstance();
     private final PlaylistService playlistService = new PlaylistService();
     private final SongSearchService songSearchService = new SongSearchService();
@@ -70,11 +71,17 @@ public class PlaylistsPageController {
             return;
         }
 
-        loadSongsFromDatabase();
+        try {
+            allLibrarySongs.setAll(songDAO.getAllSongs());
+        } catch (Exception e) {
+            e.printStackTrace();
+            AlertUtil.info("Database Error", "Could not load songs from the database.");
+        }
 
         searchResultsListView.setItems(allLibrarySongs);
-        searchResultsListView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 
+        searchResultsListView.setFocusTraversable(false);
+        searchResultsListView.getSelectionModel().clearSelection();
         loadPlaylistNames();
         setupInitialPlaylistSelection();
         setupListeners();
@@ -82,15 +89,6 @@ public class PlaylistsPageController {
         setupDoubleClickDetails();
         updateSelectedPlaylist();
         hideSearchPanel();
-    }
-
-    private void loadSongsFromDatabase() {
-        try {
-            allLibrarySongs.setAll(songDAO.getAllSongs());
-        } catch (Exception e) {
-            e.printStackTrace();
-            AlertUtil.info("Database Error", "Could not load songs from the database.");
-        }
     }
 
     private void loadPlaylistNames() {
@@ -111,12 +109,16 @@ public class PlaylistsPageController {
     private void setupListeners() {
         playlistListView.getSelectionModel()
                 .selectedItemProperty()
-                .addListener((obs, oldVal, newVal) -> updateSelectedPlaylist());
+                .addListener((obs, oldVal, newVal) -> {
+                    updateSelectedPlaylist();
+                    refreshSearchResultsCellFactory();
+                });
 
-        searchSongsField.textProperty().addListener((obs, oldVal, newVal) -> {
-            ObservableList<Song> filtered = songSearchService.filterSongs(allLibrarySongs, newVal);
-            searchResultsListView.setItems(filtered);
-        });
+        searchSongsField.textProperty()
+                .addListener((obs, oldVal, newVal) -> {
+                    searchResultsListView.setItems(songSearchService.filterSongs(allLibrarySongs, newVal));
+                    refreshSearchResultsCellFactory();
+                });
     }
 
     private void setupSongCells() {
@@ -139,9 +141,11 @@ public class PlaylistsPageController {
                 })
         );
 
-        searchResultsListView.setCellFactory(listView ->
-                new PlayableSongCell(player::playSingleSong)
-        );
+        refreshSearchResultsCellFactory();
+    }
+
+    private void refreshSearchResultsCellFactory() {
+        searchResultsListView.setCellFactory(listView -> new SearchSongToggleCell());
     }
 
     private void setupDoubleClickDetails() {
@@ -177,7 +181,6 @@ public class PlaylistsPageController {
     @FXML
     private void handleShowSearchSongs() {
         String selectedPlaylist = playlistListView.getSelectionModel().getSelectedItem();
-
         if (selectedPlaylist == null) {
             AlertUtil.info("No Playlist Selected", "Please select a playlist first.");
             return;
@@ -186,6 +189,7 @@ public class PlaylistsPageController {
         searchSongsPanel.setVisible(true);
         searchSongsPanel.setManaged(true);
         searchSongsField.requestFocus();
+        refreshSearchResultsCellFactory();
     }
 
     @FXML
@@ -224,17 +228,12 @@ public class PlaylistsPageController {
         loadPlaylistNames();
         playlistListView.getSelectionModel().select(name);
         updateSelectedPlaylist();
+        refreshSearchResultsCellFactory();
     }
 
     @FXML
     private void handleDeletePlaylist() {
         String selected = playlistListView.getSelectionModel().getSelectedItem();
-
-        if (playlistService.isProtectedPlaylist(selected)) {
-            AlertUtil.info("Protected Playlist", "Liked Songs cannot be deleted.");
-            return;
-        }
-
         if (selected == null) {
             AlertUtil.info("No Playlist Selected", "Please select a playlist to delete.");
             return;
@@ -251,6 +250,7 @@ public class PlaylistsPageController {
         }
 
         updateSelectedPlaylist();
+        refreshSearchResultsCellFactory();
     }
 
     @FXML
@@ -266,48 +266,7 @@ public class PlaylistsPageController {
         if (playlistService.removeSongFromPlaylist(profile, selectedPlaylist, selectedSong)) {
             player.onSongRemovedFromPlaylist(selectedPlaylist, selectedSong);
             updateSelectedPlaylist();
-        }
-    }
-
-    @FXML
-    private void handleAddSelectedSearchSong() {
-        String selectedPlaylist = playlistListView.getSelectionModel().getSelectedItem();
-        ObservableList<Song> selectedSongs =
-                FXCollections.observableArrayList(searchResultsListView.getSelectionModel().getSelectedItems());
-
-        if (selectedPlaylist == null) {
-            AlertUtil.info("No Playlist Selected", "Please select a playlist first.");
-            return;
-        }
-
-        if (selectedSongs.isEmpty()) {
-            AlertUtil.info("No Songs Selected", "Please select one or more songs from search results.");
-            return;
-        }
-
-        int addedCount = 0;
-        int duplicateCount = 0;
-
-        for (Song song : selectedSongs) {
-            boolean added = playlistService.addSongToPlaylist(profile, selectedPlaylist, song);
-            if (added) {
-                addedCount++;
-            } else {
-                duplicateCount++;
-            }
-        }
-
-        updateSelectedPlaylist();
-
-        if (addedCount > 0 && duplicateCount > 0) {
-            AlertUtil.info(
-                    "Songs Added",
-                    "Added " + addedCount + " song(s). " + duplicateCount + " were already in the playlist."
-            );
-        } else if (addedCount > 0) {
-            AlertUtil.info("Songs Added", "Added " + addedCount + " song(s) to the playlist.");
-        } else {
-            AlertUtil.info("No New Songs Added", "All selected songs were already in the playlist.");
+            refreshSearchResultsCellFactory();
         }
     }
 
@@ -333,5 +292,154 @@ public class PlaylistsPageController {
         playlistSongsListView.setItems(summary.getSongs());
         songCountLabel.setText("Songs: " + summary.getSongCount());
         totalDurationLabel.setText("Duration: " + summary.getFormattedDuration());
+    }
+
+    private boolean songIsInSelectedPlaylist(Song song) {
+        String selectedPlaylist = playlistListView.getSelectionModel().getSelectedItem();
+        if (selectedPlaylist == null || song == null) {
+            return false;
+        }
+
+        ObservableList<Song> songs = profile.getPlaylists().get(selectedPlaylist);
+        return songs != null && songs.contains(song);
+    }
+
+    private void toggleSongInSelectedPlaylist(Song song) {
+        String selectedPlaylist = playlistListView.getSelectionModel().getSelectedItem();
+        if (selectedPlaylist == null || song == null) {
+            return;
+        }
+
+        if (songIsInSelectedPlaylist(song)) {
+            playlistService.removeSongFromPlaylist(profile, selectedPlaylist, song);
+            player.onSongRemovedFromPlaylist(selectedPlaylist, song);
+        } else {
+            playlistService.addSongToPlaylist(profile, selectedPlaylist, song);
+        }
+
+        updateSelectedPlaylist();
+        searchResultsListView.refresh();
+    }
+
+    private class SearchSongToggleCell extends ListCell<Song> {
+        private final HBox root = new HBox();
+        private final VBox textBox = new VBox();
+        private final Label titleLabel = new Label();
+        private final Label artistLabel = new Label();
+        private final Region spacer = new Region();
+        private final Button actionButton = new Button();
+
+        SearchSongToggleCell() {
+            root.setSpacing(12);
+            root.setPadding(new Insets(8, 10, 8, 10));
+            root.setStyle("-fx-background-color: transparent; -fx-background-radius: 14;");
+            HBox.setHgrow(spacer, Priority.ALWAYS);
+
+            titleLabel.setStyle("-fx-text-fill: #1e293b; -fx-font-size: 15px; -fx-font-weight: bold;");
+            artistLabel.setStyle("-fx-text-fill: #64748b; -fx-font-size: 13px;");
+
+            textBox.setSpacing(4);
+            textBox.getChildren().addAll(titleLabel, artistLabel);
+
+            actionButton.setPrefWidth(42);
+            actionButton.setPrefHeight(32);
+            actionButton.setFocusTraversable(false);
+
+            root.getChildren().addAll(textBox, spacer, actionButton);
+
+            root.setOnMouseClicked(event -> {
+                Song song = getItem();
+                if (song == null || isEmpty()) {
+                    return;
+                }
+
+                toggleSongInCell(song);
+                event.consume();
+            });
+
+            setOnMousePressed(event -> {
+                if (!isEmpty()) {
+                    getListView().getSelectionModel().clearSelection();
+                    event.consume();
+                }
+            });
+        }
+
+        @Override
+        protected void updateItem(Song song, boolean empty) {
+            super.updateItem(song, empty);
+
+            if (empty || song == null) {
+                setText(null);
+                setGraphic(null);
+                setStyle("-fx-background-color: transparent;");
+                return;
+            }
+
+            titleLabel.setText(song.title());
+            artistLabel.setText(song.artist());
+
+            refreshActionButton(song);
+
+            setText(null);
+            setGraphic(root);
+
+            setBackground(Background.EMPTY);
+            setStyle("-fx-background-color: transparent; -fx-padding: 2 0 2 0;");
+        }
+
+        @Override
+        public void updateSelected(boolean selected) {
+            super.updateSelected(false);
+        }
+
+        private void playClickFlash(boolean added) {
+            Color flashColor = added
+                    ? Color.web("#dbeafe")
+                    : Color.web("#fee2e2");
+
+            root.setBackground(new Background(
+                    new BackgroundFill(flashColor, new CornerRadii(14), Insets.EMPTY)
+            ));
+
+            javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(Duration.millis(180));
+            pause.setOnFinished(e -> root.setBackground(Background.EMPTY));
+            pause.play();
+        }
+
+        private void toggleSongInCell(Song song) {
+            String selectedPlaylist = playlistListView.getSelectionModel().getSelectedItem();
+            if (selectedPlaylist == null || song == null) {
+                return;
+            }
+
+            boolean wasInPlaylist = songIsInSelectedPlaylist(song);
+
+            if (wasInPlaylist) {
+                playlistService.removeSongFromPlaylist(profile, selectedPlaylist, song);
+                player.onSongRemovedFromPlaylist(selectedPlaylist, song);
+            } else {
+                playlistService.addSongToPlaylist(profile, selectedPlaylist, song);
+            }
+
+            playClickFlash(!wasInPlaylist);
+            updateSelectedPlaylist();
+            searchResultsListView.refresh();
+            searchResultsListView.getSelectionModel().clearSelection();
+        }
+
+        private void refreshActionButton(Song song) {
+            boolean alreadyInPlaylist = songIsInSelectedPlaylist(song);
+
+            actionButton.setText(alreadyInPlaylist ? "✓" : "+");
+            actionButton.setStyle(alreadyInPlaylist
+                    ? "-fx-background-color: #dbeafe; -fx-text-fill: #2563eb; -fx-font-size: 16px; -fx-font-weight: bold; -fx-background-radius: 16;"
+                    : "-fx-background-color: #e2e8f0; -fx-text-fill: #334155; -fx-font-size: 16px; -fx-font-weight: bold; -fx-background-radius: 16;");
+
+            actionButton.setOnAction(event -> {
+                toggleSongInCell(song);
+                event.consume();
+            });
+        }
     }
 }
