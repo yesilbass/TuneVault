@@ -34,86 +34,76 @@
     </top>
 
     <center>
-        <VBox alignment="CENTER" spacing="24" style="-fx-padding: 26 24 32 24;">
+        <VBox alignment="CENTER" spacing="28" style="-fx-padding: 32 24 36 24;">
             <children>
-                <Label text="Choose a feature below to continue"
-                       style="-fx-text-fill: #cbd5e1; -fx-font-size: 18px;" />
-
-                <GridPane alignment="CENTER" hgap="28" vgap="28">
+                <VBox alignment="CENTER" spacing="8">
                     <children>
+                        <Label text="Choose a feature below to continue"
+                               style="-fx-text-fill: #e2e8f0; -fx-font-size: 22px; -fx-font-weight: bold;" />
+                        <Label text="Your playlists, listening recap, and genre quiz are all here."
+                               style="-fx-text-fill: #94a3b8; -fx-font-size: 14px;" />
+                    </children>
+                </VBox>
+
+                <HBox alignment="CENTER" spacing="28">
+                    <children>
+
                         <VBox alignment="CENTER" spacing="16"
-                              prefWidth="320" prefHeight="210"
-                              style="-fx-background-color: white; -fx-background-radius: 28; -fx-padding: 25;"
-                              GridPane.columnIndex="0" GridPane.rowIndex="0">
+                              prefWidth="300" prefHeight="220"
+                              style="-fx-background-color: white; -fx-background-radius: 28; -fx-padding: 28;">
                             <children>
                                 <Label text="Playlists"
-                                       style="-fx-text-fill: #0f172a; -fx-font-size: 26px; -fx-font-weight: bold;" />
-                                <Label text="Create and manage your playlists"
+                                       style="-fx-text-fill: #0f172a; -fx-font-size: 28px; -fx-font-weight: bold;" />
+                                <Label text="Create, manage, and organize your music library."
                                        wrapText="true"
-                                       maxWidth="240"
+                                       maxWidth="230"
                                        style="-fx-text-fill: #64748b; -fx-font-size: 14px;" />
+                                <Region prefHeight="8" />
                                 <Button text="Open"
                                         onAction="#openPlaylistsPage"
-                                        prefWidth="170" prefHeight="44"
+                                        prefWidth="170" prefHeight="46"
                                         style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold; -fx-background-radius: 18;" />
                             </children>
                         </VBox>
 
                         <VBox alignment="CENTER" spacing="16"
-                              prefWidth="320" prefHeight="210"
-                              style="-fx-background-color: white; -fx-background-radius: 28; -fx-padding: 25;"
-                              GridPane.columnIndex="1" GridPane.rowIndex="0">
-                            <children>
-                                <Label text="Now Playing"
-                                       style="-fx-text-fill: #0f172a; -fx-font-size: 26px; -fx-font-weight: bold;" />
-                                <Label text="See the full player and song details"
-                                       wrapText="true"
-                                       maxWidth="240"
-                                       style="-fx-text-fill: #64748b; -fx-font-size: 14px;" />
-                                <Button text="Open"
-                                        onAction="#openNowPlayingPage"
-                                        prefWidth="170" prefHeight="44"
-                                        style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold; -fx-background-radius: 18;" />
-                            </children>
-                        </VBox>
-
-                        <VBox alignment="CENTER" spacing="16"
-                              prefWidth="320" prefHeight="210"
-                              style="-fx-background-color: white; -fx-background-radius: 28; -fx-padding: 25;"
-                              GridPane.columnIndex="0" GridPane.rowIndex="1">
+                              prefWidth="300" prefHeight="220"
+                              style="-fx-background-color: white; -fx-background-radius: 28; -fx-padding: 28;">
                             <children>
                                 <Label text="Wrapped"
-                                       style="-fx-text-fill: #0f172a; -fx-font-size: 26px; -fx-font-weight: bold;" />
-                                <Label text="View your top songs, artists, and stats"
+                                       style="-fx-text-fill: #0f172a; -fx-font-size: 28px; -fx-font-weight: bold;" />
+                                <Label text="See your top songs, artists, genres, and listening stats."
                                        wrapText="true"
-                                       maxWidth="240"
+                                       maxWidth="230"
                                        style="-fx-text-fill: #64748b; -fx-font-size: 14px;" />
+                                <Region prefHeight="8" />
                                 <Button text="Open"
                                         onAction="#openWrappedPage"
-                                        prefWidth="170" prefHeight="44"
+                                        prefWidth="170" prefHeight="46"
                                         style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold; -fx-background-radius: 18;" />
                             </children>
                         </VBox>
 
                         <VBox alignment="CENTER" spacing="16"
-                              prefWidth="320" prefHeight="210"
-                              style="-fx-background-color: white; -fx-background-radius: 28; -fx-padding: 25;"
-                              GridPane.columnIndex="1" GridPane.rowIndex="1">
+                              prefWidth="300" prefHeight="220"
+                              style="-fx-background-color: white; -fx-background-radius: 28; -fx-padding: 28;">
                             <children>
                                 <Label text="Find Your Genre"
-                                       style="-fx-text-fill: #0f172a; -fx-font-size: 26px; -fx-font-weight: bold;" />
-                                <Label text="Take a quiz to discover your best genre"
+                                       style="-fx-text-fill: #0f172a; -fx-font-size: 28px; -fx-font-weight: bold;" />
+                                <Label text="Take a quiz to discover the genre that fits you best."
                                        wrapText="true"
-                                       maxWidth="240"
+                                       maxWidth="230"
                                        style="-fx-text-fill: #64748b; -fx-font-size: 14px;" />
+                                <Region prefHeight="8" />
                                 <Button text="Open"
                                         onAction="#openFindYourGenrePage"
-                                        prefWidth="170" prefHeight="44"
+                                        prefWidth="170" prefHeight="46"
                                         style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold; -fx-background-radius: 18;" />
                             </children>
                         </VBox>
+
                     </children>
-                </GridPane>
+                </HBox>
             </children>
         </VBox>
     </center>

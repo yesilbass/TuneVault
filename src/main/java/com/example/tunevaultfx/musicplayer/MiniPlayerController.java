@@ -1,20 +1,20 @@
 package com.example.tunevaultfx.musicplayer;
 
 import com.example.tunevaultfx.core.Song;
-import javafx.animation.PauseTransition;
-import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
-import javafx.util.Duration;
 import com.example.tunevaultfx.playlist.PlaylistService;
 import com.example.tunevaultfx.session.SessionManager;
 import com.example.tunevaultfx.user.UserProfile;
 import com.example.tunevaultfx.util.SceneUtil;
+import javafx.animation.PauseTransition;
 import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
@@ -25,6 +25,15 @@ import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.Slider;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
+import javafx.scene.layout.CornerRadii;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
+import javafx.scene.paint.Color;
+import javafx.util.Duration;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -32,7 +41,6 @@ import java.util.List;
 
 /**
  * Controls the shared mini-player shown across pages.
- * Handles compact playback controls, song display, and quick navigation.
  */
 public class MiniPlayerController {
 
@@ -47,8 +55,6 @@ public class MiniPlayerController {
     @FXML private Button miniShuffleButton;
     @FXML private Button miniLoopButton;
     @FXML private Button miniAddButton;
-
-
 
     @FXML private Slider miniProgressSlider;
 
@@ -84,6 +90,8 @@ public class MiniPlayerController {
 
         player.shuffleEnabledProperty().addListener((obs, oldVal, newVal) -> updateMiniModeButtons());
         player.loopEnabledProperty().addListener((obs, oldVal, newVal) -> updateMiniModeButtons());
+
+        player.currentSongLikedProperty().addListener((obs, oldVal, newVal) -> updateMiniLikeButton());
 
         updateMiniLikeButton();
         updateMiniTime();
@@ -154,14 +162,49 @@ public class MiniPlayerController {
     }
 
     @FXML
-    private void handleOpenNowPlaying(MouseEvent event) throws IOException {
+    private void handleOpenNowPlaying(MouseEvent event) {
         if (player.getCurrentSong() == null) {
             return;
         }
 
-        SceneUtil.switchScene((Node) event.getSource(), "nowplaying-page.fxml");
+        Node source = (Node) event.getSource();
+        ensureExpandedPlayerAttached(source);
+        player.setExpandedPlayerVisible(true);
     }
 
+    private void ensureExpandedPlayerAttached(Node sourceNode) {
+        Scene scene = sourceNode.getScene();
+        if (scene == null) {
+            return;
+        }
+
+        Parent currentRoot = scene.getRoot();
+        if (currentRoot.lookup("#expandedPlayerOverlay") != null) {
+            return;
+        }
+
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/com/example/tunevaultfx/expanded-page.fxml")
+            );
+            Parent overlay = loader.load();
+
+            StackPane wrapper = new StackPane();
+            wrapper.getChildren().add(currentRoot);
+            wrapper.getChildren().add(overlay);
+
+            scene.setRoot(wrapper);
+
+            scene.setOnKeyPressed(event -> {
+                switch (event.getCode()) {
+                    case ESCAPE -> player.setExpandedPlayerVisible(false);
+                }
+            });
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
     private void showPlaylistPicker(UserProfile profile, Song song) {
         Dialog<Void> dialog = new Dialog<>();
         dialog.setTitle("Add to Playlist");
@@ -181,6 +224,7 @@ public class MiniPlayerController {
         dialog.getDialogPane().setPrefWidth(420);
         dialog.showAndWait();
     }
+
     private boolean songIsInPlaylist(UserProfile profile, String playlistName, Song song) {
         var songs = profile.getPlaylists().get(playlistName);
         return songs != null && songs.contains(song);
@@ -360,4 +404,5 @@ public class MiniPlayerController {
                 event.consume();
             });
         }
-    }}
+    }
+}

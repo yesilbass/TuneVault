@@ -22,7 +22,7 @@
                        wrapText="true"
                        maxWidth="240"
                        onMouseClicked="#handleOpenNowPlaying"
-                       style="-fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold;" />
+                       style="-fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold; -fx-cursor: hand;" />
 
                 <Label fx:id="miniArtistLabel"
                        text=""

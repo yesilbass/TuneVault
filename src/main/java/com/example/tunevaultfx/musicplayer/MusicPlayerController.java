@@ -10,6 +10,7 @@ import javafx.animation.Timeline;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.ObservableList;
 import javafx.util.Duration;
@@ -31,6 +32,9 @@ public class MusicPlayerController {
     private final UserLibraryService libraryService = new UserLibraryService();
     private final ListeningEventDAO listeningEventDAO = new ListeningEventDAO();
     private final ListeningSessionTracker sessionTracker = new ListeningSessionTracker(listeningEventDAO);
+
+    private final BooleanProperty expandedPlayerVisible = new SimpleBooleanProperty(false);
+    private final BooleanProperty currentSongLiked = new SimpleBooleanProperty(false);
 
     private final PlaybackLifecycleService lifecycleService;
     private final PlaybackNavigator playbackNavigator;
@@ -139,10 +143,13 @@ public class MusicPlayerController {
     public void stop() {
         lifecycleService.stop();
         timeline.stop();
+        setExpandedPlayerVisible(false);
+        currentSongLiked.set(false);
     }
 
     public void onSongRemovedFromPlaylist(String playlistName, Song removedSong) {
         lifecycleService.onSongRemovedFromPlaylist(playlistName, removedSong);
+        refreshCurrentSongLiked();
     }
 
     public void toggleLikeCurrentSong() {
@@ -151,10 +158,19 @@ public class MusicPlayerController {
         }
 
         new PlaylistService().toggleLikeSong(state.getCurrentSong());
+        refreshCurrentSongLiked();
     }
 
     public boolean isCurrentSongLiked() {
-        return libraryService.isLiked(state.getCurrentSong());
+        return currentSongLiked.get();
+    }
+
+    public BooleanProperty currentSongLikedProperty() {
+        return currentSongLiked;
+    }
+
+    public void refreshCurrentSongLiked() {
+        currentSongLiked.set(libraryService.isLiked(state.getCurrentSong()));
     }
 
     public void addCurrentSongToPlaylist(String playlistName) {
@@ -176,6 +192,18 @@ public class MusicPlayerController {
         } else {
             shuffleManager.reset();
         }
+    }
+
+    public BooleanProperty expandedPlayerVisibleProperty() {
+        return expandedPlayerVisible;
+    }
+
+    public boolean isExpandedPlayerVisible() {
+        return expandedPlayerVisible.get();
+    }
+
+    public void setExpandedPlayerVisible(boolean visible) {
+        expandedPlayerVisible.set(visible);
     }
 
     private void setPlaying(boolean value) {
@@ -205,6 +233,7 @@ public class MusicPlayerController {
         Song song = queue.getCurrentSong();
         state.setCurrentSong(song);
         state.setCurrentSourcePlaylistName(queue.getSourcePlaylistName());
+        refreshCurrentSongLiked();
     }
 
     private void startSessionForCurrentSong() {
