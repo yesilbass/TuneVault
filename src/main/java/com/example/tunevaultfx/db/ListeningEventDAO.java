@@ -46,7 +46,7 @@ public class ListeningEventDAO {
 
         return null;
     }
-    public void updateListeningSession(Integer eventId, int playedSeconds, boolean countAsPlay) {
+    public void updateListeningSession(Integer eventId, int playedSecondsDelta, boolean countAsPlay) {
         if (eventId == null) {
             return;
         }
@@ -54,7 +54,7 @@ public class ListeningEventDAO {
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(
                      "UPDATE listening_event SET played_seconds = ?, count_as_play = ? WHERE event_id = ?")) {
-            stmt.setInt(1, Math.max(0, playedSeconds));
+            stmt.setInt(1, Math.max(0, playedSecondsDelta));
             stmt.setBoolean(2, countAsPlay);
             stmt.setInt(3, eventId);
             stmt.executeUpdate();
@@ -62,7 +62,6 @@ public class ListeningEventDAO {
             e.printStackTrace();
         }
     }
-
     public void finalizeListeningSession(Integer eventId,
                                          String actionType,
                                          int playedSeconds,

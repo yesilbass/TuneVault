@@ -1,7 +1,6 @@
-package com.example.tunevaultfx.controllers;
+package com.example.tunevaultfx.musicplayer;
 
 import com.example.tunevaultfx.core.Song;
-import com.example.tunevaultfx.musicplayer.MusicPlayerController;
 import com.example.tunevaultfx.playlist.PlaylistService;
 import com.example.tunevaultfx.session.SessionManager;
 import com.example.tunevaultfx.user.UserProfile;

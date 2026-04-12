@@ -12,11 +12,11 @@ module com.example.tunevaultfx {
     exports com.example.tunevaultfx.app;
     opens com.example.tunevaultfx.app to com.fasterxml.jackson.databind, javafx.fxml;
 
-    exports com.example.tunevaultfx.controllers;
-    opens com.example.tunevaultfx.controllers to com.fasterxml.jackson.databind, javafx.fxml;
+    exports com.example.tunevaultfx.mainmenu;
+    opens com.example.tunevaultfx.mainmenu to com.fasterxml.jackson.databind, javafx.fxml;
 
-    exports com.example.tunevaultfx.controllers.auth;
-    opens com.example.tunevaultfx.controllers.auth to com.fasterxml.jackson.databind, javafx.fxml;
+    exports com.example.tunevaultfx.auth;
+    opens com.example.tunevaultfx.auth to com.fasterxml.jackson.databind, javafx.fxml;
 
     exports com.example.tunevaultfx.core;
     opens com.example.tunevaultfx.core to com.fasterxml.jackson.databind, javafx.fxml;

@@ -1,7 +1,10 @@
-package com.example.tunevaultfx.controllers;
+package com.example.tunevaultfx.musicplayer;
 
 import com.example.tunevaultfx.core.Song;
-import com.example.tunevaultfx.musicplayer.MusicPlayerController;
+import javafx.animation.PauseTransition;
+import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
+import javafx.util.Duration;
 import com.example.tunevaultfx.playlist.PlaylistService;
 import com.example.tunevaultfx.session.SessionManager;
 import com.example.tunevaultfx.user.UserProfile;
@@ -22,9 +25,6 @@ import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.Slider;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.Region;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -47,6 +47,8 @@ public class MiniPlayerController {
     @FXML private Button miniShuffleButton;
     @FXML private Button miniLoopButton;
     @FXML private Button miniAddButton;
+
+
 
     @FXML private Slider miniProgressSlider;
 
@@ -172,13 +174,13 @@ public class MiniPlayerController {
         ListView<String> playlistListView = new ListView<>(FXCollections.observableArrayList(playlistNames));
         playlistListView.setPrefHeight(320);
         playlistListView.setFocusTraversable(false);
+        playlistListView.getSelectionModel().clearSelection();
         playlistListView.setCellFactory(listView -> new PlaylistPickerCell(profile, song));
 
         dialog.getDialogPane().setContent(playlistListView);
         dialog.getDialogPane().setPrefWidth(420);
         dialog.showAndWait();
     }
-
     private boolean songIsInPlaylist(UserProfile profile, String playlistName, Song song) {
         var songs = profile.getPlaylists().get(playlistName);
         return songs != null && songs.contains(song);
@@ -224,11 +226,11 @@ public class MiniPlayerController {
         miniLoopButton.setText("↻");
 
         miniShuffleButton.setStyle(player.isShuffleEnabled()
-                ? "-fx-background-color: #dbeafe; -fx-text-fill: #2563eb; -fx-font-size: 18px; -fx-font-weight: bold; -fx-background-radius: 21;"
+                ? "-fx-background-color: #fef3c7; -fx-text-fill: #1DB954; -fx-font-size: 18px; -fx-font-weight: bold; -fx-background-radius: 21;"
                 : "-fx-background-color: #e2e8f0; -fx-text-fill: #334155; -fx-font-size: 18px; -fx-font-weight: bold; -fx-background-radius: 21;");
 
         miniLoopButton.setStyle(player.isLoopEnabled()
-                ? "-fx-background-color: #fef3c7; -fx-text-fill: #d97706; -fx-font-size: 18px; -fx-font-weight: bold; -fx-background-radius: 21;"
+                ? "-fx-background-color: #e2e8f0; -fx-text-fill: #1DB954; -fx-font-size: 18px; -fx-font-weight: bold; -fx-background-radius: 21;"
                 : "-fx-background-color: #e2e8f0; -fx-text-fill: #334155; -fx-font-size: 18px; -fx-font-weight: bold; -fx-background-radius: 21;");
     }
 
@@ -263,7 +265,7 @@ public class MiniPlayerController {
             HBox.setHgrow(spacer, Priority.ALWAYS);
             root.setSpacing(12);
             root.setPadding(new Insets(8, 10, 8, 10));
-            root.setStyle("-fx-background-color: transparent;");
+            root.setStyle("-fx-background-color: transparent; -fx-background-radius: 14;");
 
             nameLabel.setStyle("-fx-text-fill: #0f172a; -fx-font-size: 14px; -fx-font-weight: bold;");
 
@@ -281,6 +283,13 @@ public class MiniPlayerController {
 
                 togglePlaylistMembership(playlistName);
                 event.consume();
+            });
+
+            setOnMousePressed(event -> {
+                if (!isEmpty()) {
+                    getListView().getSelectionModel().clearSelection();
+                    event.consume();
+                }
             });
         }
 
@@ -300,20 +309,42 @@ public class MiniPlayerController {
 
             setText(null);
             setGraphic(root);
+            setBackground(Background.EMPTY);
             setStyle("-fx-background-color: transparent; -fx-padding: 2 0 2 0;");
         }
 
-        private void togglePlaylistMembership(String playlistName) {
-            boolean isCurrentlyInPlaylist = songIsInPlaylist(profile, playlistName, song);
+        @Override
+        public void updateSelected(boolean selected) {
+            super.updateSelected(false);
+        }
 
-            if (isCurrentlyInPlaylist) {
+        private void playClickFlash(boolean added) {
+            Color flashColor = added
+                    ? Color.web("#dbeafe")
+                    : Color.web("#fee2e2");
+
+            root.setBackground(new Background(
+                    new BackgroundFill(flashColor, new CornerRadii(14), Insets.EMPTY)
+            ));
+
+            PauseTransition pause = new PauseTransition(Duration.millis(180));
+            pause.setOnFinished(e -> root.setBackground(Background.EMPTY));
+            pause.play();
+        }
+
+        private void togglePlaylistMembership(String playlistName) {
+            boolean wasInPlaylist = songIsInPlaylist(profile, playlistName, song);
+
+            if (wasInPlaylist) {
                 playlistService.removeSongFromPlaylist(profile, playlistName, song);
             } else {
                 playlistService.addSongToPlaylist(profile, playlistName, song);
             }
 
+            playClickFlash(!wasInPlaylist);
             refreshActionButton(playlistName);
             updateMiniAddButton();
+            getListView().getSelectionModel().clearSelection();
         }
 
         private void refreshActionButton(String playlistName) {
@@ -329,5 +360,4 @@ public class MiniPlayerController {
                 event.consume();
             });
         }
-    }
-}
+    }}

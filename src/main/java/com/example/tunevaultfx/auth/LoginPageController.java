@@ -1,4 +1,4 @@
-package com.example.tunevaultfx.controllers.auth;
+package com.example.tunevaultfx.auth;
 
 import com.example.tunevaultfx.db.UserDAO;
 import com.example.tunevaultfx.session.SessionManager;

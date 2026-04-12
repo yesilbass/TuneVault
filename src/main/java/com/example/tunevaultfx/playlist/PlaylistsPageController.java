@@ -1,6 +1,11 @@
 package com.example.tunevaultfx.playlist;
 
 import com.example.tunevaultfx.db.SongDAO;
+import javafx.animation.FadeTransition;
+import javafx.geometry.Insets;
+import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
+import javafx.util.Duration;
 import com.example.tunevaultfx.musicplayer.MusicPlayerController;
 import com.example.tunevaultfx.core.Song;
 import com.example.tunevaultfx.session.SessionManager;
@@ -17,10 +22,6 @@ import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextInputDialog;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.Region;
-import javafx.scene.layout.VBox;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -79,6 +80,8 @@ public class PlaylistsPageController {
 
         searchResultsListView.setItems(allLibrarySongs);
 
+        searchResultsListView.setFocusTraversable(false);
+        searchResultsListView.getSelectionModel().clearSelection();
         loadPlaylistNames();
         setupInitialPlaylistSelection();
         setupListeners();
@@ -328,7 +331,8 @@ public class PlaylistsPageController {
 
         SearchSongToggleCell() {
             root.setSpacing(12);
-            root.setStyle("-fx-padding: 8 10 8 10;");
+            root.setPadding(new Insets(8, 10, 8, 10));
+            root.setStyle("-fx-background-color: transparent; -fx-background-radius: 14;");
             HBox.setHgrow(spacer, Priority.ALWAYS);
 
             titleLabel.setStyle("-fx-text-fill: #1e293b; -fx-font-size: 15px; -fx-font-weight: bold;");
@@ -349,8 +353,15 @@ public class PlaylistsPageController {
                     return;
                 }
 
-                toggleSongInSelectedPlaylist(song);
+                toggleSongInCell(song);
                 event.consume();
+            });
+
+            setOnMousePressed(event -> {
+                if (!isEmpty()) {
+                    getListView().getSelectionModel().clearSelection();
+                    event.consume();
+                }
             });
         }
 
@@ -361,6 +372,7 @@ public class PlaylistsPageController {
             if (empty || song == null) {
                 setText(null);
                 setGraphic(null);
+                setStyle("-fx-background-color: transparent;");
                 return;
             }
 
@@ -371,6 +383,49 @@ public class PlaylistsPageController {
 
             setText(null);
             setGraphic(root);
+
+            setBackground(Background.EMPTY);
+            setStyle("-fx-background-color: transparent; -fx-padding: 2 0 2 0;");
+        }
+
+        @Override
+        public void updateSelected(boolean selected) {
+            super.updateSelected(false);
+        }
+
+        private void playClickFlash(boolean added) {
+            Color flashColor = added
+                    ? Color.web("#dbeafe")
+                    : Color.web("#fee2e2");
+
+            root.setBackground(new Background(
+                    new BackgroundFill(flashColor, new CornerRadii(14), Insets.EMPTY)
+            ));
+
+            javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(Duration.millis(180));
+            pause.setOnFinished(e -> root.setBackground(Background.EMPTY));
+            pause.play();
+        }
+
+        private void toggleSongInCell(Song song) {
+            String selectedPlaylist = playlistListView.getSelectionModel().getSelectedItem();
+            if (selectedPlaylist == null || song == null) {
+                return;
+            }
+
+            boolean wasInPlaylist = songIsInSelectedPlaylist(song);
+
+            if (wasInPlaylist) {
+                playlistService.removeSongFromPlaylist(profile, selectedPlaylist, song);
+                player.onSongRemovedFromPlaylist(selectedPlaylist, song);
+            } else {
+                playlistService.addSongToPlaylist(profile, selectedPlaylist, song);
+            }
+
+            playClickFlash(!wasInPlaylist);
+            updateSelectedPlaylist();
+            searchResultsListView.refresh();
+            searchResultsListView.getSelectionModel().clearSelection();
         }
 
         private void refreshActionButton(Song song) {
@@ -382,7 +437,7 @@ public class PlaylistsPageController {
                     : "-fx-background-color: #e2e8f0; -fx-text-fill: #334155; -fx-font-size: 16px; -fx-font-weight: bold; -fx-background-radius: 16;");
 
             actionButton.setOnAction(event -> {
-                toggleSongInSelectedPlaylist(song);
+                toggleSongInCell(song);
                 event.consume();
             });
         }
