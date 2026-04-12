@@ -5,6 +5,7 @@ import com.example.tunevaultfx.db.SongDAO;
 import com.example.tunevaultfx.musicplayer.controller.MusicPlayerController;
 import com.example.tunevaultfx.playlist.cell.PlayableSongCell;
 import com.example.tunevaultfx.playlist.cell.SearchSongToggleCell;
+import com.example.tunevaultfx.playlist.service.PlaylistPickerService;
 import com.example.tunevaultfx.playlist.service.PlaylistSelectionService;
 import com.example.tunevaultfx.playlist.service.PlaylistService;
 import com.example.tunevaultfx.playlist.service.SongSearchService;
@@ -51,6 +52,7 @@ public class PlaylistsPageController {
     private final PlaylistService playlistService = new PlaylistService();
     private final SongSearchService songSearchService = new SongSearchService();
     private final PlaylistSelectionService playlistSelectionService = new PlaylistSelectionService();
+    private final PlaylistPickerService playlistPickerService = new PlaylistPickerService();
 
     private UserProfile profile;
 
@@ -66,6 +68,8 @@ public class PlaylistsPageController {
         searchResultsListView.setItems(allLibrarySongs);
         searchResultsListView.setFocusTraversable(false);
         searchResultsListView.getSelectionModel().clearSelection();
+        playlistSongsListView.setFocusTraversable(false);
+        playlistSongsListView.getSelectionModel().clearSelection();
 
         loadPlaylistNames();
         setupInitialPlaylistSelection();
@@ -117,22 +121,12 @@ public class PlaylistsPageController {
 
     private void setupSongCells() {
         playlistSongsListView.setCellFactory(listView ->
-                new PlayableSongCell(song -> {
-                    String selectedPlaylist = playlistListView.getSelectionModel().getSelectedItem();
-                    if (selectedPlaylist == null) {
-                        return;
-                    }
-
-                    ObservableList<Song> songs = profile.getPlaylists().get(selectedPlaylist);
-                    if (songs == null) {
-                        return;
-                    }
-
-                    int index = songs.indexOf(song);
-                    if (index >= 0) {
-                        player.playQueue(songs, index, selectedPlaylist);
-                    }
-                })
+                new PlayableSongCell(
+                        this::playSongFromSelectedPlaylist,
+                        this::showAddToPlaylistPicker,
+                        this::removeSongFromSelectedPlaylist,
+                        this::getSelectedPlaylistName
+                )
         );
 
         refreshSearchResultsCellFactory();
@@ -145,6 +139,51 @@ public class PlaylistsPageController {
                         this::toggleSongInSelectedPlaylist
                 )
         );
+    }
+
+    private void playSongFromSelectedPlaylist(Song song) {
+        String selectedPlaylist = playlistListView.getSelectionModel().getSelectedItem();
+        if (selectedPlaylist == null) {
+            return;
+        }
+
+        ObservableList<Song> songs = profile.getPlaylists().get(selectedPlaylist);
+        if (songs == null) {
+            return;
+        }
+
+        int index = songs.indexOf(song);
+        if (index >= 0) {
+            player.playQueue(songs, index, selectedPlaylist);
+        }
+    }
+
+    private void showAddToPlaylistPicker(Song song) {
+        if (song == null || profile == null) {
+            return;
+        }
+
+        playlistPickerService.show(song);
+        updateSelectedPlaylist();
+        refreshSearchResultsCellFactory();
+    }
+
+    private void removeSongFromSelectedPlaylist(Song song) {
+        String selectedPlaylist = playlistListView.getSelectionModel().getSelectedItem();
+        if (selectedPlaylist == null || song == null) {
+            return;
+        }
+
+        if (playlistService.removeSongFromPlaylist(profile, selectedPlaylist, song)) {
+            player.onSongRemovedFromPlaylist(selectedPlaylist, song);
+            updateSelectedPlaylist();
+            refreshSearchResultsCellFactory();
+        }
+    }
+
+    private String getSelectedPlaylistName() {
+        String selectedPlaylist = playlistListView.getSelectionModel().getSelectedItem();
+        return selectedPlaylist == null ? "this playlist" : selectedPlaylist;
     }
 
     private boolean isSongInSelectedPlaylist(Song song) {
@@ -278,23 +317,6 @@ public class PlaylistsPageController {
 
         updateSelectedPlaylist();
         refreshSearchResultsCellFactory();
-    }
-
-    @FXML
-    private void handleRemoveSong() {
-        String selectedPlaylist = playlistListView.getSelectionModel().getSelectedItem();
-        Song selectedSong = playlistSongsListView.getSelectionModel().getSelectedItem();
-
-        if (selectedPlaylist == null || selectedSong == null) {
-            AlertUtil.info("Selection Needed", "Select a playlist and a song.");
-            return;
-        }
-
-        if (playlistService.removeSongFromPlaylist(profile, selectedPlaylist, selectedSong)) {
-            player.onSongRemovedFromPlaylist(selectedPlaylist, selectedSong);
-            updateSelectedPlaylist();
-            refreshSearchResultsCellFactory();
-        }
     }
 
     @FXML

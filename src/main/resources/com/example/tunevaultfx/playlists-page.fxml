@@ -12,15 +12,20 @@
             style="-fx-background-color: linear-gradient(to bottom right, #0f172a, #1e293b);">
 
     <top>
-        <HBox alignment="CENTER_LEFT" spacing="16.0" style="-fx-padding: 20 24 16 24;">
+        <HBox alignment="CENTER_LEFT" spacing="12" style="-fx-padding: 20 24 18 24;">
             <children>
-                <Label text="Playlists"
-                       style="-fx-text-fill: white; -fx-font-size: 30px; -fx-font-weight: bold;" />
                 <Button text="Back to Menu"
                         onAction="#handleBackToMenu"
-                        style="-fx-background-color: #3b82f6; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 18;"
-                        prefWidth="135.0"
-                        prefHeight="38.0" />
+                        prefWidth="125"
+                        prefHeight="40"
+                        style="-fx-background-color: #3b82f6; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 20;" />
+
+                <StackPane HBox.hgrow="ALWAYS" alignment="CENTER">
+                    <Label text="Playlists"
+                           style="-fx-text-fill: white; -fx-font-size: 30px; -fx-font-weight: bold;" />
+                </StackPane>
+
+                <Region prefWidth="125" />
             </children>
         </HBox>
     </top>
@@ -102,12 +107,6 @@
                                                 prefWidth="160.0"
                                                 prefHeight="44.0"
                                                 style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 22;" />
-
-                                        <Button text="Remove Song"
-                                                onAction="#handleRemoveSong"
-                                                prefWidth="170.0"
-                                                prefHeight="44.0"
-                                                style="-fx-background-color: #f59e0b; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 22;" />
                                     </children>
                                 </HBox>
                             </children>
