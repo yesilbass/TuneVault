@@ -547,7 +547,7 @@ public class PlaylistsPageController {
 
     @FXML
     private void handleBackToMenu(javafx.event.ActionEvent event) throws IOException {
-        SceneUtil.switchScene((Node) event.getSource(), "main-menu.fxml");
+        SceneUtil.goBack((Node) event.getSource());
     }
 
     // ── UI update ─────────────────────────────────────────────────

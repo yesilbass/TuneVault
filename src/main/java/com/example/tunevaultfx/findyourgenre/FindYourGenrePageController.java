@@ -74,7 +74,7 @@ public class FindYourGenrePageController {
 
     @FXML
     private void handleBackToMenu(ActionEvent event) throws IOException {
-        SceneUtil.switchScene((Node) event.getSource(), "main-menu.fxml");
+        SceneUtil.goBack((Node) event.getSource());
     }
 
     // ── Quiz logic ────────────────────────────────────────────────

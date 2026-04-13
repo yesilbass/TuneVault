@@ -12,54 +12,40 @@
            managed="false"
            pickOnBounds="true">
 
-    <!-- ── Backdrop ───────────────────────────────── -->
+    <!-- Backdrop -->
     <StackPane fx:id="backdropPane"
-               onMouseClicked="#handleBackdropClick"
-               style="-fx-background-color: rgba(3, 2, 14, 0.75);" />
+               styleClass="overlay-backdrop"
+               onMouseClicked="#handleBackdropClick" />
 
-    <!-- ── Player Card ────────────────────────────── -->
+    <!-- Player Card -->
     <VBox fx:id="playerCard"
+          styleClass="overlay-card"
           alignment="CENTER"
           maxWidth="1060"
           prefWidth="1060"
           spacing="0"
-          onMouseClicked="#handleConsumeClick"
-          style="-fx-background-color: #0e0e1a;
-                 -fx-background-radius: 28;
-                 -fx-border-color: rgba(255,255,255,0.08);
-                 -fx-border-radius: 28;
-                 -fx-border-width: 1;
-                 -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.7), 48, 0, 0, 16);">
+          onMouseClicked="#handleConsumeClick">
         <children>
 
-            <!-- ── Header row ──────────────────────── -->
+            <!-- Header row -->
             <HBox alignment="CENTER_LEFT"
-                  style="-fx-padding: 22 28 18 28;
-                         -fx-border-color: transparent transparent rgba(255,255,255,0.06) transparent;
-                         -fx-border-width: 0 0 1 0;">
+                  styleClass="page-header">
                 <children>
                     <VBox spacing="2">
                         <Label text="NOW PLAYING"
-                               style="-fx-text-fill: #a0a0c0; -fx-font-size: 11px; -fx-font-weight: bold;" />
+                               styleClass="overline, text-accent" />
                         <Label text="Expanded Player"
-                               style="-fx-text-fill: #ffffff; -fx-font-size: 18px; -fx-font-weight: bold;" />
+                               styleClass="heading-md" />
                     </VBox>
                     <Region HBox.hgrow="ALWAYS" />
                     <Button text="✕"
                             onAction="#handleClose"
-                            prefWidth="40" prefHeight="40"
-                            style="-fx-background-color: rgba(255,255,255,0.07);
-                                   -fx-text-fill: #a0a0c0;
-                                   -fx-font-size: 16px;
-                                   -fx-font-weight: bold;
-                                   -fx-background-radius: 20;
-                                   -fx-border-color: rgba(255,255,255,0.1);
-                                   -fx-border-radius: 20;
-                                   -fx-border-width: 1;" />
+                            styleClass="btn-icon"
+                            prefWidth="40" prefHeight="40" />
                 </children>
             </HBox>
 
-            <!-- ── Main content: art + info ──────────── -->
+            <!-- Main content: art + info -->
             <HBox alignment="CENTER" spacing="44"
                   style="-fx-padding: 36 40 40 40;">
                 <children>
@@ -67,19 +53,14 @@
                     <!-- Album Art -->
                     <VBox alignment="CENTER" spacing="14" prefWidth="320">
                         <StackPane prefWidth="300" prefHeight="300"
-                                   style="-fx-background-color: linear-gradient(to bottom right, #1a0b3c, #2d1060);
-                                          -fx-background-radius: 24;
-                                          -fx-border-color: rgba(139,92,246,0.2);
-                                          -fx-border-radius: 24;
-                                          -fx-border-width: 1;
-                                          -fx-effect: dropshadow(gaussian, rgba(139,92,246,0.25), 32, 0, 0, 8);">
+                                   styleClass="album-art-large">
                             <Label text="♫"
                                    style="-fx-font-size: 96px;
                                           -fx-text-fill: rgba(167,139,250,0.2);
                                           -fx-font-weight: bold;" />
                         </StackPane>
                         <Label text="TuneVault Player"
-                               style="-fx-text-fill: #8a8ab0; -fx-font-size: 13px;" />
+                               styleClass="body-sm" />
                     </VBox>
 
                     <!-- Song Info + Controls -->
@@ -89,50 +70,40 @@
                             <!-- Track info -->
                             <VBox spacing="8">
                                 <Label text="CURRENT TRACK"
-                                       style="-fx-text-fill: #8a8ab0; -fx-font-size: 11px; -fx-font-weight: bold;" />
+                                       styleClass="overline" />
 
                                 <Label fx:id="titleLabel"
                                        text="No song playing"
                                        wrapText="true"
                                        maxWidth="560"
-                                       style="-fx-font-size: 40px;
-                                              -fx-font-weight: bold;
-                                              -fx-text-fill: #ffffff;
-                                              -fx-line-spacing: -2;" />
+                                       styleClass="heading-2xl"
+                                       style="-fx-font-size: 40px; -fx-line-spacing: -2;" />
 
                                 <Hyperlink fx:id="artistLink"
                                            text=""
+                                           styleClass="heading-md"
                                            onAction="#handleOpenArtistProfile"
-                                           style="-fx-font-size: 18px;
-                                                  -fx-text-fill: #a0a0c0;
-                                                  -fx-border-color: transparent;
-                                                  -fx-padding: 0;" />
+                                           style="-fx-text-fill: #9d9db8;" />
 
                                 <Label fx:id="albumLabel"
                                        text="Album: -"
-                                       style="-fx-font-size: 14px; -fx-text-fill: #8a8ab0;" />
+                                       styleClass="body-sm" />
                             </VBox>
 
                             <!-- Progress section -->
                             <VBox spacing="8"
-                                  style="-fx-background-color: rgba(255,255,255,0.03);
-                                         -fx-background-radius: 18;
-                                         -fx-border-color: rgba(255,255,255,0.06);
-                                         -fx-border-radius: 18;
-                                         -fx-border-width: 1;
-                                         -fx-padding: 16 20 14 20;">
+                                  styleClass="progress-card">
                                 <Slider fx:id="progressSlider"
                                         prefWidth="510"
                                         maxWidth="510" />
                                 <HBox alignment="CENTER_LEFT">
                                     <Label text="Progress"
-                                           style="-fx-text-fill: #8a8ab0; -fx-font-size: 12px;" />
+                                           styleClass="caption, text-muted" />
                                     <Region HBox.hgrow="ALWAYS" />
                                     <Label fx:id="timeLabel"
                                            text="0:00 / 0:00"
-                                           style="-fx-font-size: 14px;
-                                                  -fx-font-weight: bold;
-                                                  -fx-text-fill: #a0a0c0;" />
+                                           styleClass="body"
+                                           style="-fx-font-weight: bold; -fx-text-fill: #9d9db8;" />
                                 </HBox>
                             </VBox>
 
@@ -142,79 +113,50 @@
                                 <Button fx:id="shuffleButton"
                                         text="⇄"
                                         onAction="#handleShuffle"
+                                        styleClass="player-btn"
                                         prefWidth="52" prefHeight="44"
-                                        style="-fx-background-color: rgba(255,255,255,0.06);
-                                               -fx-text-fill: #8a8ab0;
-                                               -fx-font-size: 20px;
-                                               -fx-font-weight: bold;
-                                               -fx-background-radius: 22;" />
+                                        style="-fx-font-size: 20px;" />
 
                                 <Button text="⏮"
                                         onAction="#handlePrevious"
+                                        styleClass="player-btn"
                                         prefWidth="52" prefHeight="44"
-                                        style="-fx-background-color: rgba(255,255,255,0.06);
-                                               -fx-text-fill: #a1a1aa;
-                                               -fx-font-size: 20px;
-                                               -fx-font-weight: bold;
-                                               -fx-background-radius: 22;" />
+                                        style="-fx-font-size: 20px;" />
 
                                 <Button fx:id="playPauseButton"
                                         text="▶"
                                         onAction="#handlePlayPause"
+                                        styleClass="player-btn-main"
                                         prefWidth="64" prefHeight="56"
-                                        style="-fx-background-color: #ffffff;
-                                               -fx-text-fill: #090912;
-                                               -fx-font-size: 22px;
-                                               -fx-font-weight: bold;
-                                               -fx-background-radius: 28;
-                                               -fx-effect: dropshadow(gaussian,rgba(255,255,255,0.2),12,0,0,2);" />
+                                        style="-fx-font-size: 22px;" />
 
                                 <Button text="⏭"
                                         onAction="#handleNext"
+                                        styleClass="player-btn"
                                         prefWidth="52" prefHeight="44"
-                                        style="-fx-background-color: rgba(255,255,255,0.06);
-                                               -fx-text-fill: #a1a1aa;
-                                               -fx-font-size: 20px;
-                                               -fx-font-weight: bold;
-                                               -fx-background-radius: 22;" />
+                                        style="-fx-font-size: 20px;" />
 
                                 <Button fx:id="loopButton"
                                         text="↻"
                                         onAction="#handleLoop"
+                                        styleClass="player-btn"
                                         prefWidth="52" prefHeight="44"
-                                        style="-fx-background-color: rgba(255,255,255,0.06);
-                                               -fx-text-fill: #8a8ab0;
-                                               -fx-font-size: 22px;
-                                               -fx-font-weight: bold;
-                                               -fx-background-radius: 22;" />
+                                        style="-fx-font-size: 22px;" />
 
                                 <Region prefWidth="16" />
 
                                 <Button fx:id="likeButton"
                                         text="♡"
                                         onAction="#handleLike"
-                                        prefWidth="52" prefHeight="44"
-                                        style="-fx-background-color: rgba(244,63,94,0.1);
-                                               -fx-text-fill: #a0a0c0;
-                                               -fx-font-size: 20px;
-                                               -fx-font-weight: bold;
-                                               -fx-background-radius: 22;
-                                               -fx-border-color: rgba(244,63,94,0.15);
-                                               -fx-border-radius: 22;
-                                               -fx-border-width: 1;" />
+                                        styleClass="player-btn-like"
+                                        prefWidth="52" prefHeight="44" />
 
                                 <Button fx:id="addToPlaylistButton"
                                         text="+"
                                         onAction="#handleAddToPlaylist"
+                                        styleClass="btn-accent-soft"
                                         prefWidth="52" prefHeight="44"
-                                        style="-fx-background-color: rgba(139,92,246,0.1);
-                                               -fx-text-fill: #a0a0c0;
-                                               -fx-font-size: 22px;
-                                               -fx-font-weight: bold;
-                                               -fx-background-radius: 22;
-                                               -fx-border-color: rgba(139,92,246,0.15);
-                                               -fx-border-radius: 22;
-                                               -fx-border-width: 1;" />
+                                        style="-fx-font-size: 22px;" />
 
                             </HBox>
 

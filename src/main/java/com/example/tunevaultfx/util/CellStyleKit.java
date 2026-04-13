@@ -15,13 +15,13 @@ import javafx.scene.layout.*;
  *
  * Design system
  * ─────────────
- * TEXT_PRIMARY   #f2f2fa  — headings, song titles, anything important
- * TEXT_SECONDARY #a0a0c0  — artist, genre, meta (CLEARLY readable on dark)
- * TEXT_MUTED     #58586e  — timestamps, very minor info (use sparingly)
+ * TEXT_PRIMARY   #eeeef6  — headings, song titles, anything important
+ * TEXT_SECONDARY #9d9db8  — artist, genre, meta (CLEARLY readable on dark)
+ * TEXT_MUTED     #5c5c78  — timestamps, very minor info (use sparingly)
  *
- * BG_CARD        #0f0f1e  — cell background
- * BG_HOVER       rgba(139,92,246,0.07) — very subtle violet tint on hover
- * BG_SELECTED    rgba(139,92,246,0.16) — selected state
+ * BG_CARD        #0f0f1c  — cell background
+ * BG_HOVER       rgba(139,92,246,0.06) — very subtle violet tint on hover
+ * BG_SELECTED    rgba(139,92,246,0.12) — selected state
  *
  * PURPLE / ROSE / GREEN / AMBER — icon and tag colour families
  */
@@ -31,26 +31,26 @@ public final class CellStyleKit {
 
     // ── Text colours ───────────────────────────────────────────────
 
-    public static final String TEXT_PRIMARY   = "#f2f2fa";
-    public static final String TEXT_SECONDARY = "#a0a0c0";   // THE key fix — was #52525b
-    public static final String TEXT_MUTED     = "#58586e";   // truly minor info only
+    public static final String TEXT_PRIMARY   = "#eeeef6";
+    public static final String TEXT_SECONDARY = "#9d9db8";
+    public static final String TEXT_MUTED     = "#5c5c78";
 
     // ── Row backgrounds ───────────────────────────────────────────
 
     public static final String ROW_DEFAULT  =
             "-fx-background-color: transparent; -fx-background-radius: 14;";
     public static final String ROW_HOVER    =
-            "-fx-background-color: rgba(139,92,246,0.07); -fx-background-radius: 14;";
+            "-fx-background-color: rgba(139,92,246,0.06); -fx-background-radius: 14;";
     public static final String ROW_PLAYING  =
-            "-fx-background-color: rgba(139,92,246,0.13); -fx-background-radius: 14;";
+            "-fx-background-color: rgba(139,92,246,0.12); -fx-background-radius: 14;";
 
     // ── Colour families ───────────────────────────────────────────
 
     public enum Palette {
-        PURPLE("rgba(139,92,246,0.18)", "rgba(139,92,246,0.28)", "#c4b5fd"),
-        ROSE  ("rgba(244,63,94,0.15)",  "rgba(244,63,94,0.25)",  "#fda4af"),
-        GREEN ("rgba(34,197,94,0.15)",  "rgba(34,197,94,0.25)",  "#86efac"),
-        AMBER ("rgba(245,158,11,0.15)", "rgba(245,158,11,0.25)", "#fcd34d");
+        PURPLE("rgba(139,92,246,0.14)", "rgba(139,92,246,0.24)", "#c4b5fd"),
+        ROSE  ("rgba(244,63,94,0.12)",  "rgba(244,63,94,0.20)",  "#fda4af"),
+        GREEN ("rgba(34,197,94,0.12)",  "rgba(34,197,94,0.20)",  "#86efac"),
+        AMBER ("rgba(245,158,11,0.12)", "rgba(245,158,11,0.20)", "#fcd34d");
 
         public final String bg;
         public final String border;

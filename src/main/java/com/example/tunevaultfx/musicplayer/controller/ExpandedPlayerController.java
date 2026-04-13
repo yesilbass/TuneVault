@@ -56,10 +56,6 @@ public class ExpandedPlayerController {
 
     private boolean animatingClose = false;
 
-    // Size tokens for the expanded player (larger than mini player)
-    private static final String FS = "20px";
-    private static final String R  = PlayerStyleConstants.RADIUS_FULL;
-
     // ─────────────────────────────────────────────────────────────
 
     @FXML
@@ -157,25 +153,27 @@ public class ExpandedPlayerController {
     private void refreshLikeButton() {
         boolean liked = player.isCurrentSongLiked();
         likeButton.setText(liked ? "♥" : "♡");
-        likeButton.setStyle(liked
-                ? PlayerStyleConstants.likeOn(FS, R)
-                : PlayerStyleConstants.likeOff(FS, R));
+        likeButton.getStyleClass().setAll("button",
+                liked ? PlayerStyleConstants.likeOnClass()
+                      : PlayerStyleConstants.likeOffClass());
     }
 
     private void refreshAddButton() {
         addToPlaylistButton.setDisable(player.getCurrentSong() == null);
-        addToPlaylistButton.setStyle(PlayerStyleConstants.addButton("22px", R));
+        addToPlaylistButton.getStyleClass().setAll("button", PlayerStyleConstants.addButtonClass());
     }
 
     private void refreshModeButtons() {
         shuffleButton.setText("⇄");
         loopButton.setText("↻");
-        shuffleButton.setStyle(player.isShuffleEnabled()
-                ? PlayerStyleConstants.modeActive(FS, R)
-                : PlayerStyleConstants.modeInactive(FS, R));
-        loopButton.setStyle(player.isLoopEnabled()
-                ? PlayerStyleConstants.modeActive("22px", R)
-                : PlayerStyleConstants.modeInactive("22px", R));
+        shuffleButton.getStyleClass().setAll("button",
+                player.isShuffleEnabled()
+                        ? PlayerStyleConstants.modeActiveClass()
+                        : PlayerStyleConstants.modeInactiveClass());
+        loopButton.getStyleClass().setAll("button",
+                player.isLoopEnabled()
+                        ? PlayerStyleConstants.modeActiveClass()
+                        : PlayerStyleConstants.modeInactiveClass());
     }
 
     // ── Overlay animation ──────────────────────────────────────────

@@ -154,6 +154,6 @@ public class ArtistProfileController {
 
     @FXML
     private void handleBackToSearch(javafx.event.ActionEvent event) throws IOException {
-        SceneUtil.switchScene((Node) event.getSource(), "search-page.fxml");
+        SceneUtil.goBack((Node) event.getSource());
     }
 }

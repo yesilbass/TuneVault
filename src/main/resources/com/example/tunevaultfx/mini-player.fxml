@@ -2,180 +2,115 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<!--
-  Mini Player — redesigned.
-
-  Layout (left → center → right like Spotify):
-    LEFT  : album art placeholder + song title + artist link + playlist link
-    CENTER: progress slider (full width at top) + playback controls + time
-    RIGHT : like + add + queue count (new)
-
-  Key contrast fixes:
-    - Song title: #f2f2fa (was implicit white, now explicit)
-    - Artist/playlist links: #a0a0c0 (was #a0a0c0 — now clearly readable)
-    - Time label: #a0a0c0 (was #8a8ab0 — now readable)
-    - Shuffle/loop inactive: text now #6868885 not #8a8ab0
--->
 <VBox xmlns="http://javafx.com/javafx/21"
       xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="com.example.tunevaultfx.musicplayer.controller.MiniPlayerController"
-      prefHeight="98"
-      style="-fx-background-color: #080810;
-             -fx-border-color: rgba(139,92,246,0.15) transparent transparent transparent;
-             -fx-border-width: 1 0 0 0;">
+      styleClass="player-bar"
+      prefHeight="98">
 
-    <!-- Progress slider — very top, full width, accent-coloured on hover -->
+    <!-- Progress slider — full width, top -->
     <Slider fx:id="miniProgressSlider"
             maxWidth="Infinity"
             VBox.vgrow="NEVER"
-            style="-fx-padding: 0; -fx-background-color: transparent;" />
+            style="-fx-padding: 0;" />
 
     <!-- Main content row -->
     <HBox VBox.vgrow="ALWAYS" alignment="CENTER">
 
-        <!-- LEFT: Album art + Song info (290px) -->
+        <!-- LEFT: Album art + Song info -->
         <HBox prefWidth="290" minWidth="290" maxWidth="290"
               spacing="12" alignment="CENTER_LEFT"
               style="-fx-padding: 0 0 0 20;">
 
-            <!-- Album art placeholder — pulsing gradient circle -->
             <StackPane prefWidth="50" prefHeight="50" minWidth="50" minHeight="50"
-                       onMouseClicked="#handleOpenNowPlaying"
-                       style="-fx-background-color: linear-gradient(to bottom right, #2e1065, #4c1d95);
-                              -fx-background-radius: 12;
-                              -fx-border-color: rgba(139,92,246,0.3);
-                              -fx-border-radius: 12;
-                              -fx-border-width: 1;
-                              -fx-effect: dropshadow(gaussian,rgba(139,92,246,0.35),12,0,0,2);
-                              -fx-cursor: hand;">
-                <Label text="♫"
-                       style="-fx-font-size: 22px; -fx-text-fill: rgba(196,181,253,0.7);" />
+                       styleClass="album-art-mini"
+                       onMouseClicked="#handleOpenNowPlaying">
+                <Label text="♫" style="-fx-font-size: 22px; -fx-text-fill: rgba(196,181,253,0.7);" />
             </StackPane>
 
-            <!-- Text info -->
             <VBox spacing="2" HBox.hgrow="ALWAYS">
                 <Label fx:id="miniSongLabel"
                        text="No song playing"
                        maxWidth="190"
+                       styleClass="heading-sm"
                        onMouseClicked="#handleOpenNowPlaying"
-                       style="-fx-text-fill: #f2f2fa;
-                              -fx-font-size: 13px;
-                              -fx-font-weight: bold;
-                              -fx-cursor: hand;" />
+                       style="-fx-cursor: hand;" />
                 <Hyperlink fx:id="miniArtistLink"
                            text=""
-                           onAction="#handleOpenArtistProfile"
-                           style="-fx-text-fill: #a0a0c0;
-                                  -fx-font-size: 12px;
-                                  -fx-border-color: transparent;
-                                  -fx-padding: 0;" />
+                           styleClass="body-sm"
+                           onAction="#handleOpenArtistProfile" />
                 <Hyperlink fx:id="miniPlaylistLink"
                            text=""
-                           onAction="#handleOpenCurrentPlaylist"
                            maxWidth="190"
-                           style="-fx-text-fill: #7070a0;
-                                  -fx-font-size: 11px;
-                                  -fx-border-color: transparent;
-                                  -fx-padding: 0;" />
+                           styleClass="caption"
+                           onAction="#handleOpenCurrentPlaylist" />
             </VBox>
         </HBox>
 
-        <!-- CENTER: Controls (fills remaining space) -->
+        <!-- CENTER: Controls -->
         <StackPane HBox.hgrow="ALWAYS" alignment="CENTER">
             <HBox spacing="4" alignment="CENTER">
 
-                <!-- Shuffle -->
                 <Button fx:id="miniShuffleButton"
                         text="⇄"
                         onAction="#handleMiniShuffle"
-                        prefWidth="60" prefHeight="38"
-                        style="-fx-background-color: transparent;
-                               -fx-text-fill: #58586e;
-                               -fx-font-size: 17px;
-                               -fx-background-radius: 19;" />
+                        styleClass="player-btn"
+                        prefWidth="60" prefHeight="38" />
 
-                <!-- Previous -->
                 <Button text="⏮"
                         onAction="#handleMiniPrevious"
-                        prefWidth="60" prefHeight="38"
-                        style="-fx-background-color: transparent;
-                               -fx-text-fill: #a0a0c0;
-                               -fx-font-size: 17px;
-                               -fx-background-radius: 19;" />
+                        styleClass="player-btn"
+                        prefWidth="60" prefHeight="38" />
 
-                <!-- Play/Pause — prominent white circle -->
                 <Button fx:id="miniPlayPauseButton"
                         text="▶"
                         onAction="#handleMiniPlayPause"
-                        prefWidth="60" prefHeight="48"
-                        style="-fx-background-color: #ffffff;
-                               -fx-text-fill: #09090f;
-                               -fx-font-size: 16px;
-                               -fx-font-weight: bold;
-                               -fx-background-radius: 24;
-                               -fx-effect: dropshadow(gaussian,rgba(255,255,255,0.2),10,0,0,2);" />
+                        styleClass="player-btn-main"
+                        prefWidth="60" prefHeight="48" />
 
-                <!-- Next -->
                 <Button text="⏭"
                         onAction="#handleMiniNext"
-                        prefWidth="60" prefHeight="38"
-                        style="-fx-background-color: transparent;
-                               -fx-text-fill: #a0a0c0;
-                               -fx-font-size: 17px;
-                               -fx-background-radius: 19;" />
+                        styleClass="player-btn"
+                        prefWidth="60" prefHeight="38" />
 
-                <!-- Loop -->
                 <Button fx:id="miniLoopButton"
                         text="↻"
                         onAction="#handleMiniLoop"
+                        styleClass="player-btn"
                         prefWidth="60" prefHeight="38"
-                        style="-fx-background-color: transparent;
-                               -fx-text-fill: #58586e;
-                               -fx-font-size: 19px;
-                               -fx-background-radius: 19;" />
+                        style="-fx-font-size: 19px;" />
 
                 <Region prefWidth="12" />
 
-                <!-- Like -->
                 <Button fx:id="miniLikeButton"
                         text="♡"
                         onAction="#handleMiniLike"
-                        prefWidth="60" prefHeight="38"
-                        style="-fx-background-color: transparent;
-                               -fx-text-fill: #58586e;
-                               -fx-font-size: 18px;
-                               -fx-background-radius: 19;" />
+                        styleClass="player-btn-like"
+                        prefWidth="60" prefHeight="38" />
 
-                <!-- Add to Playlist -->
                 <Button fx:id="miniAddButton"
                         text="+"
                         onAction="#handleMiniAddToPlaylist"
+                        styleClass="player-btn"
                         prefWidth="60" prefHeight="38"
-                        style="-fx-background-color: transparent;
-                               -fx-text-fill: #58586e;
-                               -fx-font-size: 20px;
-                               -fx-background-radius: 19;" />
+                        style="-fx-font-size: 20px;" />
 
-                <!-- Queue -->
                 <Button fx:id="miniQueueButton"
                         text="☰"
                         onAction="#handleOpenQueue"
-                        prefWidth="60" prefHeight="38"
-                        style="-fx-background-color: transparent;
-                               -fx-text-fill: #58586e;
-                               -fx-font-size: 17px;
-                               -fx-background-radius: 19;" />
+                        styleClass="player-btn-queue"
+                        prefWidth="60" prefHeight="38" />
 
             </HBox>
         </StackPane>
 
-        <!-- RIGHT: Time (150px) -->
+        <!-- RIGHT: Time -->
         <VBox prefWidth="150" minWidth="150" maxWidth="150"
               alignment="CENTER_RIGHT"
               style="-fx-padding: 0 24 0 0;">
             <Label fx:id="miniTimeLabel"
                    text="0:00 / 0:00"
-                   style="-fx-text-fill: #a0a0c0; -fx-font-size: 12px;" />
+                   styleClass="caption" />
         </VBox>
 
     </HBox>

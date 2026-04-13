@@ -58,11 +58,6 @@ public class MiniPlayerController {
     private final PlaylistPickerService addToPlaylistDialog = new PlaylistPickerService();
     private QueuePanelController queuePanelController;
 
-    // Size tokens for this controller's buttons (smaller than expanded player)
-    private static final String FS = "17px";
-    private static final String FS_S = "19px";   // slightly bigger for loop symbol
-    private static final String R = PlayerStyleConstants.RADIUS_MINI;
-
     // ─────────────────────────────────────────────────────────────
 
     @FXML
@@ -84,6 +79,7 @@ public class MiniPlayerController {
             refreshTime();
             refreshPlaylistLink();
             refreshAddButton();
+            refreshQueueButton();
         });
         player.currentSecondProperty().addListener((obs, o, n) -> refreshTime());
         player.currentDurationProperty().addListener((obs, o, n) -> refreshTime());
@@ -195,25 +191,27 @@ public class MiniPlayerController {
     private void refreshLikeButton() {
         boolean liked = player.isCurrentSongLiked();
         miniLikeButton.setText(liked ? "♥" : "♡");
-        miniLikeButton.setStyle(liked
-                ? PlayerStyleConstants.likeOn(FS, R)
-                : PlayerStyleConstants.likeOff(FS, R));
+        miniLikeButton.getStyleClass().setAll("button",
+                liked ? PlayerStyleConstants.likeOnClass()
+                      : PlayerStyleConstants.likeOffClass());
     }
 
     private void refreshAddButton() {
         miniAddButton.setDisable(player.getCurrentSong() == null);
-        miniAddButton.setStyle(PlayerStyleConstants.addButton("20px", R));
+        miniAddButton.getStyleClass().setAll("button", PlayerStyleConstants.addButtonClass());
     }
 
     private void refreshModeButtons() {
         miniShuffleButton.setText("⇄");
         miniLoopButton.setText("↻");
-        miniShuffleButton.setStyle(player.isShuffleEnabled()
-                ? PlayerStyleConstants.modeActive(FS, R)
-                : PlayerStyleConstants.modeInactive(FS, R));
-        miniLoopButton.setStyle(player.isLoopEnabled()
-                ? PlayerStyleConstants.modeActive(FS_S, R)
-                : PlayerStyleConstants.modeInactive(FS_S, R));
+        miniShuffleButton.getStyleClass().setAll("button",
+                player.isShuffleEnabled()
+                        ? PlayerStyleConstants.modeActiveClass()
+                        : PlayerStyleConstants.modeInactiveClass());
+        miniLoopButton.getStyleClass().setAll("button",
+                player.isLoopEnabled()
+                        ? PlayerStyleConstants.modeActiveClass()
+                        : PlayerStyleConstants.modeInactiveClass());
     }
 
     private void refreshTime() {
@@ -254,25 +252,15 @@ public class MiniPlayerController {
     }
 
     private void refreshQueueButton() {
-        int size = player.getUserQueueSize();
-        if (size > 0) {
-            miniQueueButton.setText("☰ " + size);
-            miniQueueButton.setStyle(
-                    "-fx-background-color: rgba(139,92,246,0.12);"
-                            + "-fx-text-fill: #a78bfa;"
-                            + "-fx-font-size: 14px;"
-                            + "-fx-font-weight: bold;"
-                            + "-fx-background-radius: 19;"
-                            + "-fx-border-color: rgba(139,92,246,0.2);"
-                            + "-fx-border-radius: 19;"
-                            + "-fx-border-width: 1;");
+        int total = player.getFullQueueSize();
+        if (total > 0) {
+            miniQueueButton.setText("☰ " + total);
+            miniQueueButton.getStyleClass().setAll("button",
+                    PlayerStyleConstants.queueActiveClass());
         } else {
             miniQueueButton.setText("☰");
-            miniQueueButton.setStyle(
-                    "-fx-background-color: transparent;"
-                            + "-fx-text-fill: #58586e;"
-                            + "-fx-font-size: 17px;"
-                            + "-fx-background-radius: 19;");
+            miniQueueButton.getStyleClass().setAll("button",
+                    PlayerStyleConstants.queueInactiveClass());
         }
     }
 

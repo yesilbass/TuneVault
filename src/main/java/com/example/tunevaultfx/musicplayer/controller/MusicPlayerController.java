@@ -404,12 +404,6 @@ public class MusicPlayerController {
         return userQueue;
     }
 
-    public void addToQueue(Song song) {
-        if (song != null) {
-            userQueue.add(song);
-        }
-    }
-
     public void addToQueueNext(Song song) {
         if (song != null) {
             userQueue.add(0, song);
@@ -453,8 +447,63 @@ public class MusicPlayerController {
         return upcoming;
     }
 
+    /**
+     * Returns how many songs the user manually added to the queue.
+     */
     public int getUserQueueSize() {
         return userQueue.size();
+    }
+
+    /**
+     * Returns the total count of all upcoming songs (user queue + playlist remaining + autoplay).
+     */
+    public int getFullQueueSize() {
+        return getUpcomingQueueSnapshot().size();
+    }
+
+    /**
+     * Plays a specific song from the unified upcoming queue by its index.
+     * Index 0..userQueue.size()-1 = user queue items.
+     * After that = playlist remaining items, then autoplay.
+     * All songs before the target index are skipped/removed.
+     */
+    public void playFromUpcomingQueue(int index) {
+        if (index < 0) return;
+
+        int uqSize = userQueue.size();
+
+        if (index < uqSize) {
+            for (int i = 0; i < index; i++) {
+                userQueue.remove(0);
+            }
+            playNextFromUserQueue();
+            return;
+        }
+
+        userQueue.clear();
+        int remaining = index - uqSize;
+
+        if (!activePlaylistSongs.isEmpty() && activePlaylistIndex >= 0) {
+            int playlistRemaining = activePlaylistSongs.size() - (activePlaylistIndex + 1);
+            if (remaining < playlistRemaining) {
+                activePlaylistIndex = activePlaylistIndex + 1 + remaining;
+                playingAutoplaySuggestions = false;
+                autoplaySuggestions.clear();
+                autoplaySuggestionIndex = -1;
+                lifecycleService.playQueue(activePlaylistSongs, activePlaylistIndex, state.getCurrentSourcePlaylistName());
+                return;
+            }
+            remaining -= playlistRemaining;
+        }
+
+        if (playingAutoplaySuggestions && !autoplaySuggestions.isEmpty()) {
+            int autoplayRemaining = autoplaySuggestions.size() - (autoplaySuggestionIndex + 1);
+            if (remaining < autoplayRemaining) {
+                autoplaySuggestionIndex = autoplaySuggestionIndex + 1 + remaining;
+                lifecycleService.playSingleSong(autoplaySuggestions.get(autoplaySuggestionIndex));
+                return;
+            }
+        }
     }
 
     private void setPlaying(boolean value) {

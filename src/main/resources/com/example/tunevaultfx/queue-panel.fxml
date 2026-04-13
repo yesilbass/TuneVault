@@ -13,20 +13,15 @@
 
     <!-- Backdrop -->
     <StackPane fx:id="backdropPane"
-               onMouseClicked="#handleBackdropClick"
-               style="-fx-background-color: rgba(3, 2, 14, 0.6);" />
+               styleClass="overlay-backdrop"
+               onMouseClicked="#handleBackdropClick" />
 
-    <!-- Queue panel — slides in from the right -->
+    <!-- Queue panel -->
     <VBox fx:id="queuePanel"
+          styleClass="queue-panel"
           maxWidth="420" prefWidth="420"
           StackPane.alignment="CENTER_RIGHT"
-          onMouseClicked="#handleConsumeClick"
-          style="-fx-background-color: #0c0c18;
-                 -fx-background-radius: 24 0 0 24;
-                 -fx-border-color: rgba(139,92,246,0.12) transparent rgba(139,92,246,0.12) rgba(139,92,246,0.12);
-                 -fx-border-radius: 24 0 0 24;
-                 -fx-border-width: 1;
-                 -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.55), 40, 0, -6, 0);">
+          onMouseClicked="#handleConsumeClick">
 
         <!-- Header -->
         <HBox alignment="CENTER_LEFT" spacing="12"
@@ -34,99 +29,51 @@
                      -fx-border-color: transparent transparent rgba(255,255,255,0.06) transparent;
                      -fx-border-width: 0 0 1 0;">
             <VBox spacing="2" HBox.hgrow="ALWAYS">
-                <Label text="UP NEXT"
-                       style="-fx-text-fill: #a78bfa; -fx-font-size: 11px; -fx-font-weight: bold;" />
+                <Label text="UP NEXT" styleClass="overline, text-accent" />
                 <Label fx:id="queueCountLabel" text="Queue"
-                       style="-fx-text-fill: #f2f2fa; -fx-font-size: 17px; -fx-font-weight: bold;" />
+                       styleClass="heading-md" style="-fx-font-size: 17px;" />
             </VBox>
             <Button fx:id="clearQueueButton" text="Clear"
                     onAction="#handleClearQueue"
-                    prefHeight="32"
-                    style="-fx-background-color: rgba(244,63,94,0.1);
-                           -fx-text-fill: #f43f5e;
-                           -fx-font-size: 12px;
-                           -fx-font-weight: bold;
-                           -fx-background-radius: 16;
-                           -fx-border-color: rgba(244,63,94,0.2);
-                           -fx-border-radius: 16;
-                           -fx-border-width: 1;
-                           -fx-padding: 4 14 4 14;
-                           -fx-cursor: hand;" />
-            <Button text="✕"
-                    onAction="#handleClose"
-                    prefWidth="36" prefHeight="36"
-                    style="-fx-background-color: rgba(255,255,255,0.07);
-                           -fx-text-fill: #a0a0c0;
-                           -fx-font-size: 14px;
-                           -fx-font-weight: bold;
-                           -fx-background-radius: 18;
-                           -fx-border-color: rgba(255,255,255,0.1);
-                           -fx-border-radius: 18;
-                           -fx-border-width: 1;
-                           -fx-cursor: hand;" />
+                    styleClass="btn-danger" prefHeight="32" />
+            <Button text="✕" onAction="#handleClose"
+                    styleClass="btn-icon" prefWidth="36" prefHeight="36" />
         </HBox>
 
-        <!-- Now Playing section -->
+        <!-- Now Playing -->
         <VBox fx:id="nowPlayingSection" spacing="6"
               style="-fx-padding: 16 24 12 24;">
-            <Label text="NOW PLAYING"
-                   style="-fx-text-fill: #58586e; -fx-font-size: 10px; -fx-font-weight: bold;" />
+            <Label text="NOW PLAYING" styleClass="overline" />
             <HBox fx:id="nowPlayingRow" spacing="12" alignment="CENTER_LEFT"
-                  style="-fx-background-color: rgba(139,92,246,0.08);
-                         -fx-background-radius: 14;
-                         -fx-padding: 10 14 10 14;">
+                  styleClass="now-playing-row">
                 <StackPane prefWidth="40" prefHeight="40" minWidth="40"
-                           style="-fx-background-color: linear-gradient(to bottom right, #2e1065, #4c1d95);
-                                  -fx-background-radius: 10;
-                                  -fx-border-color: rgba(139,92,246,0.25);
-                                  -fx-border-radius: 10;
-                                  -fx-border-width: 1;">
+                           styleClass="album-art-mini"
+                           style="-fx-background-radius: 10; -fx-border-radius: 10;">
                     <Label text="♫"
                            style="-fx-font-size: 16px; -fx-text-fill: rgba(196,181,253,0.6);" />
                 </StackPane>
                 <VBox spacing="1" HBox.hgrow="ALWAYS">
                     <Label fx:id="nowPlayingTitle" text="—"
-                           style="-fx-text-fill: #f2f2fa; -fx-font-size: 13px; -fx-font-weight: bold;" />
+                           styleClass="heading-sm" style="-fx-font-size: 13px;" />
                     <Label fx:id="nowPlayingArtist" text=""
-                           style="-fx-text-fill: #a0a0c0; -fx-font-size: 12px;" />
+                           styleClass="caption" />
                 </VBox>
             </HBox>
         </VBox>
 
-        <!-- Divider -->
-        <Separator style="-fx-background-color: rgba(255,255,255,0.04); -fx-padding: 0 24 0 24;" />
+        <Separator />
 
-        <!-- User queue section -->
-        <VBox fx:id="userQueueSection" spacing="6" VBox.vgrow="ALWAYS"
-              style="-fx-padding: 12 0 0 0;">
+        <!-- Single unified queue list -->
+        <VBox spacing="6" VBox.vgrow="ALWAYS"
+              style="-fx-padding: 12 0 16 0;">
             <HBox alignment="CENTER_LEFT" spacing="8"
                   style="-fx-padding: 0 24 6 24;">
-                <Label text="YOUR QUEUE"
-                       style="-fx-text-fill: #58586e; -fx-font-size: 10px; -fx-font-weight: bold;" />
-                <Label fx:id="userQueueCountBadge" text=""
-                       style="-fx-text-fill: #a78bfa; -fx-font-size: 10px; -fx-font-weight: bold;
-                              -fx-background-color: rgba(139,92,246,0.15);
-                              -fx-background-radius: 8;
-                              -fx-padding: 1 7 1 7;" />
+                <Label text="QUEUE" styleClass="overline" />
+                <Label fx:id="queueBadge" text="" styleClass="badge-count" />
             </HBox>
-            <ListView fx:id="userQueueListView"
+            <ListView fx:id="queueListView"
                       VBox.vgrow="ALWAYS"
-                      style="-fx-background-color: transparent;
-                             -fx-padding: 0 10 0 10;" />
-        </VBox>
-
-        <!-- Up next from playlist section -->
-        <Separator style="-fx-background-color: rgba(255,255,255,0.04); -fx-padding: 0 24 0 24;" />
-
-        <VBox fx:id="upNextSection" spacing="6"
-              style="-fx-padding: 12 0 16 0;">
-            <Label fx:id="upNextLabel" text="NEXT FROM PLAYLIST"
-                   style="-fx-text-fill: #58586e; -fx-font-size: 10px; -fx-font-weight: bold;
-                          -fx-padding: 0 24 6 24;" />
-            <ListView fx:id="upNextListView"
-                      prefHeight="180" maxHeight="220"
-                      style="-fx-background-color: transparent;
-                             -fx-padding: 0 10 0 10;" />
+                      style="-fx-padding: 0 10 0 10;" />
         </VBox>
 
     </VBox>

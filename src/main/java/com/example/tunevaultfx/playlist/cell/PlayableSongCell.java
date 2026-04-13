@@ -220,11 +220,6 @@ public class PlayableSongCell extends ListCell<Song> {
             hidePopup(); player.addToQueueNext(song); ev.consume();
         });
 
-        Button addToQueueBtn = menuButton("Add to Queue", false);
-        addToQueueBtn.setOnAction(ev -> {
-            hidePopup(); player.addToQueue(song); ev.consume();
-        });
-
         Button addBtn = menuButton("Add to Another Playlist", false);
         addBtn.setOnAction(ev -> {
             hidePopup(); if (onAddToPlaylist != null) onAddToPlaylist.accept(song); ev.consume();
@@ -236,7 +231,7 @@ public class PlayableSongCell extends ListCell<Song> {
             hidePopup(); if (onRemoveFromPlaylist != null) onRemoveFromPlaylist.accept(song); ev.consume();
         });
 
-        card.getChildren().addAll(playNextBtn, addToQueueBtn, addBtn, removeBtn);
+        card.getChildren().addAll(playNextBtn, addBtn, removeBtn);
         popup.getContent().add(card);
 
         Bounds b = moreButton.localToScreen(moreButton.getBoundsInLocal());

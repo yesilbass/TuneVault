@@ -22,10 +22,10 @@ import javafx.scene.input.DataFormat;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseButton;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
-import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.util.Duration;
@@ -44,19 +44,16 @@ public class QueuePanelController {
     @FXML private Label nowPlayingTitle;
     @FXML private Label nowPlayingArtist;
 
-    @FXML private VBox userQueueSection;
-    @FXML private Label userQueueCountBadge;
-    @FXML private ListView<Song> userQueueListView;
-
-    @FXML private VBox upNextSection;
-    @FXML private Label upNextLabel;
-    @FXML private ListView<Song> upNextListView;
+    @FXML private Label queueBadge;
+    @FXML private ListView<QueueEntry> queueListView;
 
     private final MusicPlayerController player = MusicPlayerController.getInstance();
     private final BooleanProperty visible = new SimpleBooleanProperty(false);
     private boolean animatingClose = false;
 
-    private static final DataFormat SONG_INDEX = new DataFormat("application/x-queue-index");
+    private final ObservableList<QueueEntry> displayQueue = FXCollections.observableArrayList();
+
+    private static final DataFormat DRAG_INDEX = new DataFormat("application/x-queue-drag-index");
 
     @FXML
     public void initialize() {
@@ -65,30 +62,20 @@ public class QueuePanelController {
         queueOverlayRoot.setOpacity(0);
         queuePanel.setTranslateX(420);
 
-        userQueueListView.setItems(player.getUserQueue());
-        userQueueListView.setCellFactory(lv -> new QueueSongCell(true));
-        userQueueListView.setPlaceholder(new Label("Queue is empty — add songs with \"Play Next\"") {{
-            setStyle("-fx-text-fill: #58586e; -fx-font-size: 12px;");
+        queueListView.setItems(displayQueue);
+        queueListView.setCellFactory(lv -> new UnifiedQueueCell());
+        queueListView.setPlaceholder(new Label("Nothing queued yet") {{
+            setStyle("-fx-text-fill: #5c5c78; -fx-font-size: 13px;");
         }});
-        userQueueListView.setFixedCellSize(56);
-
-        upNextListView.setCellFactory(lv -> new QueueSongCell(false));
-        upNextListView.setPlaceholder(new Label("Nothing coming up") {{
-            setStyle("-fx-text-fill: #58586e; -fx-font-size: 12px;");
-        }});
-        upNextListView.setFixedCellSize(56);
+        queueListView.setFixedCellSize(58);
 
         player.currentSongProperty().addListener((obs, o, n) -> refreshAll());
         player.playingProperty().addListener((obs, o, n) -> refreshNowPlaying());
         player.getUserQueue().addListener((ListChangeListener<Song>) c -> refreshAll());
 
         visible.addListener((obs, o, n) -> {
-            if (n) {
-                refreshAll();
-                openPanel();
-            } else {
-                closePanel();
-            }
+            if (n) { refreshAll(); openPanel(); }
+            else   { closePanel(); }
         });
 
         queueOverlayRoot.sceneProperty().addListener((obs, oldScene, newScene) -> {
@@ -105,15 +92,11 @@ public class QueuePanelController {
         refreshAll();
     }
 
-    public BooleanProperty visibleProperty() {
-        return visible;
-    }
-
-    // ── FXML handlers ──────────────────────────────────────────
+    public BooleanProperty visibleProperty() { return visible; }
 
     @FXML private void handleBackdropClick() { visible.set(false); }
-    @FXML private void handleClose() { visible.set(false); }
-    @FXML private void handleConsumeClick() { /* absorb */ }
+    @FXML private void handleClose()         { visible.set(false); }
+    @FXML private void handleConsumeClick()  { /* absorb */ }
 
     @FXML
     private void handleClearQueue() {
@@ -125,52 +108,47 @@ public class QueuePanelController {
 
     private void refreshAll() {
         refreshNowPlaying();
-        refreshUserQueue();
-        refreshUpNext();
+        rebuildDisplayQueue();
         refreshHeader();
     }
 
     private void refreshNowPlaying() {
         Song current = player.getCurrentSong();
         if (current == null) {
-            nowPlayingTitle.setText("—");
+            nowPlayingTitle.setText("\u2014");
             nowPlayingArtist.setText("");
-            nowPlayingRow.setStyle("-fx-background-color: rgba(255,255,255,0.03); -fx-background-radius: 14; -fx-padding: 10 14 10 14;");
         } else {
             nowPlayingTitle.setText(current.title());
             nowPlayingArtist.setText(current.artist());
-            nowPlayingRow.setStyle("-fx-background-color: rgba(139,92,246,0.08); -fx-background-radius: 14; -fx-padding: 10 14 10 14;");
         }
     }
 
-    private void refreshUserQueue() {
-        int size = player.getUserQueueSize();
-        userQueueCountBadge.setText(size > 0 ? String.valueOf(size) : "");
-        userQueueCountBadge.setVisible(size > 0);
-        userQueueCountBadge.setManaged(size > 0);
-        clearQueueButton.setVisible(size > 0);
-        clearQueueButton.setManaged(size > 0);
-    }
-
-    private void refreshUpNext() {
+    private void rebuildDisplayQueue() {
         ObservableList<Song> upcoming = player.getUpcomingQueueSnapshot();
-        ObservableList<Song> filtered = FXCollections.observableArrayList();
-        for (Song s : upcoming) {
-            if (!player.getUserQueue().contains(s)) {
-                filtered.add(s);
-            }
+        int userQueueSize = player.getUserQueueSize();
+
+        displayQueue.clear();
+        for (int i = 0; i < upcoming.size(); i++) {
+            Song s = upcoming.get(i);
+            boolean isUserQueued = i < userQueueSize;
+            displayQueue.add(new QueueEntry(s, i, isUserQueued));
         }
 
-        upNextListView.setItems(filtered);
+        int total = displayQueue.size();
+        queueBadge.setText(total > 0 ? String.valueOf(total) : "");
+        queueBadge.setVisible(total > 0);
+        queueBadge.setManaged(total > 0);
 
-        boolean hasUpNext = !filtered.isEmpty();
-        upNextSection.setVisible(hasUpNext);
-        upNextSection.setManaged(hasUpNext);
+        boolean hasUserItems = userQueueSize > 0;
+        clearQueueButton.setVisible(hasUserItems);
+        clearQueueButton.setManaged(hasUserItems);
     }
 
     private void refreshHeader() {
-        int total = player.getUserQueueSize();
-        queueCountLabel.setText(total == 0 ? "Queue" : "Queue · " + total + " song" + (total == 1 ? "" : "s"));
+        int total = displayQueue.size();
+        queueCountLabel.setText(total == 0
+                ? "Queue"
+                : "Queue \u00B7 " + total + " song" + (total == 1 ? "" : "s"));
     }
 
     // ── Animation ──────────────────────────────────────────────
@@ -184,10 +162,8 @@ public class QueuePanelController {
 
         FadeTransition fade = new FadeTransition(Duration.millis(180), queueOverlayRoot);
         fade.setToValue(1);
-
         TranslateTransition slide = new TranslateTransition(Duration.millis(250), queuePanel);
         slide.setToX(0);
-
         new ParallelTransition(fade, slide).play();
     }
 
@@ -197,7 +173,6 @@ public class QueuePanelController {
 
         FadeTransition fade = new FadeTransition(Duration.millis(140), queueOverlayRoot);
         fade.setToValue(0);
-
         TranslateTransition slide = new TranslateTransition(Duration.millis(180), queuePanel);
         slide.setToX(420);
 
@@ -210,81 +185,101 @@ public class QueuePanelController {
         anim.play();
     }
 
-    // ── Custom cell with drag-reorder and remove ───────────────
+    // ── Data model ─────────────────────────────────────────────
 
-    private class QueueSongCell extends ListCell<Song> {
+    record QueueEntry(Song song, int upcomingIndex, boolean userQueued) {}
 
-        private final boolean editable;
+    // ── Cell ───────────────────────────────────────────────────
 
-        QueueSongCell(boolean editable) {
-            this.editable = editable;
+    private class UnifiedQueueCell extends ListCell<QueueEntry> {
 
-            if (editable) {
-                setupDragAndDrop();
-            }
+        UnifiedQueueCell() {
+            setupDragAndDrop();
         }
 
         @Override
-        protected void updateItem(Song song, boolean empty) {
-            super.updateItem(song, empty);
-            if (empty || song == null) {
+        protected void updateItem(QueueEntry entry, boolean empty) {
+            super.updateItem(entry, empty);
+            if (empty || entry == null) {
                 setGraphic(null);
                 setText(null);
                 setStyle("-fx-background-color: transparent;");
                 return;
             }
 
-            HBox row = new HBox(10);
+            Song song = entry.song();
+
+            HBox row = new HBox(8);
             row.setAlignment(Pos.CENTER_LEFT);
-            row.setPadding(new Insets(6, 10, 6, 10));
-            row.setStyle(CellStyleKit.ROW_DEFAULT);
+            row.setPadding(new Insets(7, 10, 7, 10));
+            row.setStyle(CellStyleKit.ROW_DEFAULT + " -fx-cursor: hand;");
 
             Label indexLabel = new Label(String.valueOf(getIndex() + 1));
             indexLabel.setMinWidth(22);
             indexLabel.setAlignment(Pos.CENTER);
-            indexLabel.setStyle("-fx-text-fill: " + CellStyleKit.TEXT_MUTED + "; -fx-font-size: 12px; -fx-font-weight: bold;");
+            indexLabel.setStyle("-fx-text-fill: " + CellStyleKit.TEXT_MUTED
+                    + "; -fx-font-size: 12px; -fx-font-weight: bold;");
 
             VBox info = new VBox(1);
             HBox.setHgrow(info, Priority.ALWAYS);
 
             Label title = new Label(song.title());
-            title.setStyle("-fx-text-fill: " + CellStyleKit.TEXT_PRIMARY + "; -fx-font-size: 13px; -fx-font-weight: bold;");
-            title.setMaxWidth(240);
+            title.setStyle("-fx-text-fill: " + CellStyleKit.TEXT_PRIMARY
+                    + "; -fx-font-size: 13px; -fx-font-weight: bold;");
+            title.setMaxWidth(220);
 
             Label meta = new Label(CellStyleKit.songMeta(song.artist(), song.genre()));
-            meta.setStyle("-fx-text-fill: " + CellStyleKit.TEXT_SECONDARY + "; -fx-font-size: 11px;");
-            meta.setMaxWidth(240);
-
-            Label duration = new Label(formatDuration(song.durationSeconds()));
-            duration.setStyle("-fx-text-fill: " + CellStyleKit.TEXT_MUTED + "; -fx-font-size: 11px;");
+            meta.setStyle("-fx-text-fill: " + CellStyleKit.TEXT_SECONDARY
+                    + "; -fx-font-size: 11px;");
+            meta.setMaxWidth(220);
 
             info.getChildren().addAll(title, meta);
+
+            Label duration = new Label(formatDuration(song.durationSeconds()));
+            duration.setStyle("-fx-text-fill: " + CellStyleKit.TEXT_MUTED
+                    + "; -fx-font-size: 11px;");
+
             row.getChildren().addAll(indexLabel, info, duration);
 
-            if (editable) {
-                Label dragHandle = new Label("≡");
-                dragHandle.setStyle("-fx-text-fill: #58586e; -fx-font-size: 16px; -fx-cursor: move;");
-                dragHandle.setMinWidth(20);
-                dragHandle.setAlignment(Pos.CENTER);
-
-                Button removeBtn = new Button("✕");
-                removeBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: #58586e; -fx-font-size: 12px; -fx-cursor: hand; -fx-padding: 2 6 2 6;");
+            if (entry.userQueued()) {
+                Button removeBtn = new Button("\u2715");
+                removeBtn.setMinSize(26, 26);
+                removeBtn.setMaxSize(26, 26);
+                removeBtn.setPrefSize(26, 26);
+                removeBtn.setFocusTraversable(false);
+                removeBtn.setStyle(REMOVE_DEFAULT);
                 removeBtn.setOnAction(e -> {
-                    int idx = getIndex();
-                    if (idx >= 0) {
+                    int idx = entry.upcomingIndex();
+                    if (idx >= 0 && idx < player.getUserQueueSize()) {
                         player.removeFromQueue(idx);
                     }
+                    e.consume();
                 });
+                removeBtn.setOnMouseEntered(e -> removeBtn.setStyle(REMOVE_HOVER));
+                removeBtn.setOnMouseExited(e -> removeBtn.setStyle(REMOVE_DEFAULT));
 
-                removeBtn.setOnMouseEntered(e -> removeBtn.setStyle("-fx-background-color: rgba(244,63,94,0.15); -fx-text-fill: #f43f5e; -fx-font-size: 12px; -fx-cursor: hand; -fx-padding: 2 6 2 6; -fx-background-radius: 10;"));
-                removeBtn.setOnMouseExited(e -> removeBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: #58586e; -fx-font-size: 12px; -fx-cursor: hand; -fx-padding: 2 6 2 6;"));
+                Label dragHandle = new Label("\u2261");
+                dragHandle.setMinWidth(20);
+                dragHandle.setAlignment(Pos.CENTER);
+                dragHandle.setStyle("-fx-text-fill: #5c5c78; -fx-font-size: 18px; -fx-cursor: move;");
+                dragHandle.setOnMouseEntered(e ->
+                        dragHandle.setStyle("-fx-text-fill: #9d9db8; -fx-font-size: 18px; -fx-cursor: move;"));
+                dragHandle.setOnMouseExited(e ->
+                        dragHandle.setStyle("-fx-text-fill: #5c5c78; -fx-font-size: 18px; -fx-cursor: move;"));
 
-                row.getChildren().add(0, dragHandle);
-                row.getChildren().add(removeBtn);
+                row.getChildren().addAll(removeBtn, dragHandle);
             }
 
-            row.setOnMouseEntered(e -> row.setStyle(CellStyleKit.ROW_HOVER));
-            row.setOnMouseExited(e -> row.setStyle(CellStyleKit.ROW_DEFAULT));
+            row.setOnMouseClicked(e -> {
+                if (e.getButton() == MouseButton.PRIMARY && e.getClickCount() == 1) {
+                    player.playFromUpcomingQueue(entry.upcomingIndex());
+                    refreshAll();
+                    e.consume();
+                }
+            });
+
+            row.setOnMouseEntered(e -> row.setStyle(CellStyleKit.ROW_HOVER + " -fx-cursor: hand;"));
+            row.setOnMouseExited(e -> row.setStyle(CellStyleKit.ROW_DEFAULT + " -fx-cursor: hand;"));
 
             setGraphic(row);
             setText(null);
@@ -293,38 +288,48 @@ public class QueuePanelController {
 
         private void setupDragAndDrop() {
             setOnDragDetected(event -> {
-                if (getItem() == null) return;
+                QueueEntry entry = getItem();
+                if (entry == null || !entry.userQueued()) return;
                 Dragboard db = startDragAndDrop(TransferMode.MOVE);
                 ClipboardContent cc = new ClipboardContent();
-                cc.put(SONG_INDEX, getIndex());
+                cc.put(DRAG_INDEX, entry.upcomingIndex());
                 db.setContent(cc);
+                setStyle("-fx-background-color: rgba(139,92,246,0.10); -fx-padding: 1 0 1 0;");
                 event.consume();
             });
 
             setOnDragOver(event -> {
-                if (event.getGestureSource() != this && event.getDragboard().hasContent(SONG_INDEX)) {
-                    event.acceptTransferModes(TransferMode.MOVE);
+                if (event.getGestureSource() != this && event.getDragboard().hasContent(DRAG_INDEX)) {
+                    QueueEntry target = getItem();
+                    if (target != null && target.userQueued()) {
+                        event.acceptTransferModes(TransferMode.MOVE);
+                    }
                 }
                 event.consume();
             });
 
             setOnDragEntered(event -> {
-                if (event.getGestureSource() != this && event.getDragboard().hasContent(SONG_INDEX)) {
-                    setStyle("-fx-background-color: rgba(139,92,246,0.12); -fx-padding: 1 0 1 0;");
+                if (event.getGestureSource() != this && event.getDragboard().hasContent(DRAG_INDEX)) {
+                    QueueEntry target = getItem();
+                    if (target != null && target.userQueued()) {
+                        setStyle("-fx-background-color: rgba(139,92,246,0.14); -fx-padding: 1 0 1 0;");
+                    }
                 }
             });
 
-            setOnDragExited(event -> {
-                setStyle("-fx-background-color: transparent; -fx-padding: 1 0 1 0;");
-            });
+            setOnDragExited(event ->
+                    setStyle("-fx-background-color: transparent; -fx-padding: 1 0 1 0;"));
 
             setOnDragDropped(event -> {
                 Dragboard db = event.getDragboard();
-                if (db.hasContent(SONG_INDEX)) {
-                    int fromIdx = (int) db.getContent(SONG_INDEX);
-                    int toIdx = getIndex();
-                    if (fromIdx >= 0 && toIdx >= 0 && fromIdx != toIdx) {
-                        player.moveInQueue(fromIdx, toIdx);
+                if (db.hasContent(DRAG_INDEX)) {
+                    int fromIdx = (int) db.getContent(DRAG_INDEX);
+                    QueueEntry target = getItem();
+                    if (target != null && target.userQueued()) {
+                        int toIdx = target.upcomingIndex();
+                        if (fromIdx != toIdx) {
+                            player.moveInQueue(fromIdx, toIdx);
+                        }
                     }
                     event.setDropCompleted(true);
                 } else {
@@ -333,11 +338,22 @@ public class QueuePanelController {
                 event.consume();
             });
 
-            setOnDragDone(event -> event.consume());
+            setOnDragDone(event -> {
+                setStyle("-fx-background-color: transparent; -fx-padding: 1 0 1 0;");
+                event.consume();
+            });
         }
 
         private String formatDuration(int seconds) {
             return (seconds / 60) + ":" + String.format("%02d", seconds % 60);
         }
+
+        private static final String REMOVE_DEFAULT =
+                "-fx-background-color: transparent; -fx-text-fill: #5c5c78;"
+                        + " -fx-font-size: 11px; -fx-cursor: hand; -fx-padding: 2 5 2 5;";
+        private static final String REMOVE_HOVER =
+                "-fx-background-color: rgba(239,68,68,0.14); -fx-text-fill: #f87171;"
+                        + " -fx-font-size: 11px; -fx-cursor: hand; -fx-padding: 2 5 2 5;"
+                        + " -fx-background-radius: 8;";
     }
 }

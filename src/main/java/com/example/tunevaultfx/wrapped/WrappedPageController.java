@@ -115,7 +115,7 @@ public class WrappedPageController {
 
     @FXML
     private void handleBackToMenu(ActionEvent event) throws IOException {
-        SceneUtil.switchScene((Node) event.getSource(), "main-menu.fxml");
+        SceneUtil.goBack((Node) event.getSource());
     }
 
     private void loadStats(StatsRange range) {
@@ -175,10 +175,16 @@ public class WrappedPageController {
 
     private void updateRangeButtons() {
         if (todayButton != null) {
+            todayButton.getStyleClass().removeAll("btn-toggle-active", "btn-toggle-inactive");
+            todayButton.getStyleClass().add(currentRange == StatsRange.DAILY
+                    ? "btn-toggle-active" : "btn-toggle-inactive");
             todayButton.setDisable(currentRange == StatsRange.DAILY);
         }
 
         if (overallButton != null) {
+            overallButton.getStyleClass().removeAll("btn-toggle-active", "btn-toggle-inactive");
+            overallButton.getStyleClass().add(currentRange == StatsRange.OVERALL
+                    ? "btn-toggle-active" : "btn-toggle-inactive");
             overallButton.setDisable(currentRange == StatsRange.OVERALL);
         }
     }

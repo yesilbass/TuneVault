@@ -7,36 +7,23 @@
             xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="com.example.tunevaultfx.search.SearchPageController"
             prefWidth="1280.0" prefHeight="820.0"
-            style="-fx-background-color: linear-gradient(to bottom right, #090912, #0f0f1e);">
+            styleClass="page-bg">
 
     <!-- ── TOP ───────────────────────────────────── -->
     <top>
-        <HBox alignment="CENTER_LEFT" spacing="12"
-              style="-fx-padding: 22 32 18 32;
-                     -fx-border-color: transparent transparent rgba(255,255,255,0.06) transparent;
-                     -fx-border-width: 0 0 1 0;">
-            <Button text="← Menu"
+        <HBox alignment="CENTER_LEFT" spacing="12" styleClass="page-header">
+            <Button text="← Back"
                     onAction="#handleBackToMenu"
-                    prefWidth="110" prefHeight="38"
-                    style="-fx-background-color: rgba(255,255,255,0.07);
-                           -fx-text-fill: #94a3b8;
-                           -fx-font-size: 13px;
-                           -fx-font-weight: bold;
-                           -fx-background-radius: 19;
-                           -fx-border-color: rgba(255,255,255,0.1);
-                           -fx-border-radius: 19;
-                           -fx-border-width: 1;" />
+                    styleClass="btn-nav"/>
 
             <StackPane HBox.hgrow="ALWAYS" alignment="CENTER">
                 <HBox alignment="CENTER" spacing="10">
-                    <Label text="🔍"
-                           style="-fx-font-size: 20px;" />
-                    <Label text="Search"
-                           style="-fx-text-fill: #ffffff; -fx-font-size: 26px; -fx-font-weight: bold;" />
+                    <Label text="🔍" style="-fx-font-size: 20px;"/>
+                    <Label text="Search" styleClass="heading-xl"/>
                 </HBox>
             </StackPane>
 
-            <Region prefWidth="110" />
+            <Region prefWidth="110"/>
         </HBox>
     </top>
 
@@ -45,73 +32,40 @@
         <VBox spacing="0" style="-fx-padding: 16 32 0 32;">
 
             <!-- Search bar card (always visible) -->
-            <VBox fx:id="searchInputCard" spacing="10"
-                  style="-fx-background-color: #14141e;
-                         -fx-background-radius: 22;
-                         -fx-border-color: rgba(255,255,255,0.08);
-                         -fx-border-radius: 22;
-                         -fx-border-width: 1;
-                         -fx-padding: 20 24 18 24;
-                         -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.4),16,0,0,4);">
+            <VBox fx:id="searchInputCard" spacing="10" styleClass="card">
 
-                <Label text="What do you want to play?"
-                       style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #ffffff;" />
+                <Label text="What do you want to play?" styleClass="heading-lg"/>
 
                 <HBox spacing="10" alignment="CENTER_LEFT">
                     <TextField fx:id="searchField"
                                HBox.hgrow="ALWAYS"
                                promptText="Search songs, artists, albums, genres…"
-                               prefHeight="46" />
+                               prefHeight="46"/>
 
                     <Button text="✕  Clear"
                             onAction="#handleClearSearch"
-                            prefWidth="96" prefHeight="46"
-                            style="-fx-background-color: rgba(255,255,255,0.07);
-                                   -fx-text-fill: #a0a0c0;
-                                   -fx-font-size: 13px;
-                                   -fx-font-weight: bold;
-                                   -fx-background-radius: 13;
-                                   -fx-border-color: rgba(255,255,255,0.08);
-                                   -fx-border-radius: 13;
-                                   -fx-border-width: 1;" />
+                            styleClass="btn-secondary"/>
                 </HBox>
 
                 <Label fx:id="resultsSummaryLabel"
                        text=""
-                       style="-fx-text-fill: #8a8ab0; -fx-font-size: 13px;" />
+                       styleClass="caption"/>
             </VBox>
 
-            <Region prefHeight="16" />
+            <Region prefHeight="16"/>
 
             <!-- IDLE: Recent searches (visible when search is empty) -->
-            <VBox fx:id="recentSection"
-                  spacing="0"
-                  style="-fx-background-color: #14141e;
-                         -fx-background-radius: 22;
-                         -fx-border-color: rgba(255,255,255,0.08);
-                         -fx-border-radius: 22;
-                         -fx-border-width: 1;
-                         -fx-padding: 20 24 8 24;
-                         -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.4),16,0,0,4);">
+            <VBox fx:id="recentSection" spacing="0" styleClass="card">
 
                 <HBox alignment="CENTER_LEFT" style="-fx-padding: 0 0 14 0;">
-                    <Label text="Recent Searches"
-                           style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #ffffff;" />
-                    <Region HBox.hgrow="ALWAYS" />
+                    <Label text="Recent Searches" styleClass="heading-md"/>
+                    <Region HBox.hgrow="ALWAYS"/>
                     <Button text="Clear All"
                             onAction="#handleClearRecentSearches"
-                            prefHeight="32"
-                            style="-fx-background-color: rgba(255,255,255,0.06);
-                                   -fx-text-fill: #a0a0c0;
-                                   -fx-font-size: 12px;
-                                   -fx-font-weight: bold;
-                                   -fx-background-radius: 12;
-                                   -fx-padding: 0 14 0 14;" />
+                            styleClass="btn-ghost"/>
                 </HBox>
 
-                <ListView fx:id="recentSearchesListView"
-                          prefHeight="460"
-                          style="-fx-background-color: transparent; -fx-border-color: transparent;" />
+                <ListView fx:id="recentSearchesListView" prefHeight="460"/>
             </VBox>
 
             <!-- RESULTS: Shown while typing (scrollable) -->
@@ -120,8 +74,7 @@
                         hbarPolicy="NEVER"
                         vbarPolicy="AS_NEEDED"
                         visible="false"
-                        managed="false"
-                        style="-fx-background: transparent; -fx-background-color: transparent; -fx-border-color: transparent;">
+                        managed="false">
                 <content>
                     <VBox spacing="16" style="-fx-padding: 0 0 28 0;">
 
@@ -130,31 +83,16 @@
                               spacing="0"
                               visible="false"
                               managed="false"
-                              style="-fx-background-color: #14141e;
-                                     -fx-background-radius: 22;
-                                     -fx-border-color: rgba(255,255,255,0.08);
-                                     -fx-border-radius: 22;
-                                     -fx-border-width: 1;
-                                     -fx-padding: 20 24 8 24;
-                                     -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.4),16,0,0,4);">
+                              styleClass="card">
 
                             <HBox alignment="CENTER_LEFT" spacing="10" style="-fx-padding: 0 0 14 0;">
-                                <StackPane prefWidth="30" prefHeight="30"
-                                           style="-fx-background-color: rgba(139,92,246,0.15);
-                                                  -fx-background-radius: 10;
-                                                  -fx-border-color: rgba(139,92,246,0.2);
-                                                  -fx-border-radius: 10;
-                                                  -fx-border-width: 1;">
-                                    <Label text="♫"
-                                           style="-fx-font-size: 13px; -fx-text-fill: #a78bfa;" />
+                                <StackPane styleClass="icon-box-sm, icon-box-violet">
+                                    <Label text="♫" styleClass="text-accent"/>
                                 </StackPane>
-                                <Label text="Songs"
-                                       style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #ffffff;" />
+                                <Label text="Songs" styleClass="heading-md"/>
                             </HBox>
 
-                            <ListView fx:id="songResultsListView"
-                                      prefHeight="340"
-                                      style="-fx-background-color: transparent; -fx-border-color: transparent;" />
+                            <ListView fx:id="songResultsListView" prefHeight="340"/>
                         </VBox>
 
                         <!-- Artists -->
@@ -162,31 +100,16 @@
                               spacing="0"
                               visible="false"
                               managed="false"
-                              style="-fx-background-color: #14141e;
-                                     -fx-background-radius: 22;
-                                     -fx-border-color: rgba(255,255,255,0.08);
-                                     -fx-border-radius: 22;
-                                     -fx-border-width: 1;
-                                     -fx-padding: 20 24 8 24;
-                                     -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.4),16,0,0,4);">
+                              styleClass="card">
 
                             <HBox alignment="CENTER_LEFT" spacing="10" style="-fx-padding: 0 0 14 0;">
-                                <StackPane prefWidth="30" prefHeight="30"
-                                           style="-fx-background-color: rgba(244,63,94,0.12);
-                                                  -fx-background-radius: 15;
-                                                  -fx-border-color: rgba(244,63,94,0.18);
-                                                  -fx-border-radius: 15;
-                                                  -fx-border-width: 1;">
-                                    <Label text="◎"
-                                           style="-fx-font-size: 13px; -fx-text-fill: #fb7185;" />
+                                <StackPane styleClass="icon-box-sm, icon-box-rose">
+                                    <Label text="◎" style="-fx-text-fill: #fb7185;"/>
                                 </StackPane>
-                                <Label text="Artists"
-                                       style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #ffffff;" />
+                                <Label text="Artists" styleClass="heading-md"/>
                             </HBox>
 
-                            <ListView fx:id="artistResultsListView"
-                                      prefHeight="220"
-                                      style="-fx-background-color: transparent; -fx-border-color: transparent;" />
+                            <ListView fx:id="artistResultsListView" prefHeight="220"/>
                         </VBox>
 
                     </VBox>
@@ -198,7 +121,7 @@
 
     <!-- ── BOTTOM ─────────────────────────────────── -->
     <bottom>
-        <fx:include source="mini-player.fxml" />
+        <fx:include source="mini-player.fxml"/>
     </bottom>
 
 </BorderPane>

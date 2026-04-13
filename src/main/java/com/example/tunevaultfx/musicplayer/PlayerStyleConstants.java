@@ -24,7 +24,7 @@ public final class PlayerStyleConstants {
     private static final String ROSE_TEXT_ON      = "#f43f5e";
     private static final String ROSE_BORDER_ON    = "rgba(244,63,94,0.26)";
 
-    private static final String NEUTRAL_TEXT      = "#4a4a70";
+    private static final String NEUTRAL_TEXT      = "#5c5c78";
     private static final String NEUTRAL_BG        = "rgba(255,255,255,0.07)";
     private static final String NEUTRAL_BORDER    = "rgba(255,255,255,0.1)";
 
@@ -95,4 +95,17 @@ public final class PlayerStyleConstants {
                 "-fx-font-size: " + fontSize + "; -fx-font-weight: bold;" +
                 "-fx-background-radius: " + radius + ";";
     }
+
+    // ── CSS class names (preferred over inline styles) ─────────────
+
+    public static String modeInactiveClass()  { return "player-btn"; }
+    public static String modeActiveClass()    { return "player-btn-active"; }
+
+    public static String likeOnClass()        { return "player-btn-like-on"; }
+    public static String likeOffClass()       { return "player-btn-like"; }
+
+    public static String queueActiveClass()   { return "player-btn-queue-active"; }
+    public static String queueInactiveClass() { return "player-btn-queue"; }
+
+    public static String addButtonClass()     { return "player-btn"; }
 }

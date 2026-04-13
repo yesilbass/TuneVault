@@ -95,6 +95,7 @@ public class MainMenuController {
     @FXML
     private void handleLogout(ActionEvent event) throws IOException {
         SessionManager.logout();
-        SceneUtil.switchScene((Node) event.getSource(), "login-page.fxml");
+        SceneUtil.clearHistory();
+        SceneUtil.switchSceneNoHistory((Node) event.getSource(), "login-page.fxml");
     }
 }

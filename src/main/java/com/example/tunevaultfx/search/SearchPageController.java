@@ -157,10 +157,7 @@ public class SearchPageController {
                 Button playNextBtn = popupBtn("Play Next");
                 playNextBtn.setOnAction(ev -> { popup.hide(); player.addToQueueNext(song); ev.consume(); });
 
-                Button addToQueueBtn = popupBtn("Add to Queue");
-                addToQueueBtn.setOnAction(ev -> { popup.hide(); player.addToQueue(song); ev.consume(); });
-
-                card.getChildren().addAll(playNextBtn, addToQueueBtn);
+                card.getChildren().addAll(playNextBtn);
                 popup.getContent().add(card);
 
                 javafx.geometry.Bounds b = anchor.localToScreen(anchor.getBoundsInLocal());
@@ -347,7 +344,7 @@ public class SearchPageController {
     }
     @FXML
     private void handleBackToMenu(javafx.event.ActionEvent event) throws IOException {
-        SceneUtil.switchScene((Node) event.getSource(), "main-menu.fxml");
+        SceneUtil.goBack((Node) event.getSource());
     }
 
     // ── Helpers ───────────────────────────────────────────────────

@@ -95,7 +95,7 @@ public class ForgotPasswordPageController {
 
     @FXML
     private void handleBackToLogin(ActionEvent event) throws IOException {
-        SceneUtil.switchScene((Node) event.getSource(), "login-page.fxml");
+        SceneUtil.switchSceneNoHistory((Node) event.getSource(), "login-page.fxml");
     }
 
     private String validateResetInput(String email, String newPassword, String confirmPassword) {
@@ -140,15 +140,16 @@ public class ForgotPasswordPageController {
 
     private void clearStatus() {
         statusLabel.setText("");
+        statusLabel.getStyleClass().clear();
     }
 
     private void showError(String message) {
-        statusLabel.setStyle("-fx-text-fill: #dc2626; -fx-font-size: 12px;");
+        statusLabel.getStyleClass().setAll("status-error");
         statusLabel.setText(message);
     }
 
     private void showSuccess(String message) {
-        statusLabel.setStyle("-fx-text-fill: #16a34a; -fx-font-size: 12px;");
+        statusLabel.getStyleClass().setAll("status-success");
         statusLabel.setText(message);
     }
 }

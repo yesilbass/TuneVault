@@ -97,7 +97,7 @@ public class CreateAccountPageController {
                 return;
             }
 
-            SceneUtil.switchScene((Node) event.getSource(), "login-page.fxml");
+            SceneUtil.switchSceneNoHistory((Node) event.getSource(), "login-page.fxml");
 
         } catch (SQLException e) {
             e.printStackTrace();
@@ -107,7 +107,7 @@ public class CreateAccountPageController {
 
     @FXML
     private void handleBackToLogin(ActionEvent event) throws IOException {
-        SceneUtil.switchScene((Node) event.getSource(), "login-page.fxml");
+        SceneUtil.switchSceneNoHistory((Node) event.getSource(), "login-page.fxml");
     }
 
     private String validateCreateAccountInput(String username,
@@ -163,10 +163,11 @@ public class CreateAccountPageController {
 
     private void clearStatus() {
         statusLabel.setText("");
+        statusLabel.getStyleClass().clear();
     }
 
     private void showError(String message) {
-        statusLabel.setStyle("-fx-text-fill: #dc2626; -fx-font-size: 12px;");
+        statusLabel.getStyleClass().setAll("status-error");
         statusLabel.setText(message);
     }
 }

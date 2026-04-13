@@ -82,7 +82,8 @@ public class LoginPageController {
 
             MusicPlayerController.getInstance().resetForNewSession();
             SessionManager.startSession(user.getUsername());
-            SceneUtil.switchScene((Node) event.getSource(), "main-menu.fxml");
+            SceneUtil.clearHistory();
+            SceneUtil.switchSceneNoHistory((Node) event.getSource(), "main-menu.fxml");
 
         } catch (SQLException e) {
             e.printStackTrace();
@@ -92,12 +93,12 @@ public class LoginPageController {
 
     @FXML
     private void openCreateAccountPage(ActionEvent event) throws IOException {
-        SceneUtil.switchScene((Node) event.getSource(), "create-account-page.fxml");
+        SceneUtil.switchSceneNoHistory((Node) event.getSource(), "create-account-page.fxml");
     }
 
     @FXML
     private void openForgotPasswordPage(ActionEvent event) throws IOException {
-        SceneUtil.switchScene((Node) event.getSource(), "forgot-password-page.fxml");
+        SceneUtil.switchSceneNoHistory((Node) event.getSource(), "forgot-password-page.fxml");
     }
 
     @FXML
@@ -116,10 +117,11 @@ public class LoginPageController {
 
     private void clearStatus() {
         statusLabel.setText("");
+        statusLabel.getStyleClass().clear();
     }
 
     private void showError(String message) {
-        statusLabel.setStyle("-fx-text-fill: #dc2626; -fx-font-size: 12px;");
+        statusLabel.getStyleClass().setAll("status-error");
         statusLabel.setText(message);
     }
 }

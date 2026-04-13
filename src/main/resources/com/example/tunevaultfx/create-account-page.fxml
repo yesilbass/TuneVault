@@ -1,150 +1,92 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<HBox xmlns="http://javafx.com/javafx/21"
-      xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="com.example.tunevaultfx.auth.CreateAccountPageController"
-      prefWidth="920.0"
-      prefHeight="660.0">
+<StackPane xmlns="http://javafx.com/javafx/21"
+           xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="com.example.tunevaultfx.auth.CreateAccountPageController"
+           styleClass="auth-bg"
+           prefWidth="960.0" prefHeight="660.0">
 
-    <!-- ── LEFT: Brand Panel ──────────────────────── -->
-    <VBox prefWidth="340" minWidth="340" maxWidth="340"
-          alignment="CENTER" spacing="28"
-          style="-fx-background-color: linear-gradient(to bottom right, #0c0420, #1a0b3c);
-                 -fx-border-color: transparent rgba(255,255,255,0.07) transparent transparent;
-                 -fx-border-width: 0 1 0 0;
-                 -fx-padding: 48 36 48 36;">
-        <children>
+    <VBox alignment="CENTER" styleClass="auth-card" spacing="24"
+          style="-fx-max-width: 420;">
 
-            <StackPane prefWidth="72" prefHeight="72" maxWidth="72" maxHeight="72"
-                       style="-fx-background-color: rgba(139,92,246,0.18);
-                              -fx-background-radius: 36;
-                              -fx-border-color: rgba(139,92,246,0.35);
-                              -fx-border-radius: 36;
-                              -fx-border-width: 1;">
-                <Label text="♫"
-                       style="-fx-font-size: 32px; -fx-text-fill: #a78bfa;" />
+        <!-- Brand -->
+        <VBox alignment="CENTER" spacing="14">
+            <StackPane styleClass="logo-icon-lg"
+                       prefWidth="72" prefHeight="72" maxWidth="72" maxHeight="72">
+                <Label text="♫" style="-fx-font-size: 34px; -fx-text-fill: white;" />
             </StackPane>
+            <Label text="Create your account" styleClass="auth-brand" />
+            <Label text="It's free and takes under a minute" styleClass="auth-subtitle" />
+        </VBox>
 
-            <VBox spacing="6" alignment="CENTER">
-                <Label text="TuneVault"
-                       style="-fx-font-size: 34px; -fx-font-weight: bold; -fx-text-fill: #ffffff;" />
-                <Label text="Join the community"
-                       style="-fx-font-size: 14px; -fx-text-fill: #7c7c9e;" />
+        <!-- Form fields -->
+        <VBox spacing="14">
+            <VBox spacing="8">
+                <Label text="USERNAME" styleClass="field-label" />
+                <TextField fx:id="usernameField"
+                           promptText="3–30 characters, letters &amp; numbers"
+                           prefHeight="46" />
             </VBox>
 
-            <VBox spacing="14" alignment="CENTER_LEFT"
-                  style="-fx-background-color: rgba(139,92,246,0.08);
-                         -fx-border-color: rgba(139,92,246,0.15);
-                         -fx-border-radius: 14;
-                         -fx-background-radius: 14;
-                         -fx-padding: 18;">
-                <Label text="Password requirements"
-                       style="-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #7c7c9e;" />
-                <VBox spacing="6">
-                    <Label text="✓  At least 8 characters"
-                           style="-fx-font-size: 12px; -fx-text-fill: #a0a0c0;" />
-                    <Label text="✓  One uppercase letter"
-                           style="-fx-font-size: 12px; -fx-text-fill: #a0a0c0;" />
-                    <Label text="✓  One lowercase letter"
-                           style="-fx-font-size: 12px; -fx-text-fill: #a0a0c0;" />
-                    <Label text="✓  One number"
-                           style="-fx-font-size: 12px; -fx-text-fill: #a0a0c0;" />
-                </VBox>
+            <VBox spacing="8">
+                <Label text="EMAIL" styleClass="field-label" />
+                <TextField fx:id="emailField"
+                           promptText="you@example.com"
+                           prefHeight="46" />
             </VBox>
 
-        </children>
+            <VBox spacing="8">
+                <Label text="PASSWORD" styleClass="field-label" />
+                <PasswordField fx:id="passwordField"
+                               promptText="Create a strong password"
+                               prefHeight="46" />
+            </VBox>
+
+            <VBox spacing="8">
+                <Label text="CONFIRM PASSWORD" styleClass="field-label" />
+                <PasswordField fx:id="confirmPasswordField"
+                               promptText="Repeat your password"
+                               prefHeight="46" />
+            </VBox>
+        </VBox>
+
+        <!-- Password requirements -->
+        <VBox styleClass="info-box" spacing="8">
+            <Label text="Password requirements" styleClass="caption" />
+            <HBox spacing="8" alignment="CENTER_LEFT">
+                <StackPane styleClass="bullet-dot,bullet-violet" />
+                <Label text="At least 8 characters" styleClass="body-sm" />
+            </HBox>
+            <HBox spacing="8" alignment="CENTER_LEFT">
+                <StackPane styleClass="bullet-dot,bullet-violet" />
+                <Label text="One uppercase &amp; one lowercase letter" styleClass="body-sm" />
+            </HBox>
+            <HBox spacing="8" alignment="CENTER_LEFT">
+                <StackPane styleClass="bullet-dot,bullet-violet" />
+                <Label text="One number" styleClass="body-sm" />
+            </HBox>
+        </VBox>
+
+        <!-- Actions -->
+        <VBox spacing="10">
+            <Button text="Create Account"
+                    onAction="#handleCreateAccount"
+                    defaultButton="true"
+                    styleClass="btn-primary"
+                    maxWidth="Infinity" prefHeight="46" />
+
+            <Button text="← Back to Login"
+                    onAction="#handleBackToLogin"
+                    cancelButton="true"
+                    styleClass="btn-secondary"
+                    maxWidth="Infinity" prefHeight="46" />
+        </VBox>
+
+        <Label fx:id="statusLabel" text="" wrapText="true"
+               style="-fx-max-width: 380;" />
+
     </VBox>
 
-    <!-- ── RIGHT: Form Panel ──────────────────────── -->
-    <VBox HBox.hgrow="ALWAYS"
-          alignment="CENTER"
-          style="-fx-background-color: #0e0e1a; -fx-padding: 0 52 0 52;">
-        <children>
-
-            <VBox maxWidth="340" spacing="22">
-                <children>
-
-                    <VBox spacing="5">
-                        <Label text="Create your account"
-                               style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #ffffff;" />
-                        <Label text="It's free and takes under a minute"
-                               style="-fx-font-size: 13px; -fx-text-fill: #a0a0c0;" />
-                    </VBox>
-
-                    <VBox spacing="14">
-
-                        <VBox spacing="6">
-                            <Label text="USERNAME"
-                                   style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #a0a0c0;" />
-                            <TextField fx:id="usernameField"
-                                       promptText="3–30 characters, letters &amp; numbers"
-                                       prefHeight="44" />
-                        </VBox>
-
-                        <VBox spacing="6">
-                            <Label text="EMAIL"
-                                   style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #a0a0c0;" />
-                            <TextField fx:id="emailField"
-                                       promptText="you@example.com"
-                                       prefHeight="44" />
-                        </VBox>
-
-                        <VBox spacing="6">
-                            <Label text="PASSWORD"
-                                   style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #a0a0c0;" />
-                            <PasswordField fx:id="passwordField"
-                                           promptText="Create a strong password"
-                                           prefHeight="44" />
-                        </VBox>
-
-                        <VBox spacing="6">
-                            <Label text="CONFIRM PASSWORD"
-                                   style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #a0a0c0;" />
-                            <PasswordField fx:id="confirmPasswordField"
-                                           promptText="Repeat your password"
-                                           prefHeight="44" />
-                        </VBox>
-
-                    </VBox>
-
-                    <VBox spacing="10">
-                        <Button text="Create Account"
-                                onAction="#handleCreateAccount"
-                                defaultButton="true"
-                                maxWidth="Infinity"
-                                prefHeight="46"
-                                style="-fx-background-color: #8b5cf6;
-                                       -fx-text-fill: white;
-                                       -fx-font-size: 15px;
-                                       -fx-font-weight: bold;
-                                       -fx-background-radius: 13;
-                                       -fx-effect: dropshadow(gaussian, rgba(139,92,246,0.38), 12, 0, 0, 4);" />
-
-                        <Button text="← Back to Login"
-                                onAction="#handleBackToLogin"
-                                cancelButton="true"
-                                maxWidth="Infinity"
-                                prefHeight="42"
-                                style="-fx-background-color: rgba(255,255,255,0.06);
-                                       -fx-text-fill: #94a3b8;
-                                       -fx-font-size: 14px;
-                                       -fx-font-weight: bold;
-                                       -fx-background-radius: 13;" />
-                    </VBox>
-
-                    <Label fx:id="statusLabel"
-                           text=""
-                           wrapText="true"
-                           maxWidth="340"
-                           style="-fx-text-fill: #f87171; -fx-font-size: 13px;" />
-
-                </children>
-            </VBox>
-
-        </children>
-    </VBox>
-
-</HBox>
+</StackPane>

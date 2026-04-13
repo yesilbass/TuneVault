@@ -1,31 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import java.lang.String?>
 
 <BorderPane xmlns="http://javafx.com/javafx/21"
             xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="com.example.tunevaultfx.wrapped.WrappedPageController"
             prefWidth="1280.0" prefHeight="820.0"
             minWidth="1180.0" minHeight="780.0"
-            style="-fx-background-color: #09090f;">
+            styleClass="page-bg">
 
     <top>
-        <HBox alignment="CENTER_LEFT" spacing="12"
-              style="-fx-padding: 22 32 18 32;
-                     -fx-border-color: transparent transparent rgba(255,255,255,0.07) transparent;
-                     -fx-border-width: 0 0 1 0;">
-            <Button text="← Menu" onAction="#handleBackToMenu"
-                    prefWidth="110" prefHeight="38"
-                    style="-fx-background-color: rgba(255,255,255,0.07);
-                           -fx-text-fill: #a0a0c0; -fx-font-size: 13px; -fx-font-weight: bold;
-                           -fx-background-radius: 19;
-                           -fx-border-color: rgba(255,255,255,0.1);
-                           -fx-border-radius: 19; -fx-border-width: 1;" />
+        <HBox alignment="CENTER_LEFT" spacing="12" styleClass="page-header">
+            <Button text="← Back" onAction="#handleBackToMenu" styleClass="btn-nav" />
             <StackPane HBox.hgrow="ALWAYS" alignment="CENTER">
                 <HBox alignment="CENTER" spacing="10">
                     <Label text="📊" style="-fx-font-size: 22px;" />
-                    <Label text="Wrapped"
-                           style="-fx-text-fill: #f2f2fa; -fx-font-size: 26px; -fx-font-weight: bold;" />
+                    <Label text="Wrapped" styleClass="heading-xl" />
                 </HBox>
             </StackPane>
             <Region prefWidth="110" />
@@ -33,33 +25,23 @@
     </top>
 
     <center>
-        <ScrollPane fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED"
-                    style="-fx-background: transparent; -fx-background-color: transparent;">
+        <ScrollPane fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED">
             <content>
-                <VBox fx:id="wrappedContent" spacing="18" style="-fx-padding: 22 32 28 32;">
+                <VBox fx:id="wrappedContent" spacing="18" styleClass="page-content">
 
                     <!-- Header: title + range toggle -->
                     <HBox alignment="CENTER_LEFT" spacing="16">
                         <VBox spacing="4" HBox.hgrow="ALWAYS">
-                            <Label text="Your Listening Summary"
-                                   style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #f2f2fa;" />
-                            <Label fx:id="rangeTitleLabel" text="Today"
-                                   style="-fx-font-size: 14px; -fx-text-fill: #a0a0c0;" />
+                            <Label text="Your Listening Summary" styleClass="heading-xl" />
+                            <Label fx:id="rangeTitleLabel" text="Today" styleClass="body-sm" />
                         </VBox>
                         <HBox spacing="8" alignment="CENTER">
                             <Button fx:id="todayButton" text="Today" onAction="#handleShowToday"
                                     prefWidth="96" prefHeight="36"
-                                    style="-fx-background-color: #8b5cf6; -fx-text-fill: white;
-                                           -fx-font-size: 13px; -fx-font-weight: bold;
-                                           -fx-background-radius: 18;" />
+                                    styleClass="btn-toggle-active" />
                             <Button fx:id="overallButton" text="Overall" onAction="#handleShowOverall"
                                     prefWidth="96" prefHeight="36"
-                                    style="-fx-background-color: rgba(255,255,255,0.07);
-                                           -fx-text-fill: #a0a0c0;
-                                           -fx-font-size: 13px; -fx-font-weight: bold;
-                                           -fx-background-radius: 18;
-                                           -fx-border-color: rgba(255,255,255,0.1);
-                                           -fx-border-radius: 18; -fx-border-width: 1;" />
+                                    styleClass="btn-toggle-inactive" />
                         </HBox>
                     </HBox>
 
@@ -73,134 +55,111 @@
 
                             <!-- Top Song -->
                             <VBox fx:id="topSongCard" spacing="12"
-                                  style="-fx-background-color: #0f0f1e;
-                                         -fx-background-radius: 22;
-                                         -fx-border-color: rgba(139,92,246,0.18);
-                                         -fx-border-radius: 22; -fx-border-width: 1;
-                                         -fx-padding: 24;
-                                         -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.45),16,0,0,4);"
                                   GridPane.columnIndex="0" GridPane.rowIndex="0">
+                                <styleClass>
+                                    <String fx:value="card" />
+                                    <String fx:value="card-violet" />
+                                </styleClass>
                                 <HBox spacing="10" alignment="CENTER_LEFT">
-                                    <StackPane prefWidth="36" prefHeight="36"
-                                               style="-fx-background-color: rgba(139,92,246,0.18);
-                                                      -fx-background-radius: 12;
-                                                      -fx-border-color: rgba(139,92,246,0.28);
-                                                      -fx-border-radius: 12; -fx-border-width: 1;">
+                                    <StackPane>
+                                        <styleClass>
+                                            <String fx:value="icon-box-sm" />
+                                            <String fx:value="icon-box-violet" />
+                                        </styleClass>
                                         <Label text="♫" style="-fx-font-size: 15px; -fx-text-fill: #c4b5fd;" />
                                     </StackPane>
-                                    <Label text="Top Song"
-                                           style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #a0a0c0;" />
+                                    <Label text="Top Song" styleClass="body-sm" />
                                 </HBox>
                                 <Label fx:id="topSongLabel" text="-" wrapText="true" maxWidth="460"
-                                       style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #f2f2fa;" />
+                                       styleClass="heading-lg" />
                                 <Label fx:id="topSongArtistLabel" text="" wrapText="true" maxWidth="460"
                                        managed="false" visible="false"
-                                       style="-fx-font-size: 14px; -fx-text-fill: #a0a0c0;" />
+                                       styleClass="body-sm" />
                                 <ProgressBar fx:id="songBar" maxWidth="Infinity" prefHeight="6" />
                             </VBox>
 
                             <!-- Top Artist -->
                             <VBox fx:id="topArtistCard" spacing="12"
-                                  style="-fx-background-color: #0f0f1e;
-                                         -fx-background-radius: 22;
-                                         -fx-border-color: rgba(244,63,94,0.18);
-                                         -fx-border-radius: 22; -fx-border-width: 1;
-                                         -fx-padding: 24;
-                                         -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.45),16,0,0,4);"
                                   GridPane.columnIndex="1" GridPane.rowIndex="0">
+                                <styleClass>
+                                    <String fx:value="card" />
+                                    <String fx:value="card-rose" />
+                                </styleClass>
                                 <HBox spacing="10" alignment="CENTER_LEFT">
-                                    <StackPane prefWidth="36" prefHeight="36"
-                                               style="-fx-background-color: rgba(244,63,94,0.15);
-                                                      -fx-background-radius: 12;
-                                                      -fx-border-color: rgba(244,63,94,0.25);
-                                                      -fx-border-radius: 12; -fx-border-width: 1;">
+                                    <StackPane>
+                                        <styleClass>
+                                            <String fx:value="icon-box-sm" />
+                                            <String fx:value="icon-box-rose" />
+                                        </styleClass>
                                         <Label text="◎" style="-fx-font-size: 15px; -fx-text-fill: #fda4af;" />
                                     </StackPane>
-                                    <Label text="Top Artist"
-                                           style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #a0a0c0;" />
+                                    <Label text="Top Artist" styleClass="body-sm" />
                                 </HBox>
                                 <Label fx:id="topArtistLabel" text="-" wrapText="true" maxWidth="460"
-                                       style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #f2f2fa;" />
+                                       styleClass="heading-lg" />
                                 <Label fx:id="topArtistTopSongLabel" text="" wrapText="true" maxWidth="460"
                                        managed="false" visible="false"
-                                       style="-fx-font-size: 14px; -fx-text-fill: #a0a0c0;" />
+                                       styleClass="body-sm" />
                                 <ProgressBar fx:id="artistBar" maxWidth="Infinity" prefHeight="6" />
                             </VBox>
 
                             <!-- Favorite Genre -->
                             <VBox fx:id="genreCard" spacing="12"
-                                  style="-fx-background-color: #0f0f1e;
-                                         -fx-background-radius: 22;
-                                         -fx-border-color: rgba(20,184,166,0.18);
-                                         -fx-border-radius: 22; -fx-border-width: 1;
-                                         -fx-padding: 24;
-                                         -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.45),16,0,0,4);"
                                   GridPane.columnIndex="0" GridPane.rowIndex="1">
+                                <styleClass>
+                                    <String fx:value="card" />
+                                    <String fx:value="card-teal" />
+                                </styleClass>
                                 <HBox spacing="10" alignment="CENTER_LEFT">
-                                    <StackPane prefWidth="36" prefHeight="36"
-                                               style="-fx-background-color: rgba(20,184,166,0.15);
-                                                      -fx-background-radius: 12;
-                                                      -fx-border-color: rgba(20,184,166,0.25);
-                                                      -fx-border-radius: 12; -fx-border-width: 1;">
+                                    <StackPane>
+                                        <styleClass>
+                                            <String fx:value="icon-box-sm" />
+                                            <String fx:value="icon-box-teal" />
+                                        </styleClass>
                                         <Label text="🎵" style="-fx-font-size: 15px;" />
                                     </StackPane>
-                                    <Label text="Favorite Genre"
-                                           style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #a0a0c0;" />
+                                    <Label text="Favorite Genre" styleClass="body-sm" />
                                 </HBox>
                                 <Label fx:id="favoriteGenreLabel" text="-" wrapText="true" maxWidth="460"
-                                       style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #f2f2fa;" />
+                                       styleClass="heading-lg" />
                                 <ProgressBar fx:id="genreBar" maxWidth="Infinity" prefHeight="6" />
                             </VBox>
 
                             <!-- Total Listening Time — accent card -->
                             <VBox fx:id="timeCard" spacing="10" alignment="CENTER_LEFT"
-                                  style="-fx-background-color: linear-gradient(to bottom right, #1a0b3c, #0f0f1e);
-                                         -fx-background-radius: 22;
-                                         -fx-border-color: rgba(139,92,246,0.3);
-                                         -fx-border-radius: 22; -fx-border-width: 1;
-                                         -fx-padding: 24;
-                                         -fx-effect: dropshadow(gaussian,rgba(139,92,246,0.25),20,0,0,4);"
-                                  GridPane.columnIndex="1" GridPane.rowIndex="1">
+                                  GridPane.columnIndex="1" GridPane.rowIndex="1"
+                                  styleClass="card-time-gradient">
                                 <HBox spacing="10" alignment="CENTER_LEFT">
-                                    <StackPane prefWidth="36" prefHeight="36"
-                                               style="-fx-background-color: rgba(249,115,22,0.15);
-                                                      -fx-background-radius: 12;
-                                                      -fx-border-color: rgba(249,115,22,0.25);
-                                                      -fx-border-radius: 12; -fx-border-width: 1;">
+                                    <StackPane>
+                                        <styleClass>
+                                            <String fx:value="icon-box-sm" />
+                                            <String fx:value="icon-box-orange" />
+                                        </styleClass>
                                         <Label text="⏱" style="-fx-font-size: 15px;" />
                                     </StackPane>
-                                    <Label text="Total Listening Time"
-                                           style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #a0a0c0;" />
+                                    <Label text="Total Listening Time" styleClass="body-sm" />
                                 </HBox>
-                                <Label fx:id="totalMinutesLabel" text="-"
-                                       style="-fx-font-size: 46px; -fx-font-weight: bold; -fx-text-fill: #c4b5fd;" />
-                                <Label text="time listened"
-                                       style="-fx-font-size: 14px; -fx-text-fill: #a0a0c0;" />
+                                <Label fx:id="totalMinutesLabel" text="-" styleClass="stat-number" />
+                                <Label text="time listened" styleClass="body-sm" />
                             </VBox>
 
                         </children>
                     </GridPane>
 
                     <!-- Summary card -->
-                    <VBox fx:id="summaryCard" spacing="14"
-                          style="-fx-background-color: #0f0f1e;
-                                 -fx-background-radius: 22;
-                                 -fx-border-color: rgba(255,255,255,0.08);
-                                 -fx-border-radius: 22; -fx-border-width: 1;
-                                 -fx-padding: 24;">
+                    <VBox fx:id="summaryCard" spacing="14" styleClass="card">
                         <HBox spacing="10" alignment="CENTER_LEFT">
-                            <StackPane prefWidth="32" prefHeight="32"
-                                       style="-fx-background-color: rgba(139,92,246,0.14);
-                                              -fx-background-radius: 10;
-                                              -fx-border-color: rgba(139,92,246,0.22);
-                                              -fx-border-radius: 10; -fx-border-width: 1;">
+                            <StackPane>
+                                <styleClass>
+                                    <String fx:value="icon-box-sm" />
+                                    <String fx:value="icon-box-violet" />
+                                </styleClass>
                                 <Label text="✦" style="-fx-font-size: 12px; -fx-text-fill: #c4b5fd;" />
                             </StackPane>
-                            <Label text="Summary"
-                                   style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #a0a0c0;" />
+                            <Label text="Summary" styleClass="heading-md" />
                         </HBox>
                         <Label fx:id="summaryLabel" text="-" wrapText="true" maxWidth="1100"
-                               style="-fx-font-size: 16px; -fx-text-fill: #c8c8e0; -fx-line-spacing: 3px;" />
+                               styleClass="body" />
                     </VBox>
 
                 </VBox>
