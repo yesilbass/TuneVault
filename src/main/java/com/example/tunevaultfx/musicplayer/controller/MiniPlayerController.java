@@ -1,5 +1,6 @@
 package com.example.tunevaultfx.musicplayer.controller;
 
+import com.example.tunevaultfx.musicplayer.PlayerStyleConstants;
 import com.example.tunevaultfx.playlist.service.PlaylistPickerService;
 import com.example.tunevaultfx.session.SessionManager;
 import com.example.tunevaultfx.util.SceneUtil;
@@ -14,14 +15,16 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
-import javafx.scene.input.MouseEvent;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.StackPane;
 
 import java.io.IOException;
 
 /**
- * Controls the shared mini-player bar shown across all pages.
- * All button styles use the dark theme palette — no light gray backgrounds.
+ * Controls the shared mini-player bar shown at the bottom of every page.
+ *
+ * Style constants live in PlayerStyleConstants — change them there to
+ * re-theme the entire player in one edit.
  */
 public class MiniPlayerController {
 
@@ -38,53 +41,13 @@ public class MiniPlayerController {
 
     @FXML private Slider miniProgressSlider;
 
-    private final MusicPlayerController   player            = MusicPlayerController.getInstance();
-    private final PlaylistPickerService   addToPlaylistDialog = new PlaylistPickerService();
+    private final MusicPlayerController player              = MusicPlayerController.getInstance();
+    private final PlaylistPickerService addToPlaylistDialog = new PlaylistPickerService();
 
-    // ─────────────────────────────────────────────────────────────
-    // Styles (dark theme)
-    // ─────────────────────────────────────────────────────────────
-
-    private static final String BTN_INACTIVE =
-            "-fx-background-color: transparent;" +
-                    "-fx-text-fill: #3d3d5c;" +
-                    "-fx-font-size: 18px;" +
-                    "-fx-font-weight: bold;" +
-                    "-fx-background-radius: 18;";
-
-    private static final String BTN_MODE_ACTIVE =
-            "-fx-background-color: rgba(139,92,246,0.18);" +
-                    "-fx-text-fill: #a78bfa;" +
-                    "-fx-font-size: 18px;" +
-                    "-fx-font-weight: bold;" +
-                    "-fx-background-radius: 18;" +
-                    "-fx-border-color: rgba(139,92,246,0.28);" +
-                    "-fx-border-radius: 18;" +
-                    "-fx-border-width: 1;";
-
-    private static final String BTN_LIKE_ON =
-            "-fx-background-color: rgba(244,63,94,0.15);" +
-                    "-fx-text-fill: #f43f5e;" +
-                    "-fx-font-size: 18px;" +
-                    "-fx-font-weight: bold;" +
-                    "-fx-background-radius: 18;" +
-                    "-fx-border-color: rgba(244,63,94,0.22);" +
-                    "-fx-border-radius: 18;" +
-                    "-fx-border-width: 1;";
-
-    private static final String BTN_LIKE_OFF =
-            "-fx-background-color: transparent;" +
-                    "-fx-text-fill: #3d3d5c;" +
-                    "-fx-font-size: 18px;" +
-                    "-fx-font-weight: bold;" +
-                    "-fx-background-radius: 18;";
-
-    private static final String BTN_ADD =
-            "-fx-background-color: transparent;" +
-                    "-fx-text-fill: #3d3d5c;" +
-                    "-fx-font-size: 20px;" +
-                    "-fx-font-weight: bold;" +
-                    "-fx-background-radius: 18;";
+    // Size tokens for this controller's buttons (smaller than expanded player)
+    private static final String FS   = "17px";
+    private static final String FS_S = "19px";   // slightly bigger for loop symbol
+    private static final String R    = PlayerStyleConstants.RADIUS_MINI;
 
     // ─────────────────────────────────────────────────────────────
 
@@ -94,45 +57,43 @@ public class MiniPlayerController {
         miniArtistLink.textProperty().bind(player.currentArtistProperty());
 
         miniPlayPauseButton.textProperty().bind(
-                Bindings.when(player.playingProperty()).then("⏸").otherwise("▶")
-        );
+                Bindings.when(player.playingProperty()).then("⏸").otherwise("▶"));
 
-        miniProgressSlider.setOnMouseReleased(e -> player.seek((int) miniProgressSlider.getValue()));
-        miniProgressSlider.valueChangingProperty().addListener((obs, wasChanging, isChanging) -> {
+        miniProgressSlider.setOnMouseReleased(e ->
+                player.seek((int) miniProgressSlider.getValue()));
+        miniProgressSlider.valueChangingProperty().addListener((obs, was, isChanging) -> {
             if (!isChanging) player.seek((int) miniProgressSlider.getValue());
         });
 
         player.currentSongProperty().addListener((obs, o, n) -> {
-            updateMiniLikeButton();
-            updateMiniTime();
-            updateMiniPlaylistLink();
-            updateMiniAddButton();
+            refreshLikeButton();
+            refreshTime();
+            refreshPlaylistLink();
+            refreshAddButton();
         });
+        player.currentSecondProperty().addListener((obs, o, n)   -> refreshTime());
+        player.currentDurationProperty().addListener((obs, o, n) -> refreshTime());
+        player.currentSourcePlaylistNameProperty().addListener((obs, o, n) -> refreshPlaylistLink());
+        player.shuffleEnabledProperty().addListener((obs, o, n) -> refreshModeButtons());
+        player.loopEnabledProperty().addListener((obs, o, n)    -> refreshModeButtons());
+        player.currentSongLikedProperty().addListener((obs, o, n) -> refreshLikeButton());
 
-        player.currentSecondProperty().addListener((obs, o, n)   -> updateMiniTime());
-        player.currentDurationProperty().addListener((obs, o, n) -> updateMiniTime());
-        player.currentSourcePlaylistNameProperty().addListener((obs, o, n) -> updateMiniPlaylistLink());
-
-        player.shuffleEnabledProperty().addListener((obs, o, n) -> updateMiniModeButtons());
-        player.loopEnabledProperty().addListener((obs, o, n)    -> updateMiniModeButtons());
-        player.currentSongLikedProperty().addListener((obs, o, n) -> updateMiniLikeButton());
-
-        updateMiniLikeButton();
-        updateMiniTime();
-        updateMiniPlaylistLink();
-        updateMiniModeButtons();
-        updateMiniAddButton();
+        refreshLikeButton();
+        refreshTime();
+        refreshPlaylistLink();
+        refreshModeButtons();
+        refreshAddButton();
     }
 
-    // ─── Button handlers ─────────────────────────────────────────
+    // ── Handlers ──────────────────────────────────────────────────
 
-    @FXML private void handleMiniPrevious()       { player.previous();          updateMiniLikeButton(); updateMiniAddButton(); }
-    @FXML private void handleMiniPlayPause()      { player.togglePlayPause(); }
-    @FXML private void handleMiniNext()           { player.next();              updateMiniLikeButton(); updateMiniAddButton(); }
-    @FXML private void handleMiniLike()           { player.toggleLikeCurrentSong(); updateMiniLikeButton(); }
-    @FXML private void handleMiniShuffle()        { player.toggleShuffle();     updateMiniModeButtons(); }
-    @FXML private void handleMiniLoop()           { player.toggleLoop();        updateMiniModeButtons(); }
-    @FXML private void handleMiniAddToPlaylist()  { addToPlaylistDialog.show(player.getCurrentSong()); updateMiniAddButton(); }
+    @FXML private void handleMiniPrevious()      { player.previous();              refreshLikeButton(); refreshAddButton(); }
+    @FXML private void handleMiniPlayPause()     { player.togglePlayPause(); }
+    @FXML private void handleMiniNext()          { player.next();                  refreshLikeButton(); refreshAddButton(); }
+    @FXML private void handleMiniLike()          { player.toggleLikeCurrentSong(); refreshLikeButton(); }
+    @FXML private void handleMiniShuffle()       { player.toggleShuffle();         refreshModeButtons(); }
+    @FXML private void handleMiniLoop()          { player.toggleLoop();            refreshModeButtons(); }
+    @FXML private void handleMiniAddToPlaylist() { addToPlaylistDialog.show(player.getCurrentSong()); refreshAddButton(); }
 
     @FXML
     private void handleOpenArtistProfile(ActionEvent event) throws IOException {
@@ -144,9 +105,9 @@ public class MiniPlayerController {
 
     @FXML
     private void handleOpenCurrentPlaylist(ActionEvent event) throws IOException {
-        String playlistName = player.getCurrentSourcePlaylistName();
-        if (playlistName == null || playlistName.isBlank()) return;
-        SessionManager.requestPlaylistToOpen(playlistName);
+        String name = player.getCurrentSourcePlaylistName();
+        if (name == null || name.isBlank()) return;
+        SessionManager.requestPlaylistToOpen(name);
         SceneUtil.switchScene((Node) event.getSource(), "playlists-page.fxml");
     }
 
@@ -157,9 +118,9 @@ public class MiniPlayerController {
         player.setExpandedPlayerVisible(true);
     }
 
-    // ─── UI update helpers ────────────────────────────────────────
+    // ── UI refresh helpers ─────────────────────────────────────────
 
-    private void updateMiniPlaylistLink() {
+    private void refreshPlaylistLink() {
         String name = player.getCurrentSourcePlaylistName();
         if (name == null || name.isBlank()) {
             miniPlaylistLink.setText("");
@@ -172,58 +133,59 @@ public class MiniPlayerController {
         }
     }
 
-    private void updateMiniLikeButton() {
+    private void refreshLikeButton() {
         boolean liked = player.isCurrentSongLiked();
         miniLikeButton.setText(liked ? "♥" : "♡");
-        miniLikeButton.setStyle(liked ? BTN_LIKE_ON : BTN_LIKE_OFF);
+        miniLikeButton.setStyle(liked
+                ? PlayerStyleConstants.likeOn(FS, R)
+                : PlayerStyleConstants.likeOff(FS, R));
     }
 
-    private void updateMiniAddButton() {
-        boolean hasSong = player.getCurrentSong() != null;
-        miniAddButton.setDisable(!hasSong);
-        miniAddButton.setStyle(BTN_ADD);
+    private void refreshAddButton() {
+        miniAddButton.setDisable(player.getCurrentSong() == null);
+        miniAddButton.setStyle(PlayerStyleConstants.addButton("20px", R));
     }
 
-    private void updateMiniModeButtons() {
-        // ⇄ is a plain Unicode arrow — renders cleanly in JavaFX (unlike 🔀 emoji)
+    private void refreshModeButtons() {
         miniShuffleButton.setText("⇄");
         miniLoopButton.setText("↻");
-
-        miniShuffleButton.setStyle(player.isShuffleEnabled() ? BTN_MODE_ACTIVE : BTN_INACTIVE);
-        miniLoopButton.setStyle(player.isLoopEnabled()       ? BTN_MODE_ACTIVE : BTN_INACTIVE);
+        miniShuffleButton.setStyle(player.isShuffleEnabled()
+                ? PlayerStyleConstants.modeActive(FS, R)
+                : PlayerStyleConstants.modeInactive(FS, R));
+        miniLoopButton.setStyle(player.isLoopEnabled()
+                ? PlayerStyleConstants.modeActive(FS_S, R)
+                : PlayerStyleConstants.modeInactive(FS_S, R));
     }
 
-    private void updateMiniTime() {
+    private void refreshTime() {
         int current = player.currentSecondProperty().get();
         int total   = player.currentDurationProperty().get();
-
         miniProgressSlider.setMax(Math.max(total, 1));
         miniProgressSlider.setValue(current);
         miniTimeLabel.setText(formatTime(current) + " / " + formatTime(total));
     }
 
-    // ─── Expanded player overlay ──────────────────────────────────
+    // ── Expanded player overlay ────────────────────────────────────
 
-    private void ensureExpandedPlayerAttached(Node sourceNode) {
-        Scene scene = sourceNode.getScene();
+    private void ensureExpandedPlayerAttached(Node source) {
+        Scene scene = source.getScene();
         if (scene == null) return;
 
-        Parent currentRoot = scene.getRoot();
-        if (currentRoot.lookup("#expandedPlayerOverlay") != null) return;
+        Parent root = scene.getRoot();
+        if (root.lookup("#expandedPlayerOverlay") != null) return;
 
         try {
             FXMLLoader loader = new FXMLLoader(
                     getClass().getResource("/com/example/tunevaultfx/expanded-page.fxml"));
             Parent overlay = loader.load();
 
-            javafx.scene.layout.StackPane wrapper = new javafx.scene.layout.StackPane();
-            wrapper.getChildren().addAll(currentRoot, overlay);
+            StackPane wrapper = new StackPane();
+            wrapper.getChildren().addAll(root, overlay);
             scene.setRoot(wrapper);
 
             scene.setOnKeyPressed(e -> {
-                if (e.getCode() == javafx.scene.input.KeyCode.ESCAPE) {
+                if (e.getCode() == KeyCode.ESCAPE)
                     player.setExpandedPlayerVisible(false);
-                }
             });
         } catch (IOException e) {
             e.printStackTrace();
@@ -231,8 +193,6 @@ public class MiniPlayerController {
     }
 
     private String formatTime(int totalSeconds) {
-        int m = totalSeconds / 60;
-        int s = totalSeconds % 60;
-        return m + ":" + String.format("%02d", s);
+        return (totalSeconds / 60) + ":" + String.format("%02d", totalSeconds % 60);
     }
 }

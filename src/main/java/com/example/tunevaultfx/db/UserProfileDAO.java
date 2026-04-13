@@ -5,302 +5,105 @@ import com.example.tunevaultfx.user.UserProfile;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Loads and updates a user's music data from the database.
- * Uses targeted database operations instead of deleting and recreating everything.
+ * Loads a user's full profile from the database and delegates all
+ * playlist / song mutations to PlaylistDAO and PlaylistSongDAO.
+ *
+ * Reduced from 300 lines to ~100 lines by extracting two focused DAOs.
  */
 public class UserProfileDAO {
 
+    private final PlaylistDAO    playlistDAO    = new PlaylistDAO();
+    private final PlaylistSongDAO playlistSongDAO = new PlaylistSongDAO();
+
+    // ── Profile loading ────────────────────────────────────────────
+
+    /**
+     * Loads the complete UserProfile (all playlists + songs) for a user.
+     * Guaranteed to always contain "Liked Songs", even if empty.
+     */
     public UserProfile loadProfile(String username) throws SQLException {
-        Integer userId = findUserIdByUsername(username);
-        if (userId == null) {
-            return new UserProfile(username);
-        }
+        Integer userId = playlistDAO.findUserIdByUsername(username);
+        if (userId == null) return new UserProfile(username);
 
-        UserProfile profile = new UserProfile(username);
-        profile.getPlaylists().clear();
-
-        ensureLikedSongsPlaylistExists(userId);
+        playlistDAO.ensureLikedSongsPlaylistExists(userId);
 
         String sql = """
-    SELECT p.playlist_id,
-           p.name AS playlist_name,
-           p.is_system_playlist,
-           s.song_id,
-           s.title,
-           COALESCE(a.name, '') AS artist_name,
-           '' AS album_name,
-           COALESCE(g.genre_name, '') AS genre_name,
-           COALESCE(s.duration_seconds, 0) AS duration_seconds
-    FROM playlist p
-    LEFT JOIN playlist_song ps ON ps.playlist_id = p.playlist_id
-    LEFT JOIN song s ON s.song_id = ps.song_id
-    LEFT JOIN artist a ON a.artist_id = s.artist_id
-    LEFT JOIN genre g ON g.genre_id = s.genre_id
-    WHERE p.user_id = ?
-    ORDER BY p.is_system_playlist DESC, p.playlist_id, ps.song_id
-""";
+                SELECT p.name AS playlist_name,
+                       s.song_id,
+                       s.title,
+                       COALESCE(a.name, '')           AS artist_name,
+                       ''                             AS album_name,
+                       COALESCE(g.genre_name, '')     AS genre_name,
+                       COALESCE(s.duration_seconds,0) AS duration_seconds
+                FROM playlist p
+                LEFT JOIN playlist_song ps ON ps.playlist_id = p.playlist_id
+                LEFT JOIN song          s  ON s.song_id      = ps.song_id
+                LEFT JOIN artist        a  ON a.artist_id    = s.artist_id
+                LEFT JOIN genre         g  ON g.genre_id     = s.genre_id
+                WHERE p.user_id = ?
+                ORDER BY p.is_system_playlist DESC, p.playlist_id, ps.song_id
+                """;
 
-        Map<String, ObservableList<Song>> loadedPlaylists = new LinkedHashMap<>();
+        Map<String, ObservableList<Song>> loaded = new LinkedHashMap<>();
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-
             stmt.setInt(1, userId);
-
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
-                    String playlistName = rs.getString("playlist_name");
-                    loadedPlaylists.computeIfAbsent(playlistName, k -> FXCollections.observableArrayList());
+                    String name = rs.getString("playlist_name");
+                    loaded.computeIfAbsent(name, k -> FXCollections.observableArrayList());
 
-                    Object songIdObj = rs.getObject("song_id");
-                    if (songIdObj != null) {
-                        loadedPlaylists.get(playlistName).add(new Song(
+                    if (rs.getObject("song_id") != null) {
+                        loaded.get(name).add(new Song(
                                 rs.getInt("song_id"),
                                 rs.getString("title"),
                                 rs.getString("artist_name"),
                                 rs.getString("album_name"),
                                 rs.getString("genre_name"),
-                                rs.getInt("duration_seconds")
-                        ));
+                                rs.getInt("duration_seconds")));
                     }
                 }
             }
         }
 
-        if (!loadedPlaylists.containsKey("Liked Songs")) {
-            loadedPlaylists.put("Liked Songs", FXCollections.observableArrayList());
-        }
+        // Always guarantee Liked Songs is present
+        loaded.putIfAbsent("Liked Songs", FXCollections.observableArrayList());
 
-        profile.getPlaylists().putAll(loadedPlaylists);
+        UserProfile profile = new UserProfile(username);
+        profile.getPlaylists().clear();
+        profile.getPlaylists().putAll(loaded);
         return profile;
     }
 
+    // ── Delegating operations ──────────────────────────────────────
+    // Public API stays identical to before — callers (PlaylistService etc.)
+    // do not need to change.
+
     public boolean createPlaylist(String username, String playlistName) throws SQLException {
-        Integer userId = findUserIdByUsername(username);
-        if (userId == null || playlistName == null || playlistName.isBlank()) {
-            return false;
-        }
-
-        if (playlistExists(userId, playlistName)) {
-            return false;
-        }
-
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(
-                     "INSERT INTO playlist (user_id, name, is_system_playlist) VALUES (?, ?, FALSE)")) {
-            stmt.setInt(1, userId);
-            stmt.setString(2, playlistName);
-            return stmt.executeUpdate() == 1;
-        }
+        return playlistDAO.createPlaylist(username, playlistName);
     }
 
     public boolean deletePlaylist(String username, String playlistName) throws SQLException {
-        Integer userId = findUserIdByUsername(username);
-        if (userId == null) {
-            return false;
-        }
-
-        Integer playlistId = findPlaylistId(userId, playlistName);
-        if (playlistId == null) {
-            return false;
-        }
-
-        if (isSystemPlaylist(playlistId)) {
-            return false;
-        }
-
-        try (Connection conn = DBConnection.getConnection()) {
-            conn.setAutoCommit(false);
-
-            try {
-                try (PreparedStatement stmt = conn.prepareStatement(
-                        "DELETE FROM playlist_song WHERE playlist_id = ?")) {
-                    stmt.setInt(1, playlistId);
-                    stmt.executeUpdate();
-                }
-
-                try (PreparedStatement stmt = conn.prepareStatement(
-                        "DELETE FROM playlist WHERE playlist_id = ?")) {
-                    stmt.setInt(1, playlistId);
-                    int deleted = stmt.executeUpdate();
-                    conn.commit();
-                    return deleted == 1;
-                }
-            } catch (SQLException e) {
-                conn.rollback();
-                throw e;
-            } finally {
-                conn.setAutoCommit(true);
-            }
-        }
+        return playlistDAO.deletePlaylist(username, playlistName);
     }
 
-    public boolean addSongToPlaylist(String username, String playlistName, Song song) throws SQLException {
-        Integer userId = findUserIdByUsername(username);
-        if (userId == null || song == null || song.songId() <= 0) {
-            return false;
-        }
-
-        Integer playlistId = findPlaylistId(userId, playlistName);
-        if (playlistId == null) {
-            return false;
-        }
-
-        if (playlistContainsSong(playlistId, song.songId())) {
-            return false;
-        }
-
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(
-                     "INSERT INTO playlist_song (playlist_id, song_id) VALUES (?, ?)")) {
-            stmt.setInt(1, playlistId);
-            stmt.setInt(2, song.songId());
-            return stmt.executeUpdate() == 1;
-        }
+    public boolean addSongToPlaylist(String username, String playlistName, Song song)
+            throws SQLException {
+        return playlistSongDAO.addSong(username, playlistName, song);
     }
 
-    public boolean removeSongFromPlaylist(String username, String playlistName, Song song) throws SQLException {
-        Integer userId = findUserIdByUsername(username);
-        if (userId == null || song == null || song.songId() <= 0) {
-            return false;
-        }
-
-        Integer playlistId = findPlaylistId(userId, playlistName);
-        if (playlistId == null) {
-            return false;
-        }
-
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(
-                     "DELETE FROM playlist_song WHERE playlist_id = ? AND song_id = ?")) {
-            stmt.setInt(1, playlistId);
-            stmt.setInt(2, song.songId());
-            return stmt.executeUpdate() > 0;
-        }
+    public boolean removeSongFromPlaylist(String username, String playlistName, Song song)
+            throws SQLException {
+        return playlistSongDAO.removeSong(username, playlistName, song);
     }
 
     public void toggleLike(String username, Song song) throws SQLException {
-        if (song == null || song.songId() <= 0) {
-            return;
-        }
-
-        Integer userId = findUserIdByUsername(username);
-        if (userId == null) {
-            return;
-        }
-
-        ensureLikedSongsPlaylistExists(userId);
-        Integer likedSongsId = findPlaylistId(userId, "Liked Songs");
-        if (likedSongsId == null) {
-            return;
-        }
-
-        if (playlistContainsSong(likedSongsId, song.songId())) {
-            try (Connection conn = DBConnection.getConnection();
-                 PreparedStatement stmt = conn.prepareStatement(
-                         "DELETE FROM playlist_song WHERE playlist_id = ? AND song_id = ?")) {
-                stmt.setInt(1, likedSongsId);
-                stmt.setInt(2, song.songId());
-                stmt.executeUpdate();
-            }
-        } else {
-            try (Connection conn = DBConnection.getConnection();
-                 PreparedStatement stmt = conn.prepareStatement(
-                         "INSERT INTO playlist_song (playlist_id, song_id) VALUES (?, ?)")) {
-                stmt.setInt(1, likedSongsId);
-                stmt.setInt(2, song.songId());
-                stmt.executeUpdate();
-            }
-        }
-    }
-
-    private void ensureLikedSongsPlaylistExists(int userId) throws SQLException {
-        String sql = """
-                INSERT INTO playlist (user_id, name, is_system_playlist)
-                SELECT ?, 'Liked Songs', TRUE
-                WHERE NOT EXISTS (
-                    SELECT 1 FROM playlist WHERE user_id = ? AND name = 'Liked Songs'
-                )
-                """;
-
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, userId);
-            stmt.setInt(2, userId);
-            stmt.executeUpdate();
-        }
-
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(
-                     "UPDATE playlist SET is_system_playlist = TRUE WHERE user_id = ? AND name = 'Liked Songs'")) {
-            stmt.setInt(1, userId);
-            stmt.executeUpdate();
-        }
-    }
-
-    private Integer findUserIdByUsername(String username) throws SQLException {
-        String sql = "SELECT user_id FROM app_user WHERE username = ? LIMIT 1";
-
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, username);
-
-            try (ResultSet rs = stmt.executeQuery()) {
-                return rs.next() ? rs.getInt("user_id") : null;
-            }
-        }
-    }
-
-    private Integer findPlaylistId(int userId, String playlistName) throws SQLException {
-        String sql = "SELECT playlist_id FROM playlist WHERE user_id = ? AND name = ? LIMIT 1";
-
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, userId);
-            stmt.setString(2, playlistName);
-
-            try (ResultSet rs = stmt.executeQuery()) {
-                return rs.next() ? rs.getInt("playlist_id") : null;
-            }
-        }
-    }
-
-    private boolean playlistExists(int userId, String playlistName) throws SQLException {
-        return findPlaylistId(userId, playlistName) != null;
-    }
-
-    private boolean playlistContainsSong(int playlistId, int songId) throws SQLException {
-        String sql = "SELECT 1 FROM playlist_song WHERE playlist_id = ? AND song_id = ? LIMIT 1";
-
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, playlistId);
-            stmt.setInt(2, songId);
-
-            try (ResultSet rs = stmt.executeQuery()) {
-                return rs.next();
-            }
-        }
-    }
-
-    private boolean isSystemPlaylist(int playlistId) throws SQLException {
-        String sql = "SELECT is_system_playlist FROM playlist WHERE playlist_id = ? LIMIT 1";
-
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, playlistId);
-
-            try (ResultSet rs = stmt.executeQuery()) {
-                return rs.next() && rs.getBoolean("is_system_playlist");
-            }
-        }
+        playlistSongDAO.toggleLike(username, song);
     }
 }

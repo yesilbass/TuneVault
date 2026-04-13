@@ -9,6 +9,13 @@ module com.example.tunevaultfx {
     requires com.fasterxml.jackson.annotation;
     requires java.sql;
 
+    // Connection pooling
+    requires com.zaxxer.hikari;
+
+    // HikariCP uses SLF4J for logging — declare it so the module system
+    // doesn't block the reflection HikariCP needs internally
+    requires org.slf4j;
+
     exports com.example.tunevaultfx.app;
     opens com.example.tunevaultfx.app to com.fasterxml.jackson.databind, javafx.fxml;
 
@@ -60,7 +67,6 @@ module com.example.tunevaultfx {
     exports com.example.tunevaultfx.search;
     opens com.example.tunevaultfx.search to com.fasterxml.jackson.databind, javafx.fxml;
 
-    // Required for RecommendationService used by PlaylistsPageController
     exports com.example.tunevaultfx.recommendation;
     opens com.example.tunevaultfx.recommendation to com.fasterxml.jackson.databind, javafx.fxml;
 }
