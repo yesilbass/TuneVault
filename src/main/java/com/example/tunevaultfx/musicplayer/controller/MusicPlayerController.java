@@ -9,6 +9,7 @@ import com.example.tunevaultfx.musicplayer.playback.PlaybackNavigator;
 import com.example.tunevaultfx.musicplayer.playback.PlaybackQueue;
 import com.example.tunevaultfx.musicplayer.playback.PlaybackState;
 import com.example.tunevaultfx.playlist.service.PlaylistService;
+import com.example.tunevaultfx.recommendation.RecommendationService;
 import com.example.tunevaultfx.session.SessionManager;
 import com.example.tunevaultfx.user.UserLibraryService;
 import javafx.animation.KeyFrame;
@@ -18,6 +19,7 @@ import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.StringProperty;
+import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.util.Duration;
 
@@ -39,6 +41,7 @@ public class MusicPlayerController {
     private final ListeningEventDAO listeningEventDAO = new ListeningEventDAO();
     private final ListeningSessionTracker sessionTracker = new ListeningSessionTracker(listeningEventDAO);
     private final PlaylistService playlistService = new PlaylistService();
+    private final RecommendationService recommendationService = new RecommendationService();
 
     private final BooleanProperty expandedPlayerVisible = new SimpleBooleanProperty(false);
     private final BooleanProperty currentSongLiked = new SimpleBooleanProperty(false);
@@ -46,6 +49,13 @@ public class MusicPlayerController {
     private final PlaybackLifecycleService lifecycleService;
     private final PlaybackNavigator playbackNavigator;
     private final Timeline timeline;
+
+    private ObservableList<Song> activePlaylistSongs = FXCollections.observableArrayList();
+    private int activePlaylistIndex = -1;
+
+    private ObservableList<Song> autoplaySuggestions = FXCollections.observableArrayList();
+    private int autoplaySuggestionIndex = -1;
+    private boolean playingAutoplaySuggestions = false;
 
     private MusicPlayerController() {
         PlaybackLifecycleService.PlayerRuntime lifecycleRuntime = new PlaybackLifecycleService.PlayerRuntime() {
@@ -108,18 +118,26 @@ public class MusicPlayerController {
     }
 
     public void playQueue(ObservableList<Song> songs, int index) {
-        lifecycleService.playQueue(songs, index, "");
+        playQueue(songs, index, "");
     }
 
     public void playQueue(ObservableList<Song> songs, int index, String playlistName) {
+        activePlaylistSongs = songs == null ? FXCollections.observableArrayList() : FXCollections.observableArrayList(songs);
+        activePlaylistIndex = index;
+        playingAutoplaySuggestions = false;
+        autoplaySuggestions.clear();
+        autoplaySuggestionIndex = -1;
+
         lifecycleService.playQueue(songs, index, playlistName);
     }
 
-    /**
-     * Plays only one song and stops when it finishes unless loop is enabled.
-     * This is used for Search Songs so search is not treated like a playlist.
-     */
     public void playSingleSong(Song song) {
+        activePlaylistSongs.clear();
+        activePlaylistIndex = -1;
+        playingAutoplaySuggestions = false;
+        autoplaySuggestions.clear();
+        autoplaySuggestionIndex = -1;
+
         lifecycleService.playSingleSong(song);
     }
 
@@ -131,10 +149,51 @@ public class MusicPlayerController {
     }
 
     public void next() {
+        if (playingAutoplaySuggestions) {
+            playNextAutoplaySuggestion();
+            return;
+        }
+
+        if (!activePlaylistSongs.isEmpty() && activePlaylistIndex >= 0) {
+            if (activePlaylistIndex < activePlaylistSongs.size() - 1) {
+                activePlaylistIndex++;
+                playbackNavigator.next();
+                return;
+            }
+
+            if (!state.isLoopEnabled()) {
+                startAutoplaySuggestions();
+                return;
+            }
+        }
+
         playbackNavigator.next();
     }
 
     public void previous() {
+        if (playingAutoplaySuggestions) {
+            if (autoplaySuggestionIndex > 0) {
+                autoplaySuggestionIndex--;
+                Song previousSuggestion = autoplaySuggestions.get(autoplaySuggestionIndex);
+                lifecycleService.playSingleSong(previousSuggestion);
+                return;
+            }
+
+            playingAutoplaySuggestions = false;
+            autoplaySuggestionIndex = -1;
+
+            if (!activePlaylistSongs.isEmpty() && !activePlaylistSongs.isEmpty()) {
+                Song lastPlaylistSong = activePlaylistSongs.get(activePlaylistSongs.size() - 1);
+                activePlaylistIndex = activePlaylistSongs.size() - 1;
+                lifecycleService.playQueue(activePlaylistSongs, activePlaylistIndex, state.getCurrentSourcePlaylistName());
+                return;
+            }
+        }
+
+        if (!activePlaylistSongs.isEmpty() && activePlaylistIndex > 0) {
+            activePlaylistIndex--;
+        }
+
         playbackNavigator.previous();
     }
 
@@ -152,11 +211,21 @@ public class MusicPlayerController {
         timeline.stop();
         setExpandedPlayerVisible(false);
         currentSongLiked.set(false);
+        playingAutoplaySuggestions = false;
+        autoplaySuggestions.clear();
+        autoplaySuggestionIndex = -1;
     }
 
     public void onSongRemovedFromPlaylist(String playlistName, Song removedSong) {
         lifecycleService.onSongRemovedFromPlaylist(playlistName, removedSong);
         refreshCurrentSongLiked();
+
+        if (removedSong != null && !activePlaylistSongs.isEmpty()) {
+            activePlaylistSongs.removeIf(song -> song.songId() == removedSong.songId());
+            if (activePlaylistIndex >= activePlaylistSongs.size()) {
+                activePlaylistIndex = activePlaylistSongs.size() - 1;
+            }
+        }
     }
 
     public void toggleLikeCurrentSong() {
@@ -180,8 +249,26 @@ public class MusicPlayerController {
         state.setCurrentSecond(0);
         state.setPlaying(false);
 
+        activePlaylistSongs.clear();
+        activePlaylistIndex = -1;
+        autoplaySuggestions.clear();
+        autoplaySuggestionIndex = -1;
+        playingAutoplaySuggestions = false;
+
         currentSongLiked.set(false);
         expandedPlayerVisible.set(false);
+    }
+
+    public ObservableList<Song> getAutoplaySuggestionsForCurrentPlaylist(int limit) {
+        if (activePlaylistSongs.isEmpty()) {
+            return FXCollections.observableArrayList();
+        }
+
+        return recommendationService.getSuggestedSongsForPlaylist(
+                SessionManager.getCurrentUsername(),
+                activePlaylistSongs,
+                limit
+        );
     }
 
     public boolean isCurrentSongLiked() {
@@ -232,6 +319,38 @@ public class MusicPlayerController {
 
     public void setExpandedPlayerVisible(boolean visible) {
         expandedPlayerVisible.set(visible);
+    }
+
+    private void startAutoplaySuggestions() {
+        ObservableList<Song> suggestions = recommendationService.getSuggestedSongsForPlaylist(
+                SessionManager.getCurrentUsername(),
+                activePlaylistSongs,
+                4
+        );
+
+        if (suggestions.isEmpty()) {
+            stop();
+            return;
+        }
+
+        autoplaySuggestions = FXCollections.observableArrayList(suggestions);
+        autoplaySuggestionIndex = 0;
+        playingAutoplaySuggestions = true;
+        lifecycleService.playSingleSong(autoplaySuggestions.get(0));
+    }
+
+    private void playNextAutoplaySuggestion() {
+        if (autoplaySuggestions.isEmpty()) {
+            stop();
+            return;
+        }
+
+        if (autoplaySuggestionIndex < autoplaySuggestions.size() - 1) {
+            autoplaySuggestionIndex++;
+            lifecycleService.playSingleSong(autoplaySuggestions.get(autoplaySuggestionIndex));
+        } else {
+            stop();
+        }
     }
 
     private void setPlaying(boolean value) {

@@ -5,31 +5,27 @@ import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
-import javafx.scene.control.ListCell;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.Region;
-import javafx.scene.layout.VBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
+import javafx.scene.layout.*;
 import javafx.stage.Popup;
 
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * Custom playlist song cell with a play button and a styled three-dot action menu.
+ * Playlist song row — dark theme.
+ * ▶ play button on the left, title/artist in the middle, ⋯ menu on the right.
  */
 public class PlayableSongCell extends ListCell<Song> {
 
-    private final Button playButton = new Button("▶");
-    private final Button moreButton = new Button("⋯");
-
-    private final Label titleLabel = new Label();
-    private final Label artistLabel = new Label();
-
-    private final VBox textBox = new VBox(2, titleLabel, artistLabel);
-    private final Region spacer = new Region();
-    private final HBox row = new HBox(12);
+    private final Button   playButton = new Button("▶");
+    private final Button   moreButton = new Button("⋯");
+    private final Label    titleLabel  = new Label();
+    private final Label    artistLabel = new Label();
+    private final VBox     textBox     = new VBox(2, titleLabel, artistLabel);
+    private final Region   spacer      = new Region();
+    private final HBox     row         = new HBox(12);
 
     private final Consumer<Song> onPlay;
     private final Consumer<Song> onAddToPlaylist;
@@ -38,103 +34,109 @@ public class PlayableSongCell extends ListCell<Song> {
 
     private Popup activePopup;
 
+    // ── Style constants ────────────────────────────────────────────
+
+    private static final String PLAY_BTN =
+            "-fx-background-color: #22c55e;" +
+                    "-fx-text-fill: white;" +
+                    "-fx-font-size: 13px;" +
+                    "-fx-font-weight: bold;" +
+                    "-fx-background-radius: 17;";
+
+    private static final String MORE_BTN =
+            "-fx-background-color: rgba(255,255,255,0.06);" +
+                    "-fx-text-fill: #4a4a70;" +
+                    "-fx-font-size: 18px;" +
+                    "-fx-font-weight: bold;" +
+                    "-fx-background-radius: 18;" +
+                    "-fx-padding: 0;";
+
+    private static final String MORE_BTN_HOVER =
+            "-fx-background-color: rgba(255,255,255,0.12);" +
+                    "-fx-text-fill: #a1a1aa;" +
+                    "-fx-font-size: 18px;" +
+                    "-fx-font-weight: bold;" +
+                    "-fx-background-radius: 18;" +
+                    "-fx-padding: 0;";
+
+    private static final String ROW_DEFAULT =
+            "-fx-background-color: transparent; -fx-background-radius: 14;";
+
+    private static final String ROW_HOVER =
+            "-fx-background-color: rgba(255,255,255,0.045); -fx-background-radius: 14;";
+
+    // ─────────────────────────────────────────────────────────────
+
     public PlayableSongCell(Consumer<Song> onPlay,
                             Consumer<Song> onAddToPlaylist,
                             Consumer<Song> onRemoveFromPlaylist,
                             Supplier<String> playlistNameSupplier) {
-        this.onPlay = onPlay;
-        this.onAddToPlaylist = onAddToPlaylist;
-        this.onRemoveFromPlaylist = onRemoveFromPlaylist;
-        this.playlistNameSupplier = playlistNameSupplier;
+        this.onPlay                = onPlay;
+        this.onAddToPlaylist       = onAddToPlaylist;
+        this.onRemoveFromPlaylist  = onRemoveFromPlaylist;
+        this.playlistNameSupplier  = playlistNameSupplier;
 
-        playButton.setStyle(
-                "-fx-background-color: #10b981; " +
-                        "-fx-text-fill: white; " +
-                        "-fx-font-size: 14px; " +
-                        "-fx-font-weight: bold; " +
-                        "-fx-background-radius: 18;"
-        );
+        // Play button
+        playButton.setStyle(PLAY_BTN);
         playButton.setPrefSize(34, 34);
         playButton.setMinSize(34, 34);
         playButton.setMaxSize(34, 34);
         playButton.setFocusTraversable(false);
 
-        moreButton.setStyle(
-                "-fx-background-color: #e2e8f0; " +
-                        "-fx-text-fill: #334155; " +
-                        "-fx-font-size: 18px; " +
-                        "-fx-font-weight: bold; " +
-                        "-fx-background-radius: 18; " +
-                        "-fx-padding: 0;"
-        );
+        // More button
+        moreButton.setStyle(MORE_BTN);
         moreButton.setPrefSize(36, 36);
         moreButton.setMinSize(36, 36);
         moreButton.setMaxSize(36, 36);
         moreButton.setFocusTraversable(false);
 
-        titleLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #0f172a;");
-        artistLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #64748b;");
+        // Labels — light text on dark background
+        titleLabel.setStyle(
+                "-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #e2e8f0;");
+        artistLabel.setStyle(
+                "-fx-font-size: 12px; -fx-text-fill: #3d3d5c;");
 
         textBox.setMaxWidth(Double.MAX_VALUE);
         HBox.setHgrow(textBox, Priority.ALWAYS);
-        HBox.setHgrow(spacer, Priority.ALWAYS);
+        HBox.setHgrow(spacer,  Priority.ALWAYS);
 
         row.setAlignment(Pos.CENTER_LEFT);
         row.setPadding(new Insets(8, 12, 8, 12));
-        row.setStyle("-fx-background-color: transparent; -fx-background-radius: 16;");
+        row.setStyle(ROW_DEFAULT);
         row.getChildren().addAll(playButton, textBox, spacer, moreButton);
 
+        // Row hover
         row.setOnMouseEntered(e -> {
-            row.setStyle("-fx-background-color: #f8fafc; -fx-background-radius: 16;");
-            moreButton.setStyle(
-                    "-fx-background-color: #cbd5e1; " +
-                            "-fx-text-fill: #0f172a; " +
-                            "-fx-font-size: 18px; " +
-                            "-fx-font-weight: bold; " +
-                            "-fx-background-radius: 18; " +
-                            "-fx-padding: 0;"
-            );
+            row.setStyle(ROW_HOVER);
+            moreButton.setStyle(MORE_BTN_HOVER);
         });
-
         row.setOnMouseExited(e -> {
-            row.setStyle("-fx-background-color: transparent; -fx-background-radius: 16;");
-            moreButton.setStyle(
-                    "-fx-background-color: #e2e8f0; " +
-                            "-fx-text-fill: #334155; " +
-                            "-fx-font-size: 18px; " +
-                            "-fx-font-weight: bold; " +
-                            "-fx-background-radius: 18; " +
-                            "-fx-padding: 0;"
-            );
+            row.setStyle(ROW_DEFAULT);
+            moreButton.setStyle(MORE_BTN);
         });
 
-        playButton.setOnAction(event -> {
+        // Button actions
+        playButton.setOnAction(ev -> {
             Song song = getItem();
-            if (song != null && onPlay != null) {
-                onPlay.accept(song);
-            }
-            event.consume();
+            if (song != null && onPlay != null) onPlay.accept(song);
+            ev.consume();
         });
 
-        moreButton.setOnAction(event -> {
+        moreButton.setOnAction(ev -> {
             Song song = getItem();
-            if (song != null) {
-                showActionPopup(song);
-            }
-            event.consume();
+            if (song != null) showActionPopup(song);
+            ev.consume();
         });
 
-        setOnMousePressed(event -> {
-            if (!isEmpty() && getListView() != null) {
+        setOnMousePressed(ev -> {
+            if (!isEmpty() && getListView() != null)
                 getListView().getSelectionModel().clearSelection();
-            }
         });
     }
 
     @Override
     protected void updateItem(Song song, boolean empty) {
         super.updateItem(song, empty);
-
         hidePopup();
 
         if (empty || song == null) {
@@ -145,7 +147,8 @@ public class PlayableSongCell extends ListCell<Song> {
         }
 
         titleLabel.setText(song.title());
-        artistLabel.setText(song.artist());
+        artistLabel.setText(song.artist()
+                + (song.genre() != null && !song.genre().isBlank() ? " · " + song.genre() : ""));
 
         setText(null);
         setGraphic(row);
@@ -157,6 +160,8 @@ public class PlayableSongCell extends ListCell<Song> {
         super.updateSelected(false);
     }
 
+    // ── Popup menu ────────────────────────────────────────────────
+
     private void showActionPopup(Song song) {
         hidePopup();
 
@@ -165,74 +170,72 @@ public class PlayableSongCell extends ListCell<Song> {
         popup.setAutoFix(true);
         popup.setHideOnEscape(true);
 
-        VBox menuCard = new VBox(8);
-        menuCard.setPadding(new Insets(10));
-        menuCard.setPrefWidth(210);
-        menuCard.setStyle(
-                "-fx-background-color: white; " +
-                        "-fx-background-radius: 18; " +
-                        "-fx-border-color: #e2e8f0; " +
-                        "-fx-border-radius: 18; " +
-                        "-fx-effect: dropshadow(gaussian, rgba(15,23,42,0.18), 18, 0.18, 0, 6);"
-        );
+        VBox card = new VBox(6);
+        card.setPadding(new Insets(8));
+        card.setPrefWidth(220);
+        card.setStyle(
+                "-fx-background-color: #1a1a28;" +
+                        "-fx-background-radius: 18;" +
+                        "-fx-border-color: rgba(255,255,255,0.1);" +
+                        "-fx-border-radius: 18;" +
+                        "-fx-border-width: 1;" +
+                        "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.55), 24, 0, 0, 8);");
 
-        Button addButton = buildMenuButton("Add to Playlist", false);
-        addButton.setOnAction(event -> {
+        Button addBtn = buildMenuButton("Add to Another Playlist", false);
+        addBtn.setOnAction(ev -> {
             hidePopup();
-            if (onAddToPlaylist != null) {
-                onAddToPlaylist.accept(song);
-            }
-            event.consume();
+            if (onAddToPlaylist != null) onAddToPlaylist.accept(song);
+            ev.consume();
         });
 
-        String playlistName = playlistNameSupplier != null ? playlistNameSupplier.get() : "this playlist";
-        Button removeButton = buildMenuButton("Remove from " + playlistName, true);
-        removeButton.setOnAction(event -> {
+        String playlistName = playlistNameSupplier != null
+                ? playlistNameSupplier.get() : "this playlist";
+        Button removeBtn = buildMenuButton("Remove from " + playlistName, true);
+        removeBtn.setOnAction(ev -> {
             hidePopup();
-            if (onRemoveFromPlaylist != null) {
-                onRemoveFromPlaylist.accept(song);
-            }
-            event.consume();
+            if (onRemoveFromPlaylist != null) onRemoveFromPlaylist.accept(song);
+            ev.consume();
         });
 
-        menuCard.getChildren().addAll(addButton, removeButton);
-        popup.getContent().add(menuCard);
+        card.getChildren().addAll(addBtn, removeBtn);
+        popup.getContent().add(card);
 
         Bounds bounds = moreButton.localToScreen(moreButton.getBoundsInLocal());
         if (bounds != null) {
-            popup.show(moreButton, bounds.getMaxX() - 200, bounds.getMaxY() + 6);
+            popup.show(moreButton, bounds.getMaxX() - 210, bounds.getMaxY() + 6);
             activePopup = popup;
         }
     }
 
     private Button buildMenuButton(String text, boolean destructive) {
-        Button button = new Button(text);
-        button.setAlignment(Pos.CENTER_LEFT);
-        button.setMaxWidth(Double.MAX_VALUE);
-        button.setPrefHeight(40);
-        button.setFocusTraversable(false);
+        Button btn = new Button(text);
+        btn.setAlignment(Pos.CENTER_LEFT);
+        btn.setMaxWidth(Double.MAX_VALUE);
+        btn.setPrefHeight(40);
+        btn.setFocusTraversable(false);
 
-        String baseStyle =
-                "-fx-background-color: transparent; " +
-                        "-fx-background-radius: 12; " +
-                        "-fx-font-size: 13px; " +
-                        "-fx-font-weight: bold; " +
-                        "-fx-padding: 0 12 0 12; " +
-                        "-fx-text-fill: " + (destructive ? "#dc2626" : "#0f172a") + ";";
+        String base =
+                "-fx-background-color: transparent;" +
+                        "-fx-background-radius: 11;" +
+                        "-fx-font-size: 13px;" +
+                        "-fx-font-weight: bold;" +
+                        "-fx-padding: 0 12 0 12;" +
+                        "-fx-text-fill: " + (destructive ? "#f87171" : "#e2e8f0") + ";";
 
-        String hoverStyle =
-                "-fx-background-color: " + (destructive ? "#fef2f2" : "#f8fafc") + "; " +
-                        "-fx-background-radius: 12; " +
-                        "-fx-font-size: 13px; " +
-                        "-fx-font-weight: bold; " +
-                        "-fx-padding: 0 12 0 12; " +
-                        "-fx-text-fill: " + (destructive ? "#dc2626" : "#0f172a") + ";";
+        String hover =
+                "-fx-background-color: " + (destructive
+                        ? "rgba(239,68,68,0.1);"
+                        : "rgba(255,255,255,0.06);") +
+                        "-fx-background-radius: 11;" +
+                        "-fx-font-size: 13px;" +
+                        "-fx-font-weight: bold;" +
+                        "-fx-padding: 0 12 0 12;" +
+                        "-fx-text-fill: " + (destructive ? "#f87171" : "#e2e8f0") + ";";
 
-        button.setStyle(baseStyle);
-        button.setOnMouseEntered(e -> button.setStyle(hoverStyle));
-        button.setOnMouseExited(e -> button.setStyle(baseStyle));
-
-        return button;
+        btn.setStyle(base);
+        btn.setOnMouseEntered(e -> btn.setStyle(hover));
+        btn.setOnMouseExited(e -> btn.setStyle(base));
+        return btn;
     }
 
     private void hidePopup() {

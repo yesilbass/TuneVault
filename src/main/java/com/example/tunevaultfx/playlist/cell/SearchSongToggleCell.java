@@ -3,16 +3,11 @@ package com.example.tunevaultfx.playlist.cell;
 import com.example.tunevaultfx.core.Song;
 import javafx.animation.PauseTransition;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
-import javafx.scene.layout.CornerRadii;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.Region;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.util.Duration;
 
@@ -20,55 +15,93 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 /**
- * Search the results cell with an add / remove toggle button for the selected playlist.
+ * Search-results cell with an add / remove toggle — dark theme.
  */
 public class SearchSongToggleCell extends ListCell<Song> {
 
     private final Predicate<Song> isSongInPlaylist;
-    private final Consumer<Song> onToggleSong;
+    private final Consumer<Song>  onToggleSong;
 
-    private final HBox root = new HBox();
-    private final VBox textBox = new VBox();
-    private final Label titleLabel = new Label();
-    private final Label artistLabel = new Label();
-    private final Region spacer = new Region();
+    private final HBox   root        = new HBox();
+    private final VBox   textBox     = new VBox();
+    private final Label  titleLabel  = new Label();
+    private final Label  artistLabel = new Label();
+    private final Region spacer      = new Region();
     private final Button actionButton = new Button();
+
+    // ── Style constants ────────────────────────────────────────────
+
+    private static final String BTN_IN_PLAYLIST =
+            "-fx-background-color: rgba(139,92,246,0.2);" +
+                    "-fx-text-fill: #a78bfa;" +
+                    "-fx-font-size: 15px;" +
+                    "-fx-font-weight: bold;" +
+                    "-fx-background-radius: 16;" +
+                    "-fx-border-color: rgba(139,92,246,0.3);" +
+                    "-fx-border-radius: 16;" +
+                    "-fx-border-width: 1;";
+
+    private static final String BTN_NOT_IN_PLAYLIST =
+            "-fx-background-color: rgba(255,255,255,0.07);" +
+                    "-fx-text-fill: #4a4a70;" +
+                    "-fx-font-size: 16px;" +
+                    "-fx-font-weight: bold;" +
+                    "-fx-background-radius: 16;" +
+                    "-fx-border-color: rgba(255,255,255,0.1);" +
+                    "-fx-border-radius: 16;" +
+                    "-fx-border-width: 1;";
+
+    private static final String ROW_DEFAULT =
+            "-fx-background-color: transparent; -fx-background-radius: 13;";
+    private static final String ROW_HOVER =
+            "-fx-background-color: rgba(255,255,255,0.04); -fx-background-radius: 13;";
+
+    // ─────────────────────────────────────────────────────────────
 
     public SearchSongToggleCell(Predicate<Song> isSongInPlaylist, Consumer<Song> onToggleSong) {
         this.isSongInPlaylist = isSongInPlaylist;
-        this.onToggleSong = onToggleSong;
+        this.onToggleSong     = onToggleSong;
 
         root.setSpacing(12);
         root.setPadding(new Insets(8, 10, 8, 10));
-        root.setStyle("-fx-background-color: transparent; -fx-background-radius: 14;");
-        HBox.setHgrow(spacer, Priority.ALWAYS);
+        root.setAlignment(Pos.CENTER_LEFT);
+        root.setStyle(ROW_DEFAULT);
 
-        titleLabel.setStyle("-fx-text-fill: #1e293b; -fx-font-size: 15px; -fx-font-weight: bold;");
-        artistLabel.setStyle("-fx-text-fill: #64748b; -fx-font-size: 13px;");
+        HBox.setHgrow(spacer,  Priority.ALWAYS);
+        HBox.setHgrow(textBox, Priority.ALWAYS);
 
-        textBox.setSpacing(4);
+        // Labels — light text on dark bg
+        titleLabel.setStyle(
+                "-fx-text-fill: #e2e8f0; -fx-font-size: 14px; -fx-font-weight: bold;");
+        artistLabel.setStyle(
+                "-fx-text-fill: #3d3d5c; -fx-font-size: 12px;");
+
+        textBox.setSpacing(3);
         textBox.getChildren().addAll(titleLabel, artistLabel);
 
         actionButton.setPrefWidth(42);
         actionButton.setPrefHeight(32);
+        actionButton.setMinWidth(42);
         actionButton.setFocusTraversable(false);
 
         root.getChildren().addAll(textBox, spacer, actionButton);
 
-        root.setOnMouseClicked(event -> {
-            Song song = getItem();
-            if (song == null || isEmpty()) {
-                return;
-            }
+        // Row hover
+        root.setOnMouseEntered(e -> root.setStyle(ROW_HOVER));
+        root.setOnMouseExited(e  -> root.setStyle(ROW_DEFAULT));
 
+        // Click anywhere on the row also toggles
+        root.setOnMouseClicked(ev -> {
+            Song song = getItem();
+            if (song == null || isEmpty()) return;
             toggleSong(song);
-            event.consume();
+            ev.consume();
         });
 
-        setOnMousePressed(event -> {
-            if (!isEmpty()) {
+        setOnMousePressed(ev -> {
+            if (!isEmpty() && getListView() != null) {
                 getListView().getSelectionModel().clearSelection();
-                event.consume();
+                ev.consume();
             }
         });
     }
@@ -85,7 +118,8 @@ public class SearchSongToggleCell extends ListCell<Song> {
         }
 
         titleLabel.setText(song.title());
-        artistLabel.setText(song.artist());
+        artistLabel.setText(song.artist()
+                + (song.genre() != null && !song.genre().isBlank() ? " · " + song.genre() : ""));
         refreshActionButton(song);
 
         setText(null);
@@ -99,13 +133,12 @@ public class SearchSongToggleCell extends ListCell<Song> {
         super.updateSelected(false);
     }
 
+    // ── Helpers ───────────────────────────────────────────────────
+
     private void toggleSong(Song song) {
-        boolean wasInPlaylist = isSongInPlaylist.test(song);
-
+        boolean wasIn = isSongInPlaylist.test(song);
         onToggleSong.accept(song);
-
-        playClickFlash(!wasInPlaylist);
-
+        playClickFlash(!wasIn);
         if (getListView() != null) {
             getListView().refresh();
             getListView().getSelectionModel().clearSelection();
@@ -113,28 +146,24 @@ public class SearchSongToggleCell extends ListCell<Song> {
     }
 
     private void refreshActionButton(Song song) {
-        boolean alreadyInPlaylist = isSongInPlaylist.test(song);
-
-        actionButton.setText(alreadyInPlaylist ? "✓" : "+");
-        actionButton.setStyle(alreadyInPlaylist
-                ? "-fx-background-color: #dbeafe; -fx-text-fill: #2563eb; -fx-font-size: 16px; -fx-font-weight: bold; -fx-background-radius: 16;"
-                : "-fx-background-color: #e2e8f0; -fx-text-fill: #334155; -fx-font-size: 16px; -fx-font-weight: bold; -fx-background-radius: 16;");
-
-        actionButton.setOnAction(event -> {
+        boolean inPlaylist = isSongInPlaylist.test(song);
+        actionButton.setText(inPlaylist ? "✓" : "+");
+        actionButton.setStyle(inPlaylist ? BTN_IN_PLAYLIST : BTN_NOT_IN_PLAYLIST);
+        actionButton.setOnAction(ev -> {
             toggleSong(song);
-            event.consume();
+            ev.consume();
         });
     }
 
     private void playClickFlash(boolean added) {
-        Color flashColor = added ? Color.web("#dbeafe") : Color.web("#fee2e2");
+        // Subtle dark-theme flash: violet for add, red-tint for remove
+        String flashStyle = added
+                ? "-fx-background-color: rgba(139,92,246,0.15); -fx-background-radius: 13;"
+                : "-fx-background-color: rgba(239,68,68,0.1); -fx-background-radius: 13;";
 
-        root.setBackground(new Background(
-                new BackgroundFill(flashColor, new CornerRadii(14), Insets.EMPTY)
-        ));
-
-        PauseTransition pause = new PauseTransition(Duration.millis(180));
-        pause.setOnFinished(e -> root.setBackground(Background.EMPTY));
+        root.setStyle(flashStyle);
+        PauseTransition pause = new PauseTransition(Duration.millis(200));
+        pause.setOnFinished(e -> root.setStyle(ROW_DEFAULT));
         pause.play();
     }
 }

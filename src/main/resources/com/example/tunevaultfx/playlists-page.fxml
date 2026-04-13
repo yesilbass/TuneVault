@@ -1,165 +1,248 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
 <BorderPane xmlns="http://javafx.com/javafx/21"
             xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="com.example.tunevaultfx.playlist.PlaylistsPageController"
-            prefWidth="1280.0"
-            prefHeight="760.0"
-            style="-fx-background-color: linear-gradient(to bottom right, #0f172a, #1e293b);">
+            prefWidth="1280.0" prefHeight="820.0"
+            style="-fx-background-color: linear-gradient(to bottom right, #090912, #0f0f1e);">
 
+    <!-- ── TOP ───────────────────────────────────── -->
     <top>
-        <HBox alignment="CENTER_LEFT" spacing="12" style="-fx-padding: 20 24 18 24;">
-            <children>
-                <Button text="Back to Menu"
-                        onAction="#handleBackToMenu"
-                        prefWidth="125"
-                        prefHeight="40"
-                        style="-fx-background-color: #3b82f6; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 20;" />
+        <HBox alignment="CENTER_LEFT" spacing="12"
+              style="-fx-padding: 22 32 18 32;
+                     -fx-border-color: transparent transparent rgba(255,255,255,0.06) transparent;
+                     -fx-border-width: 0 0 1 0;">
+            <Button text="← Menu"
+                    onAction="#handleBackToMenu"
+                    prefWidth="110" prefHeight="38"
+                    style="-fx-background-color: rgba(255,255,255,0.07);
+                           -fx-text-fill: #94a3b8;
+                           -fx-font-size: 13px;
+                           -fx-font-weight: bold;
+                           -fx-background-radius: 19;
+                           -fx-border-color: rgba(255,255,255,0.1);
+                           -fx-border-radius: 19;
+                           -fx-border-width: 1;" />
 
-                <StackPane HBox.hgrow="ALWAYS" alignment="CENTER">
+            <StackPane HBox.hgrow="ALWAYS" alignment="CENTER">
+                <HBox alignment="CENTER" spacing="10">
+                    <Label text="🎵"
+                           style="-fx-font-size: 20px;" />
                     <Label text="Playlists"
-                           style="-fx-text-fill: white; -fx-font-size: 30px; -fx-font-weight: bold;" />
-                </StackPane>
+                           style="-fx-text-fill: #ffffff; -fx-font-size: 26px; -fx-font-weight: bold;" />
+                </HBox>
+            </StackPane>
 
-                <Region prefWidth="125" />
-            </children>
+            <Region prefWidth="110" />
         </HBox>
     </top>
 
+    <!-- ── CENTER: Scrollable two-column layout ──── -->
     <center>
-        <StackPane style="-fx-padding: 10 24 18 24;">
-            <children>
+        <StackPane style="-fx-padding: 16 32 16 32;">
 
-                <!-- Main two-column layout -->
-                <HBox spacing="24.0" alignment="TOP_LEFT">
-                    <children>
+            <!-- Main scrollable content -->
+            <ScrollPane fitToWidth="true"
+                        hbarPolicy="NEVER"
+                        vbarPolicy="AS_NEEDED"
+                        style="-fx-background: transparent; -fx-background-color: transparent; -fx-border-color: transparent;">
+                <content>
+                    <HBox spacing="20" alignment="TOP_LEFT" style="-fx-padding: 0 0 24 0;">
 
-                        <!-- Left card -->
-                        <VBox spacing="16.0"
-                              minWidth="340.0"
-                              prefWidth="340.0"
-                              maxWidth="340.0"
-                              style="-fx-background-color: #f8fafc; -fx-background-radius: 24; -fx-padding: 24;">
-                            <children>
+                        <!-- ── LEFT: Playlist list ──────────── -->
+                        <VBox spacing="16" minWidth="280" prefWidth="280" maxWidth="280"
+                              style="-fx-background-color: #14141e;
+                                     -fx-background-radius: 22;
+                                     -fx-border-color: rgba(255,255,255,0.08);
+                                     -fx-border-radius: 22;
+                                     -fx-border-width: 1;
+                                     -fx-padding: 22;
+                                     -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.4),16,0,0,4);">
+
+                            <HBox alignment="CENTER_LEFT" spacing="8">
                                 <Label text="Your Playlists"
-                                       style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #1e293b;" />
+                                       style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #ffffff;" />
+                            </HBox>
 
-                                <ListView fx:id="playlistListView"
-                                          VBox.vgrow="ALWAYS"
-                                          prefHeight="460.0"
-                                          style="-fx-background-radius: 12; -fx-border-radius: 12;" />
+                            <ListView fx:id="playlistListView"
+                                      prefHeight="380"
+                                      style="-fx-background-color: transparent; -fx-border-color: transparent;" />
 
-                                <HBox spacing="14.0" alignment="CENTER">
-                                    <children>
-                                        <Button text="Create Playlist"
-                                                onAction="#handleCreatePlaylist"
-                                                HBox.hgrow="ALWAYS"
-                                                maxWidth="Infinity"
-                                                prefHeight="44.0"
-                                                style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 22;" />
+                            <VBox spacing="8">
+                                <Button text="+ New Playlist"
+                                        onAction="#handleCreatePlaylist"
+                                        maxWidth="Infinity" prefHeight="40"
+                                        style="-fx-background-color: #8b5cf6;
+                                               -fx-text-fill: white;
+                                               -fx-font-size: 13px;
+                                               -fx-font-weight: bold;
+                                               -fx-background-radius: 20;
+                                               -fx-effect: dropshadow(gaussian,rgba(139,92,246,0.3),8,0,0,2);" />
 
-                                        <Button text="Delete Playlist"
-                                                onAction="#handleDeletePlaylist"
-                                                HBox.hgrow="ALWAYS"
-                                                maxWidth="Infinity"
-                                                prefHeight="44.0"
-                                                style="-fx-background-color: #ef4444; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 22;" />
-                                    </children>
-                                </HBox>
-                            </children>
+                                <Button text="Delete Playlist"
+                                        onAction="#handleDeletePlaylist"
+                                        maxWidth="Infinity" prefHeight="38"
+                                        style="-fx-background-color: rgba(239,68,68,0.1);
+                                               -fx-text-fill: #f87171;
+                                               -fx-font-size: 13px;
+                                               -fx-font-weight: bold;
+                                               -fx-background-radius: 20;
+                                               -fx-border-color: rgba(239,68,68,0.18);
+                                               -fx-border-radius: 20;
+                                               -fx-border-width: 1;" />
+                            </VBox>
                         </VBox>
 
-                        <!-- Center card -->
-                        <VBox spacing="16.0"
-                              HBox.hgrow="ALWAYS"
-                              minWidth="520.0"
-                              prefWidth="720.0"
-                              style="-fx-background-color: #f8fafc; -fx-background-radius: 24; -fx-padding: 24;">
-                            <children>
-                                <Label fx:id="selectedPlaylistLabel"
-                                       text="No playlist selected"
-                                       style="-fx-font-size: 26px; -fx-font-weight: bold; -fx-text-fill: #1e293b;" />
+                        <!-- ── RIGHT: Content ──────────────── -->
+                        <VBox spacing="18" HBox.hgrow="ALWAYS">
 
-                                <HBox spacing="18.0" alignment="CENTER_LEFT">
-                                    <children>
-                                        <Label fx:id="songCountLabel"
-                                               text="Songs: 0"
-                                               style="-fx-font-size: 16px; -fx-text-fill: #334155;" />
-                                        <Label fx:id="totalDurationLabel"
-                                               text="Duration: 0:00"
-                                               style="-fx-font-size: 16px; -fx-text-fill: #334155;" />
-                                    </children>
+                            <!-- Playlist songs card -->
+                            <VBox spacing="14"
+                                  style="-fx-background-color: #14141e;
+                                         -fx-background-radius: 22;
+                                         -fx-border-color: rgba(255,255,255,0.08);
+                                         -fx-border-radius: 22;
+                                         -fx-border-width: 1;
+                                         -fx-padding: 24;
+                                         -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.4),16,0,0,4);">
+
+                                <HBox alignment="CENTER_LEFT" spacing="14">
+                                    <VBox spacing="4" HBox.hgrow="ALWAYS">
+                                        <Label fx:id="selectedPlaylistLabel"
+                                               text="No playlist selected"
+                                               style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #ffffff;" />
+                                        <HBox spacing="16" alignment="CENTER_LEFT">
+                                            <Label fx:id="songCountLabel"
+                                                   text="Songs: 0"
+                                                   style="-fx-font-size: 13px; -fx-text-fill: #3d3d5c;" />
+                                            <Label fx:id="totalDurationLabel"
+                                                   text="Duration: 0:00"
+                                                   style="-fx-font-size: 13px; -fx-text-fill: #3d3d5c;" />
+                                        </HBox>
+                                    </VBox>
+                                    <Button text="+ Add Song"
+                                            onAction="#handleShowSearchSongs"
+                                            prefWidth="120" prefHeight="38"
+                                            style="-fx-background-color: rgba(139,92,246,0.18);
+                                                   -fx-text-fill: #a78bfa;
+                                                   -fx-font-size: 13px;
+                                                   -fx-font-weight: bold;
+                                                   -fx-background-radius: 19;
+                                                   -fx-border-color: rgba(139,92,246,0.28);
+                                                   -fx-border-radius: 19;
+                                                   -fx-border-width: 1;" />
                                 </HBox>
+
+                                <Separator style="-fx-opacity: 0.4;" />
 
                                 <ListView fx:id="playlistSongsListView"
-                                          VBox.vgrow="ALWAYS"
-                                          prefHeight="470.0"
-                                          style="-fx-background-radius: 12; -fx-border-radius: 12;" />
+                                          prefHeight="260"
+                                          style="-fx-background-color: transparent; -fx-border-color: transparent;" />
+                            </VBox>
 
-                                <HBox spacing="14.0" alignment="CENTER_LEFT">
-                                    <children>
-                                        <Button text="Add Song"
-                                                onAction="#handleShowSearchSongs"
-                                                prefWidth="160.0"
-                                                prefHeight="44.0"
-                                                style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 22;" />
-                                    </children>
+                            <!-- Suggestions card (hidden until populated) -->
+                            <VBox fx:id="suggestionsSection"
+                                  spacing="14"
+                                  visible="false"
+                                  managed="false"
+                                  style="-fx-background-color: #14141e;
+                                         -fx-background-radius: 22;
+                                         -fx-border-color: rgba(139,92,246,0.15);
+                                         -fx-border-radius: 22;
+                                         -fx-border-width: 1;
+                                         -fx-padding: 24;
+                                         -fx-effect: dropshadow(gaussian,rgba(139,92,246,0.12),16,0,0,4);">
+
+                                <HBox alignment="CENTER_LEFT" spacing="12">
+                                    <VBox spacing="4" HBox.hgrow="ALWAYS">
+                                        <Label text="Suggested For You"
+                                               style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #ffffff;" />
+                                        <Label fx:id="suggestionSubtitleLabel"
+                                               text="Based on this playlist and your listening history"
+                                               style="-fx-font-size: 12px; -fx-text-fill: #3d3d5c;" />
+                                    </VBox>
+                                    <Label text="✦ Smart Picks"
+                                           style="-fx-background-color: rgba(139,92,246,0.12);
+                                                  -fx-text-fill: #a78bfa;
+                                                  -fx-font-size: 11px;
+                                                  -fx-font-weight: bold;
+                                                  -fx-background-radius: 20;
+                                                  -fx-border-color: rgba(139,92,246,0.2);
+                                                  -fx-border-radius: 20;
+                                                  -fx-border-width: 1;
+                                                  -fx-padding: 5 12 5 12;" />
                                 </HBox>
-                            </children>
+
+                                <Separator style="-fx-opacity: 0.3;" />
+
+                                <ListView fx:id="suggestedSongsListView"
+                                          prefHeight="268"
+                                          maxHeight="268"
+                                          fixedCellSize="66"
+                                          style="-fx-background-color: transparent; -fx-border-color: transparent;" />
+                            </VBox>
+
                         </VBox>
-                    </children>
-                </HBox>
+                    </HBox>
+                </content>
+            </ScrollPane>
 
-                <!-- Overlay search panel -->
-                <VBox fx:id="searchSongsPanel"
-                      visible="false"
-                      managed="false"
-                      maxWidth="330.0"
-                      minWidth="330.0"
-                      prefWidth="330.0"
-                      spacing="14.0"
-                      StackPane.alignment="TOP_RIGHT"
-                      translateX="-8.0"
-                      style="-fx-background-color: #f8fafc; -fx-background-radius: 24; -fx-padding: 20; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.18), 20, 0.2, 0, 6);">
-                    <children>
-                        <HBox alignment="CENTER_LEFT">
-                            <children>
-                                <Label text="Search Songs"
-                                       style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #1e293b;" />
-                                <Region HBox.hgrow="ALWAYS" />
-                                <Button text="X"
-                                        onAction="#handleHideSearchSongs"
-                                        prefWidth="48.0"
-                                        prefHeight="48.0"
-                                        style="-fx-background-color: #ef4444; -fx-text-fill: white; -fx-font-size: 18px; -fx-font-weight: bold; -fx-background-radius: 24;" />
-                            </children>
-                        </HBox>
+            <!-- Floating search panel (top-right overlay) -->
+            <VBox fx:id="searchSongsPanel"
+                  visible="false"
+                  managed="false"
+                  maxWidth="340" minWidth="340" prefWidth="340"
+                  spacing="14"
+                  StackPane.alignment="TOP_RIGHT"
+                  translateX="-8"
+                  style="-fx-background-color: #1a1a28;
+                         -fx-background-radius: 22;
+                         -fx-border-color: rgba(255,255,255,0.1);
+                         -fx-border-radius: 22;
+                         -fx-border-width: 1;
+                         -fx-padding: 20;
+                         -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.55),28,0,0,10);">
+                <children>
 
-                        <Label text="Songs stay hidden until you type. Search by title, artist, album, or genre."
-                               wrapText="true"
-                               style="-fx-text-fill: #64748b; -fx-font-size: 14px;" />
+                    <HBox alignment="CENTER_LEFT">
+                        <Label text="Add Songs"
+                               style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #ffffff;" />
+                        <Region HBox.hgrow="ALWAYS" />
+                        <Button text="✕"
+                                onAction="#handleHideSearchSongs"
+                                prefWidth="36" prefHeight="36"
+                                style="-fx-background-color: rgba(239,68,68,0.12);
+                                       -fx-text-fill: #f87171;
+                                       -fx-font-size: 15px;
+                                       -fx-font-weight: bold;
+                                       -fx-background-radius: 18;" />
+                    </HBox>
 
-                        <TextField fx:id="searchSongsField"
-                                   promptText="Search by title, artist, album, or genre"
-                                   prefHeight="42.0"
-                                   style="-fx-background-radius: 10; -fx-border-radius: 10; -fx-border-color: #cbd5e1;" />
+                    <TextField fx:id="searchSongsField"
+                               promptText="Title, artist, album or genre…"
+                               prefHeight="42" />
 
-                        <ListView fx:id="searchResultsListView"
-                                  VBox.vgrow="ALWAYS"
-                                  prefHeight="420.0"
-                                  style="-fx-background-radius: 12; -fx-border-radius: 12;" />
-                    </children>
-                </VBox>
+                    <Label text="Double-click a result to open song details."
+                           wrapText="true"
+                           style="-fx-text-fill: #3d3d5c; -fx-font-size: 12px;" />
 
-            </children>
+                    <ListView fx:id="searchResultsListView"
+                              VBox.vgrow="ALWAYS"
+                              prefHeight="380"
+                              style="-fx-background-color: transparent; -fx-border-color: transparent;" />
+
+                </children>
+            </VBox>
+
         </StackPane>
     </center>
 
+    <!-- ── BOTTOM ─────────────────────────────────── -->
     <bottom>
         <fx:include source="mini-player.fxml" />
     </bottom>
+
 </BorderPane>

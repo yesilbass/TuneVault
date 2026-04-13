@@ -38,18 +38,29 @@ module com.example.tunevaultfx {
 
     exports com.example.tunevaultfx.musicplayer;
     opens com.example.tunevaultfx.musicplayer to com.fasterxml.jackson.databind, javafx.fxml;
+
     exports com.example.tunevaultfx.wrapped;
     opens com.example.tunevaultfx.wrapped to com.fasterxml.jackson.databind, javafx.fxml;
+
     exports com.example.tunevaultfx.db;
     opens com.example.tunevaultfx.db to com.fasterxml.jackson.databind, javafx.fxml;
+
     exports com.example.tunevaultfx.musicplayer.playback;
     opens com.example.tunevaultfx.musicplayer.playback to com.fasterxml.jackson.databind, javafx.fxml;
+
     exports com.example.tunevaultfx.playlist.service;
     opens com.example.tunevaultfx.playlist.service to com.fasterxml.jackson.databind, javafx.fxml;
+
     exports com.example.tunevaultfx.playlist.cell;
     opens com.example.tunevaultfx.playlist.cell to com.fasterxml.jackson.databind, javafx.fxml;
+
     exports com.example.tunevaultfx.musicplayer.controller;
     opens com.example.tunevaultfx.musicplayer.controller to com.fasterxml.jackson.databind, javafx.fxml;
+
     exports com.example.tunevaultfx.search;
     opens com.example.tunevaultfx.search to com.fasterxml.jackson.databind, javafx.fxml;
+
+    // Required for RecommendationService used by PlaylistsPageController
+    exports com.example.tunevaultfx.recommendation;
+    opens com.example.tunevaultfx.recommendation to com.fasterxml.jackson.databind, javafx.fxml;
 }

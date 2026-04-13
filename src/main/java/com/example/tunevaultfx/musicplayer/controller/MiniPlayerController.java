@@ -20,14 +20,14 @@ import javafx.scene.layout.StackPane;
 import java.io.IOException;
 
 /**
- * Controls the shared mini-player shown across pages.
+ * Controls the shared mini-player bar shown across all pages.
+ * All button styles use the dark theme palette — no light gray backgrounds.
  */
 public class MiniPlayerController {
 
-    @FXML private Label miniSongLabel;
+    @FXML private Label     miniSongLabel;
     @FXML private Hyperlink miniArtistLink;
-    @FXML private Label miniTimeLabel;
-
+    @FXML private Label     miniTimeLabel;
     @FXML private Hyperlink miniPlaylistLink;
 
     @FXML private Button miniPlayPauseButton;
@@ -38,8 +38,55 @@ public class MiniPlayerController {
 
     @FXML private Slider miniProgressSlider;
 
-    private final MusicPlayerController player = MusicPlayerController.getInstance();
-    private final PlaylistPickerService addToPlaylistDialog = new PlaylistPickerService();
+    private final MusicPlayerController   player            = MusicPlayerController.getInstance();
+    private final PlaylistPickerService   addToPlaylistDialog = new PlaylistPickerService();
+
+    // ─────────────────────────────────────────────────────────────
+    // Styles (dark theme)
+    // ─────────────────────────────────────────────────────────────
+
+    private static final String BTN_INACTIVE =
+            "-fx-background-color: transparent;" +
+                    "-fx-text-fill: #3d3d5c;" +
+                    "-fx-font-size: 18px;" +
+                    "-fx-font-weight: bold;" +
+                    "-fx-background-radius: 18;";
+
+    private static final String BTN_MODE_ACTIVE =
+            "-fx-background-color: rgba(139,92,246,0.18);" +
+                    "-fx-text-fill: #a78bfa;" +
+                    "-fx-font-size: 18px;" +
+                    "-fx-font-weight: bold;" +
+                    "-fx-background-radius: 18;" +
+                    "-fx-border-color: rgba(139,92,246,0.28);" +
+                    "-fx-border-radius: 18;" +
+                    "-fx-border-width: 1;";
+
+    private static final String BTN_LIKE_ON =
+            "-fx-background-color: rgba(244,63,94,0.15);" +
+                    "-fx-text-fill: #f43f5e;" +
+                    "-fx-font-size: 18px;" +
+                    "-fx-font-weight: bold;" +
+                    "-fx-background-radius: 18;" +
+                    "-fx-border-color: rgba(244,63,94,0.22);" +
+                    "-fx-border-radius: 18;" +
+                    "-fx-border-width: 1;";
+
+    private static final String BTN_LIKE_OFF =
+            "-fx-background-color: transparent;" +
+                    "-fx-text-fill: #3d3d5c;" +
+                    "-fx-font-size: 18px;" +
+                    "-fx-font-weight: bold;" +
+                    "-fx-background-radius: 18;";
+
+    private static final String BTN_ADD =
+            "-fx-background-color: transparent;" +
+                    "-fx-text-fill: #3d3d5c;" +
+                    "-fx-font-size: 20px;" +
+                    "-fx-font-weight: bold;" +
+                    "-fx-background-radius: 18;";
+
+    // ─────────────────────────────────────────────────────────────
 
     @FXML
     public void initialize() {
@@ -52,26 +99,23 @@ public class MiniPlayerController {
 
         miniProgressSlider.setOnMouseReleased(e -> player.seek((int) miniProgressSlider.getValue()));
         miniProgressSlider.valueChangingProperty().addListener((obs, wasChanging, isChanging) -> {
-            if (!isChanging) {
-                player.seek((int) miniProgressSlider.getValue());
-            }
+            if (!isChanging) player.seek((int) miniProgressSlider.getValue());
         });
 
-        player.currentSongProperty().addListener((obs, oldVal, newVal) -> {
+        player.currentSongProperty().addListener((obs, o, n) -> {
             updateMiniLikeButton();
             updateMiniTime();
             updateMiniPlaylistLink();
             updateMiniAddButton();
         });
 
-        player.currentSecondProperty().addListener((obs, oldVal, newVal) -> updateMiniTime());
-        player.currentDurationProperty().addListener((obs, oldVal, newVal) -> updateMiniTime());
-        player.currentSourcePlaylistNameProperty().addListener((obs, oldVal, newVal) -> updateMiniPlaylistLink());
+        player.currentSecondProperty().addListener((obs, o, n)   -> updateMiniTime());
+        player.currentDurationProperty().addListener((obs, o, n) -> updateMiniTime());
+        player.currentSourcePlaylistNameProperty().addListener((obs, o, n) -> updateMiniPlaylistLink());
 
-        player.shuffleEnabledProperty().addListener((obs, oldVal, newVal) -> updateMiniModeButtons());
-        player.loopEnabledProperty().addListener((obs, oldVal, newVal) -> updateMiniModeButtons());
-
-        player.currentSongLikedProperty().addListener((obs, oldVal, newVal) -> updateMiniLikeButton());
+        player.shuffleEnabledProperty().addListener((obs, o, n) -> updateMiniModeButtons());
+        player.loopEnabledProperty().addListener((obs, o, n)    -> updateMiniModeButtons());
+        player.currentSongLikedProperty().addListener((obs, o, n) -> updateMiniLikeButton());
 
         updateMiniLikeButton();
         updateMiniTime();
@@ -80,125 +124,49 @@ public class MiniPlayerController {
         updateMiniAddButton();
     }
 
-    @FXML
-    private void handleMiniPrevious() {
-        player.previous();
-        updateMiniLikeButton();
-        updateMiniAddButton();
-    }
+    // ─── Button handlers ─────────────────────────────────────────
 
-    @FXML
-    private void handleMiniPlayPause() {
-        player.togglePlayPause();
-    }
-
-    @FXML
-    private void handleMiniNext() {
-        player.next();
-        updateMiniLikeButton();
-        updateMiniAddButton();
-    }
+    @FXML private void handleMiniPrevious()       { player.previous();          updateMiniLikeButton(); updateMiniAddButton(); }
+    @FXML private void handleMiniPlayPause()      { player.togglePlayPause(); }
+    @FXML private void handleMiniNext()           { player.next();              updateMiniLikeButton(); updateMiniAddButton(); }
+    @FXML private void handleMiniLike()           { player.toggleLikeCurrentSong(); updateMiniLikeButton(); }
+    @FXML private void handleMiniShuffle()        { player.toggleShuffle();     updateMiniModeButtons(); }
+    @FXML private void handleMiniLoop()           { player.toggleLoop();        updateMiniModeButtons(); }
+    @FXML private void handleMiniAddToPlaylist()  { addToPlaylistDialog.show(player.getCurrentSong()); updateMiniAddButton(); }
 
     @FXML
     private void handleOpenArtistProfile(ActionEvent event) throws IOException {
         String artist = player.currentArtistProperty().get();
-
-        if (artist == null || artist.isBlank()) {
-            return;
-        }
-
+        if (artist == null || artist.isBlank()) return;
         SessionManager.setSelectedArtist(artist);
         SceneUtil.switchScene((Node) event.getSource(), "artist-profile-page.fxml");
     }
 
     @FXML
-    private void handleMiniLike() {
-        player.toggleLikeCurrentSong();
-        updateMiniLikeButton();
-    }
-
-    @FXML
-    private void handleMiniShuffle() {
-        player.toggleShuffle();
-        updateMiniModeButtons();
-    }
-
-    @FXML
-    private void handleMiniLoop() {
-        player.toggleLoop();
-        updateMiniModeButtons();
-    }
-
-    @FXML
-    private void handleMiniAddToPlaylist() {
-        addToPlaylistDialog.show(player.getCurrentSong());
-        updateMiniAddButton();
-    }
-
-    @FXML
     private void handleOpenCurrentPlaylist(ActionEvent event) throws IOException {
         String playlistName = player.getCurrentSourcePlaylistName();
-        if (playlistName == null || playlistName.isBlank()) {
-            return;
-        }
-
+        if (playlistName == null || playlistName.isBlank()) return;
         SessionManager.requestPlaylistToOpen(playlistName);
         SceneUtil.switchScene((Node) event.getSource(), "playlists-page.fxml");
     }
 
     @FXML
-    private void handleOpenNowPlaying(MouseEvent event) {
-        if (player.getCurrentSong() == null) {
-            return;
-        }
-
-        Node source = (Node) event.getSource();
-        ensureExpandedPlayerAttached(source);
+    private void handleOpenNowPlaying(javafx.scene.input.MouseEvent event) {
+        if (player.getCurrentSong() == null) return;
+        ensureExpandedPlayerAttached((Node) event.getSource());
         player.setExpandedPlayerVisible(true);
     }
 
-    private void ensureExpandedPlayerAttached(Node sourceNode) {
-        Scene scene = sourceNode.getScene();
-        if (scene == null) {
-            return;
-        }
-
-        Parent currentRoot = scene.getRoot();
-        if (currentRoot.lookup("#expandedPlayerOverlay") != null) {
-            return;
-        }
-
-        try {
-            FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/com/example/tunevaultfx/expanded-page.fxml")
-            );
-            Parent overlay = loader.load();
-
-            StackPane wrapper = new StackPane();
-            wrapper.getChildren().add(currentRoot);
-            wrapper.getChildren().add(overlay);
-
-            scene.setRoot(wrapper);
-
-            scene.setOnKeyPressed(event -> {
-                switch (event.getCode()) {
-                    case ESCAPE -> player.setExpandedPlayerVisible(false);
-                }
-            });
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+    // ─── UI update helpers ────────────────────────────────────────
 
     private void updateMiniPlaylistLink() {
-        String playlistName = player.getCurrentSourcePlaylistName();
-        if (playlistName == null || playlistName.isBlank()) {
+        String name = player.getCurrentSourcePlaylistName();
+        if (name == null || name.isBlank()) {
             miniPlaylistLink.setText("");
             miniPlaylistLink.setVisible(false);
             miniPlaylistLink.setManaged(false);
         } else {
-            miniPlaylistLink.setText("Playlist: " + playlistName);
+            miniPlaylistLink.setText("From: " + name);
             miniPlaylistLink.setVisible(true);
             miniPlaylistLink.setManaged(true);
         }
@@ -206,57 +174,65 @@ public class MiniPlayerController {
 
     private void updateMiniLikeButton() {
         boolean liked = player.isCurrentSongLiked();
-
         miniLikeButton.setText(liked ? "♥" : "♡");
-        miniLikeButton.setStyle(
-                liked
-                        ? "-fx-background-color: #ef4444; -fx-text-fill: white; -fx-font-size: 20px; -fx-font-weight: bold; -fx-background-radius: 21;"
-                        : "-fx-background-color: #e2e8f0; -fx-text-fill: #475569; -fx-font-size: 20px; -fx-font-weight: bold; -fx-background-radius: 21;"
-        );
+        miniLikeButton.setStyle(liked ? BTN_LIKE_ON : BTN_LIKE_OFF);
     }
 
     private void updateMiniAddButton() {
         boolean hasSong = player.getCurrentSong() != null;
-
         miniAddButton.setDisable(!hasSong);
-        miniAddButton.setStyle(
-                "-fx-background-color: #e2e8f0; " +
-                        "-fx-text-fill: #475569; " +
-                        "-fx-font-size: 20px; " +
-                        "-fx-font-weight: bold; " +
-                        "-fx-background-radius: 21;"
-        );
+        miniAddButton.setStyle(BTN_ADD);
     }
 
     private void updateMiniModeButtons() {
-        miniShuffleButton.setText("🔀");
+        // ⇄ is a plain Unicode arrow — renders cleanly in JavaFX (unlike 🔀 emoji)
+        miniShuffleButton.setText("⇄");
         miniLoopButton.setText("↻");
 
-        miniShuffleButton.setStyle(
-                player.isShuffleEnabled()
-                        ? "-fx-background-color: #fef3c7; -fx-text-fill: #1DB954; -fx-font-size: 18px; -fx-font-weight: bold; -fx-background-radius: 21;"
-                        : "-fx-background-color: #e2e8f0; -fx-text-fill: #334155; -fx-font-size: 18px; -fx-font-weight: bold; -fx-background-radius: 21;"
-        );
-
-        miniLoopButton.setStyle(
-                player.isLoopEnabled()
-                        ? "-fx-background-color: #e2e8f0; -fx-text-fill: #1DB954; -fx-font-size: 18px; -fx-font-weight: bold; -fx-background-radius: 21;"
-                        : "-fx-background-color: #e2e8f0; -fx-text-fill: #334155; -fx-font-size: 18px; -fx-font-weight: bold; -fx-background-radius: 21;"
-        );
+        miniShuffleButton.setStyle(player.isShuffleEnabled() ? BTN_MODE_ACTIVE : BTN_INACTIVE);
+        miniLoopButton.setStyle(player.isLoopEnabled()       ? BTN_MODE_ACTIVE : BTN_INACTIVE);
     }
 
     private void updateMiniTime() {
         int current = player.currentSecondProperty().get();
-        int total = player.currentDurationProperty().get();
+        int total   = player.currentDurationProperty().get();
 
-        miniProgressSlider.setMax(total);
+        miniProgressSlider.setMax(Math.max(total, 1));
         miniProgressSlider.setValue(current);
         miniTimeLabel.setText(formatTime(current) + " / " + formatTime(total));
     }
 
+    // ─── Expanded player overlay ──────────────────────────────────
+
+    private void ensureExpandedPlayerAttached(Node sourceNode) {
+        Scene scene = sourceNode.getScene();
+        if (scene == null) return;
+
+        Parent currentRoot = scene.getRoot();
+        if (currentRoot.lookup("#expandedPlayerOverlay") != null) return;
+
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/com/example/tunevaultfx/expanded-page.fxml"));
+            Parent overlay = loader.load();
+
+            javafx.scene.layout.StackPane wrapper = new javafx.scene.layout.StackPane();
+            wrapper.getChildren().addAll(currentRoot, overlay);
+            scene.setRoot(wrapper);
+
+            scene.setOnKeyPressed(e -> {
+                if (e.getCode() == javafx.scene.input.KeyCode.ESCAPE) {
+                    player.setExpandedPlayerVisible(false);
+                }
+            });
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     private String formatTime(int totalSeconds) {
-        int minutes = totalSeconds / 60;
-        int seconds = totalSeconds % 60;
-        return minutes + ":" + String.format("%02d", seconds);
+        int m = totalSeconds / 60;
+        int s = totalSeconds % 60;
+        return m + ":" + String.format("%02d", s);
     }
 }

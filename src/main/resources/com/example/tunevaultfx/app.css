@@ -1,14 +1,238 @@
+/* ═══════════════════════════════════════════════
+   TuneVault — Global Dark Theme
+   ═══════════════════════════════════════════════ */
+
+/* ── Root ─────────────────────────────────────── */
+.root {
+    -fx-font-family: "Helvetica Neue", "Segoe UI", "SF Pro Text", system;
+}
+
+/* ── Buttons ──────────────────────────────────── */
 .button {
     -fx-cursor: hand;
 }
-
 .button:hover {
-    -fx-opacity: 0.92;
-    -fx-scale-x: 1.03;
-    -fx-scale-y: 1.03;
+    -fx-opacity: 0.86;
+}
+.button:pressed {
+    -fx-opacity: 0.72;
+    -fx-scale-x: 0.97;
+    -fx-scale-y: 0.97;
 }
 
-.logout-button:hover {
-    -fx-background-color: #dc2626 !important;
+/* ── Text Fields & Password Fields ────────────── */
+.text-field,
+.password-field {
+    -fx-background-color: rgba(255, 255, 255, 0.06);
+    -fx-text-fill: #f1f5f9;
+    -fx-prompt-text-fill: rgba(255, 255, 255, 0.26);
+    -fx-border-color: rgba(255, 255, 255, 0.1);
+    -fx-border-width: 1;
+    -fx-border-radius: 12;
+    -fx-background-radius: 12;
+    -fx-padding: 0 16 0 16;
+    -fx-font-size: 14px;
+    -fx-highlight-fill: #8b5cf6;
+    -fx-highlight-text-fill: white;
+}
+.text-field:focused,
+.password-field:focused {
+    -fx-border-color: #8b5cf6;
+    -fx-background-color: rgba(139, 92, 246, 0.07);
+}
+
+/* ── Hyperlinks ───────────────────────────────── */
+.hyperlink {
+    -fx-text-fill: #a78bfa;
+    -fx-border-color: transparent;
+    -fx-underline: false;
+    -fx-padding: 0;
+}
+.hyperlink:hover {
+    -fx-text-fill: #c4b5fd;
+    -fx-underline: true;
+}
+.hyperlink:visited,
+.hyperlink:visited:hover {
+    -fx-text-fill: #a78bfa;
+}
+
+/* ── Scroll Pane ──────────────────────────────── */
+.scroll-pane {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+}
+.scroll-pane > .viewport {
+    -fx-background-color: transparent;
+}
+.scroll-pane .scroll-bar:vertical {
+    -fx-pref-width: 6;
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+.scroll-pane .scroll-bar:vertical .thumb {
+    -fx-background-color: rgba(255, 255, 255, 0.16);
+    -fx-background-radius: 3;
+    -fx-border-color: transparent;
+}
+.scroll-pane .scroll-bar:vertical .track {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+.scroll-pane .scroll-bar:vertical .increment-button,
+.scroll-pane .scroll-bar:vertical .decrement-button {
+    -fx-background-color: transparent;
+    -fx-pref-height: 0;
+    -fx-pref-width: 0;
+    -fx-opacity: 0;
+}
+.scroll-pane .scroll-bar:horizontal {
+    -fx-pref-height: 0;
+    -fx-opacity: 0;
+}
+.scroll-pane .corner {
+    -fx-background-color: transparent;
+}
+
+/* ── List View ────────────────────────────────── */
+.list-view {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-background-insets: 0;
+    -fx-padding: 4 0 4 0;
+}
+.list-view:focused {
+    -fx-border-color: transparent;
+}
+.list-view .list-cell {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+    -fx-border-color: transparent;
+}
+.list-view .list-cell:filled:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.045);
+    -fx-background-radius: 12;
+}
+.list-view .list-cell:filled:selected {
+    -fx-background-color: rgba(139, 92, 246, 0.14);
+    -fx-background-radius: 12;
+}
+.list-view .list-cell:filled:selected:hover {
+    -fx-background-color: rgba(139, 92, 246, 0.2);
+    -fx-background-radius: 12;
+}
+
+/* ── Slider ───────────────────────────────────── */
+.slider {
+    -fx-pref-height: 18;
+}
+.slider .track {
+    -fx-background-color: rgba(255, 255, 255, 0.14);
+    -fx-background-radius: 3;
+    -fx-pref-height: 4;
+    -fx-background-insets: 0;
+}
+.slider .thumb {
+    -fx-background-color: #ffffff;
+    -fx-pref-width: 13;
+    -fx-pref-height: 13;
+    -fx-background-radius: 7;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.35), 4, 0, 0, 1);
+    -fx-cursor: hand;
+}
+.slider:hover .thumb {
+    -fx-background-color: #a78bfa;
+    -fx-pref-width: 15;
+    -fx-pref-height: 15;
+    -fx-background-radius: 8;
+    -fx-effect: dropshadow(gaussian, rgba(139,92,246,0.55), 8, 0, 0, 0);
+}
+.slider .axis {
+    -fx-opacity: 0;
+    -fx-pref-height: 0;
+}
+
+/* ── Progress Bar ─────────────────────────────── */
+.progress-bar {
+    -fx-pref-height: 8;
+    -fx-background-radius: 4;
+    -fx-background-insets: 0;
+}
+.progress-bar > .track {
+    -fx-background-color: rgba(255, 255, 255, 0.1);
+    -fx-background-radius: 4;
+    -fx-background-insets: 0;
+    -fx-border-color: transparent;
+}
+.progress-bar > .bar {
+    -fx-background-color: linear-gradient(to right, #8b5cf6, #6d28d9);
+    -fx-background-radius: 4;
+    -fx-background-insets: 0;
+    -fx-border-color: transparent;
+}
+
+/* ── Separator ────────────────────────────────── */
+.separator .line {
+    -fx-border-color: rgba(255, 255, 255, 0.08) transparent transparent transparent;
+    -fx-border-width: 1 0 0 0;
+}
+
+/* ── Tooltip ──────────────────────────────────── */
+.tooltip {
+    -fx-background-color: #1e1e2e;
+    -fx-text-fill: #f1f5f9;
+    -fx-font-size: 12px;
+    -fx-border-color: rgba(255,255,255,0.1);
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.4), 12, 0, 0, 4);
+}
+
+/* ── Context Menu ─────────────────────────────── */
+.context-menu {
+    -fx-background-color: #1a1a26;
+    -fx-border-color: rgba(255,255,255,0.1);
+    -fx-border-radius: 12;
+    -fx-background-radius: 12;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 20, 0, 0, 6);
+    -fx-padding: 6;
+}
+.menu-item {
+    -fx-background-color: transparent;
+    -fx-text-fill: #e2e8f0;
+    -fx-padding: 8 14 8 14;
+    -fx-background-radius: 8;
+}
+.menu-item:hover {
+    -fx-background-color: rgba(139,92,246,0.18);
+}
+
+/* ── Dialog / Alert ───────────────────────────── */
+.dialog-pane {
+    -fx-background-color: #14141e;
+    -fx-border-color: rgba(255,255,255,0.1);
+    -fx-border-radius: 16;
+    -fx-background-radius: 16;
+}
+.dialog-pane .header-panel {
+    -fx-background-color: #1a1a2a;
+    -fx-background-radius: 16 16 0 0;
+}
+.dialog-pane .header-panel .label {
     -fx-text-fill: white;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+}
+.dialog-pane .content.label {
+    -fx-text-fill: #94a3b8;
+    -fx-font-size: 14px;
+}
+.dialog-pane .button-bar .button {
+    -fx-background-color: #8b5cf6;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-background-radius: 10;
+    -fx-cursor: hand;
 }

@@ -3,7 +3,7 @@ package com.example.tunevaultfx.search;
 import com.example.tunevaultfx.core.Song;
 import com.example.tunevaultfx.db.SongDAO;
 import com.example.tunevaultfx.musicplayer.controller.MusicPlayerController;
-import com.example.tunevaultfx.playlist.service.SongSearchService;
+import com.example.tunevaultfx.recommendation.RecommendationService;
 import com.example.tunevaultfx.session.SessionManager;
 import com.example.tunevaultfx.util.AlertUtil;
 import com.example.tunevaultfx.util.SceneUtil;
@@ -11,34 +11,39 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.Region;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 
 import java.io.IOException;
-import java.util.LinkedHashSet;
-import java.util.Set;
 
 public class SearchPageController {
 
-    @FXML private TextField searchField;
-    @FXML private ListView<Song> songResultsListView;
-    @FXML private ListView<String> artistResultsListView;
-    @FXML private ListView<SearchRecentItem> recentSearchesListView;
-    @FXML private Label resultsSummaryLabel;
-    @FXML private VBox recentSection;
-    @FXML private HBox resultsSection;
+    // ── FXML fields ───────────────────────────────────────────────
+    @FXML private TextField  searchField;
+    @FXML private Label      resultsSummaryLabel;
 
-    private final ObservableList<Song> allSongs = FXCollections.observableArrayList();
-    private final ObservableList<Song> filteredSongs = FXCollections.observableArrayList();
+    @FXML private VBox       recentSection;
+    @FXML private ListView<SearchRecentItem> recentSearchesListView;
+
+    @FXML private ScrollPane resultsScrollPane;
+    @FXML private VBox       songResultsSection;
+    @FXML private VBox       artistResultsSection;
+    @FXML private ListView<Song>   songResultsListView;
+    @FXML private ListView<String> artistResultsListView;
+
+    // ── Data ──────────────────────────────────────────────────────
+    private final ObservableList<Song>   allSongs        = FXCollections.observableArrayList();
+    private final ObservableList<Song>   filteredSongs   = FXCollections.observableArrayList();
     private final ObservableList<String> filteredArtists = FXCollections.observableArrayList();
 
-    private final SongDAO songDAO = new SongDAO();
-    private final SongSearchService songSearchService = new SongSearchService();
-    private final MusicPlayerController player = MusicPlayerController.getInstance();
+    // ── Services ──────────────────────────────────────────────────
+    private final SongDAO               songDAO               = new SongDAO();
+    private final RecommendationService recommendationService = new RecommendationService();
+    private final MusicPlayerController player                = MusicPlayerController.getInstance();
+
+    // ─────────────────────────────────────────────────────────────
 
     @FXML
     public void initialize() {
@@ -48,17 +53,17 @@ public class SearchPageController {
         artistResultsListView.setItems(filteredArtists);
         recentSearchesListView.setItems(SessionManager.getRecentSearches());
 
-        songResultsListView.setPlaceholder(new Label("No matching songs."));
-        artistResultsListView.setPlaceholder(new Label("No matching artists."));
-        recentSearchesListView.setPlaceholder(new Label("No recent searches yet."));
-        resultsSummaryLabel.setText("Start typing to search.");
+        songResultsListView.setPlaceholder(placeholderLabel("No matching songs"));
+        artistResultsListView.setPlaceholder(placeholderLabel("No matching artists"));
+        recentSearchesListView.setPlaceholder(placeholderLabel("No recent searches yet"));
 
         setupSongCells();
         setupArtistCells();
         setupRecentCells();
         setupListeners();
         setupDoubleClickActions();
-        showRecentMode();
+
+        showIdleMode();
     }
 
     private void loadSongs() {
@@ -70,184 +75,253 @@ public class SearchPageController {
         }
     }
 
+    // ── Cell factories ────────────────────────────────────────────
+
     private void setupSongCells() {
-        songResultsListView.setCellFactory(listView -> new ListCell<>() {
+        songResultsListView.setCellFactory(lv -> new ListCell<>() {
             @Override
             protected void updateItem(Song song, boolean empty) {
                 super.updateItem(song, empty);
+                if (empty || song == null) { setText(null); setGraphic(null); return; }
 
-                if (empty || song == null) {
-                    setText(null);
-                    setGraphic(null);
-                    return;
-                }
+                // Icon
+                StackPane icon = new StackPane();
+                icon.setPrefSize(42, 42);
+                icon.setMinSize(42, 42);
+                icon.setMaxSize(42, 42);
+                icon.setStyle("-fx-background-color: rgba(139,92,246,0.12);" +
+                        "-fx-background-radius: 11;" +
+                        "-fx-border-color: rgba(139,92,246,0.18);" +
+                        "-fx-border-radius: 11;" +
+                        "-fx-border-width: 1;");
+                Label iconLabel = new Label("♫");
+                iconLabel.setStyle("-fx-font-size: 17px; -fx-text-fill: #7c6fa6;");
+                icon.getChildren().add(iconLabel);
+                StackPane.setAlignment(iconLabel, Pos.CENTER);
 
+                // Text
                 Label title = new Label(song.title());
-                title.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #0f172a;");
+                title.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #e2e8f0;");
 
-                String metaText = song.artist();
-                if (song.genre() != null && !song.genre().isBlank()) {
-                    metaText += " • " + song.genre();
-                }
+                String meta = song.artist() == null ? "" : song.artist();
+                if (song.genre() != null && !song.genre().isBlank())
+                    meta += " · " + song.genre();
+                Label metaLabel = new Label(meta);
+                metaLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #3d3d5c;");
 
-                Label meta = new Label(metaText);
-                meta.setStyle("-fx-font-size: 13px; -fx-text-fill: #64748b;");
+                VBox textBox = new VBox(3, title, metaLabel);
+                HBox.setHgrow(textBox, Priority.ALWAYS);
 
-                VBox box = new VBox(4, title, meta);
-                box.setPadding(new Insets(8, 6, 8, 6));
+                // Duration
+                Label dur = new Label(formatDuration(song.durationSeconds()));
+                dur.setStyle("-fx-font-size: 12px; -fx-text-fill: #3d3d5c;");
+
+                HBox row = new HBox(12, icon, textBox, dur);
+                row.setAlignment(Pos.CENTER_LEFT);
+                row.setPadding(new Insets(8, 12, 8, 12));
+                row.setStyle("-fx-background-color: transparent; -fx-background-radius: 12;");
+                row.setOnMouseEntered(e ->
+                        row.setStyle("-fx-background-color: rgba(255,255,255,0.04); -fx-background-radius: 12;"));
+                row.setOnMouseExited(e ->
+                        row.setStyle("-fx-background-color: transparent; -fx-background-radius: 12;"));
 
                 setText(null);
-                setGraphic(box);
+                setGraphic(row);
+                setStyle("-fx-background-color: transparent; -fx-padding: 2 0 2 0;");
             }
+
+            @Override public void updateSelected(boolean s) { super.updateSelected(false); }
         });
     }
 
     private void setupArtistCells() {
-        artistResultsListView.setCellFactory(listView -> new ListCell<>() {
+        artistResultsListView.setCellFactory(lv -> new ListCell<>() {
             @Override
             protected void updateItem(String artist, boolean empty) {
                 super.updateItem(artist, empty);
+                if (empty || artist == null || artist.isBlank()) { setText(null); setGraphic(null); return; }
 
-                if (empty || artist == null || artist.isBlank()) {
-                    setText(null);
-                    setGraphic(null);
-                    return;
-                }
+                // Avatar circle
+                StackPane avatar = new StackPane();
+                avatar.setPrefSize(42, 42);
+                avatar.setMinSize(42, 42);
+                avatar.setMaxSize(42, 42);
+                avatar.setStyle("-fx-background-color: rgba(244,63,94,0.12);" +
+                        "-fx-background-radius: 21;" +
+                        "-fx-border-color: rgba(244,63,94,0.18);" +
+                        "-fx-border-radius: 21;" +
+                        "-fx-border-width: 1;");
+                Label initial = new Label(artist.substring(0, 1).toUpperCase());
+                initial.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #9b4f62;");
+                avatar.getChildren().add(initial);
+                StackPane.setAlignment(initial, Pos.CENTER);
 
                 Label name = new Label(artist);
-                name.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #0f172a;");
+                name.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #e2e8f0;");
+                Label type = new Label("Artist");
+                type.setStyle("-fx-font-size: 12px; -fx-text-fill: #3d3d5c;");
+                VBox textBox = new VBox(3, name, type);
+                HBox.setHgrow(textBox, Priority.ALWAYS);
 
-                Label meta = new Label("Artist");
-                meta.setStyle("-fx-font-size: 13px; -fx-text-fill: #64748b;");
-
-                VBox box = new VBox(4, name, meta);
-                box.setPadding(new Insets(8, 6, 8, 6));
+                HBox row = new HBox(12, avatar, textBox);
+                row.setAlignment(Pos.CENTER_LEFT);
+                row.setPadding(new Insets(8, 12, 8, 12));
+                row.setStyle("-fx-background-color: transparent; -fx-background-radius: 12;");
+                row.setOnMouseEntered(e ->
+                        row.setStyle("-fx-background-color: rgba(255,255,255,0.04); -fx-background-radius: 12;"));
+                row.setOnMouseExited(e ->
+                        row.setStyle("-fx-background-color: transparent; -fx-background-radius: 12;"));
 
                 setText(null);
-                setGraphic(box);
+                setGraphic(row);
+                setStyle("-fx-background-color: transparent; -fx-padding: 2 0 2 0;");
             }
+
+            @Override public void updateSelected(boolean s) { super.updateSelected(false); }
         });
     }
 
     private void setupRecentCells() {
-        recentSearchesListView.setCellFactory(listView -> new ListCell<>() {
+        recentSearchesListView.setCellFactory(lv -> new ListCell<>() {
             @Override
             protected void updateItem(SearchRecentItem item, boolean empty) {
                 super.updateItem(item, empty);
+                if (empty || item == null) { setText(null); setGraphic(null); return; }
 
-                if (empty || item == null) {
-                    setText(null);
-                    setGraphic(null);
-                    return;
-                }
+                boolean isSong = item.getType() == SearchRecentItem.Type.SONG;
+
+                StackPane icon = new StackPane();
+                icon.setPrefSize(42, 42);
+                icon.setMinSize(42, 42);
+                icon.setMaxSize(42, 42);
+                icon.setStyle(isSong
+                        ? "-fx-background-color: rgba(139,92,246,0.12); -fx-background-radius: 11; -fx-border-color: rgba(139,92,246,0.18); -fx-border-radius: 11; -fx-border-width: 1;"
+                        : "-fx-background-color: rgba(244,63,94,0.12); -fx-background-radius: 21; -fx-border-color: rgba(244,63,94,0.18); -fx-border-radius: 21; -fx-border-width: 1;");
+                Label iconLabel = new Label(isSong ? "♫" : "◎");
+                iconLabel.setStyle(isSong
+                        ? "-fx-font-size: 17px; -fx-text-fill: #7c6fa6;"
+                        : "-fx-font-size: 17px; -fx-text-fill: #9b4f62;");
+                icon.getChildren().add(iconLabel);
+                StackPane.setAlignment(iconLabel, Pos.CENTER);
 
                 Label primary = new Label(item.getPrimaryText());
-                primary.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #0f172a;");
-
+                primary.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #e2e8f0;");
                 Label secondary = new Label(item.getSecondaryText());
-                secondary.setStyle("-fx-font-size: 13px; -fx-text-fill: #64748b;");
+                secondary.setStyle("-fx-font-size: 12px; -fx-text-fill: #3d3d5c;");
+                VBox textBox = new VBox(3, primary, secondary);
+                HBox.setHgrow(textBox, Priority.ALWAYS);
 
-                VBox textBox = new VBox(4, primary, secondary);
+                Label tag = new Label(isSong ? "Song" : "Artist");
+                tag.setStyle(isSong
+                        ? "-fx-background-color: rgba(139,92,246,0.12); -fx-text-fill: #7c6fa6; -fx-font-size: 11px; -fx-font-weight: bold; -fx-background-radius: 10; -fx-padding: 3 10 3 10; -fx-border-color: rgba(139,92,246,0.18); -fx-border-radius: 10; -fx-border-width: 1;"
+                        : "-fx-background-color: rgba(244,63,94,0.1); -fx-text-fill: #9b4f62; -fx-font-size: 11px; -fx-font-weight: bold; -fx-background-radius: 10; -fx-padding: 3 10 3 10; -fx-border-color: rgba(244,63,94,0.15); -fx-border-radius: 10; -fx-border-width: 1;");
 
-                Region spacer = new Region();
-                HBox.setHgrow(spacer, Priority.ALWAYS);
-
-                HBox row = new HBox(12, textBox, spacer);
-                row.setPadding(new Insets(10, 6, 10, 6));
+                HBox row = new HBox(12, icon, textBox, tag);
+                row.setAlignment(Pos.CENTER_LEFT);
+                row.setPadding(new Insets(8, 12, 8, 12));
+                row.setStyle("-fx-background-color: transparent; -fx-background-radius: 12;");
+                row.setOnMouseEntered(e ->
+                        row.setStyle("-fx-background-color: rgba(255,255,255,0.04); -fx-background-radius: 12;"));
+                row.setOnMouseExited(e ->
+                        row.setStyle("-fx-background-color: transparent; -fx-background-radius: 12;"));
 
                 setText(null);
                 setGraphic(row);
+                setStyle("-fx-background-color: transparent; -fx-padding: 2 0 2 0;");
             }
+
+            @Override public void updateSelected(boolean s) { super.updateSelected(false); }
         });
 
-        recentSearchesListView.setOnMouseClicked(event -> {
-            if (event.getClickCount() == 2) {
-                SearchRecentItem selected = recentSearchesListView.getSelectionModel().getSelectedItem();
-                if (selected != null) {
-                    openRecentItem(selected);
-                }
+        recentSearchesListView.setOnMouseClicked(e -> {
+            if (e.getClickCount() == 2) {
+                SearchRecentItem item = recentSearchesListView.getSelectionModel().getSelectedItem();
+                if (item != null) openRecentItem(item);
             }
         });
     }
 
+    // ── Listeners ─────────────────────────────────────────────────
+
     private void setupListeners() {
-        searchField.textProperty().addListener((obs, oldVal, newVal) -> runSearch(newVal));
+        searchField.textProperty().addListener((obs, o, n) -> runSearch(n));
     }
 
     private void setupDoubleClickActions() {
-        songResultsListView.setOnMouseClicked(event -> {
-            if (event.getClickCount() == 2) {
-                Song selectedSong = songResultsListView.getSelectionModel().getSelectedItem();
-                if (selectedSong != null) {
-                    player.playSingleSong(selectedSong);
-                    SessionManager.addRecentSearch(SearchRecentItem.song(selectedSong));
+        songResultsListView.setOnMouseClicked(e -> {
+            if (e.getClickCount() == 2) {
+                Song s = songResultsListView.getSelectionModel().getSelectedItem();
+                if (s != null) {
+                    player.playSingleSong(s);
+                    SessionManager.addRecentSearch(SearchRecentItem.song(s));
                 }
             }
         });
 
-        artistResultsListView.setOnMouseClicked(event -> {
-            if (event.getClickCount() == 2) {
-                String selectedArtist = artistResultsListView.getSelectionModel().getSelectedItem();
-                if (selectedArtist != null && !selectedArtist.isBlank()) {
-                    SessionManager.setSelectedArtist(selectedArtist);
-                    SessionManager.addRecentSearch(SearchRecentItem.artist(selectedArtist));
-                    try {
-                        SceneUtil.switchScene(artistResultsListView, "artist-profile-page.fxml");
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+        artistResultsListView.setOnMouseClicked(e -> {
+            if (e.getClickCount() == 2) {
+                String artist = artistResultsListView.getSelectionModel().getSelectedItem();
+                if (artist != null && !artist.isBlank()) {
+                    SessionManager.setSelectedArtist(artist);
+                    SessionManager.addRecentSearch(SearchRecentItem.artist(artist));
+                    try { SceneUtil.switchScene(artistResultsListView, "artist-profile-page.fxml"); }
+                    catch (IOException ex) { ex.printStackTrace(); }
                 }
             }
         });
     }
+
+    // ── Search logic ──────────────────────────────────────────────
 
     private void runSearch(String rawQuery) {
         String query = rawQuery == null ? "" : rawQuery.trim();
-
         if (query.isBlank()) {
             filteredSongs.clear();
             filteredArtists.clear();
-            resultsSummaryLabel.setText("Start typing to search.");
-            showRecentMode();
+            resultsSummaryLabel.setText("");
+            showIdleMode();
             return;
         }
 
-        ObservableList<Song> songMatches = songSearchService.filterSongs(allSongs, query);
-        filteredSongs.setAll(songMatches);
+        String username = SessionManager.getCurrentUsername();
 
-        Set<String> artistSet = new LinkedHashSet<>();
-        String lowerQuery = query.toLowerCase();
+        filteredSongs.setAll(
+                recommendationService.getRankedSearchSongs(username, query, allSongs, 50));
+        filteredArtists.setAll(
+                recommendationService.getRankedSearchArtists(username, query, allSongs, 20));
 
-        for (Song song : allSongs) {
-            if (song == null || song.artist() == null) {
-                continue;
-            }
+        int sc = filteredSongs.size();
+        int ac = filteredArtists.size();
 
-            if (song.artist().toLowerCase().contains(lowerQuery)) {
-                artistSet.add(song.artist());
-            }
-        }
+        resultsSummaryLabel.setText(
+                sc == 0 && ac == 0
+                        ? "No results for \"" + query + "\""
+                        : sc + " song" + (sc != 1 ? "s" : "") + "  \u00B7  " + ac + " artist" + (ac != 1 ? "s" : ""));
 
-        filteredArtists.setAll(artistSet);
-        resultsSummaryLabel.setText("Songs: " + filteredSongs.size() + " | Artists: " + filteredArtists.size());
-        showSearchResultsMode();
+        showResultsMode(sc > 0, ac > 0);
     }
 
-    private void showRecentMode() {
+    // ── Mode switching ────────────────────────────────────────────
+
+    private void showIdleMode() {
         recentSection.setVisible(true);
         recentSection.setManaged(true);
-
-        resultsSection.setVisible(false);
-        resultsSection.setManaged(false);
+        resultsScrollPane.setVisible(false);
+        resultsScrollPane.setManaged(false);
     }
 
-    private void showSearchResultsMode() {
+    private void showResultsMode(boolean hasSongs, boolean hasArtists) {
         recentSection.setVisible(false);
         recentSection.setManaged(false);
-
-        resultsSection.setVisible(true);
-        resultsSection.setManaged(true);
+        resultsScrollPane.setVisible(true);
+        resultsScrollPane.setManaged(true);
+        songResultsSection.setVisible(hasSongs);
+        songResultsSection.setManaged(hasSongs);
+        artistResultsSection.setVisible(hasArtists);
+        artistResultsSection.setManaged(hasArtists);
     }
+
+    // ── Recent item handler ───────────────────────────────────────
 
     private void openRecentItem(SearchRecentItem item) {
         if (item.getType() == SearchRecentItem.Type.SONG && item.getSong() != null) {
@@ -255,16 +329,27 @@ public class SearchPageController {
             SessionManager.addRecentSearch(SearchRecentItem.song(item.getSong()));
             return;
         }
-
         if (item.getType() == SearchRecentItem.Type.ARTIST && item.getArtistName() != null) {
             SessionManager.setSelectedArtist(item.getArtistName());
             SessionManager.addRecentSearch(SearchRecentItem.artist(item.getArtistName()));
-            try {
-                SceneUtil.switchScene(recentSearchesListView, "artist-profile-page.fxml");
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            try { SceneUtil.switchScene(recentSearchesListView, "artist-profile-page.fxml"); }
+            catch (IOException e) { e.printStackTrace(); }
         }
+    }
+
+    // ── FXML handlers ─────────────────────────────────────────────
+
+    @FXML private void handleClearSearch() {
+        searchField.clear();
+        filteredSongs.clear();
+        filteredArtists.clear();
+        resultsSummaryLabel.setText("");
+        showIdleMode();
+    }
+
+    @FXML private void handleClearRecentSearches() {
+        SessionManager.clearRecentSearches();
+        recentSearchesListView.refresh();
     }
 
     @FXML
@@ -272,18 +357,16 @@ public class SearchPageController {
         SceneUtil.switchScene((Node) event.getSource(), "main-menu.fxml");
     }
 
-    @FXML
-    private void handleClearSearch() {
-        searchField.clear();
-        filteredSongs.clear();
-        filteredArtists.clear();
-        resultsSummaryLabel.setText("Start typing to search.");
-        showRecentMode();
+    // ── Helpers ───────────────────────────────────────────────────
+
+    private String formatDuration(int seconds) {
+        if (seconds <= 0) return "";
+        return (seconds / 60) + ":" + String.format("%02d", seconds % 60);
     }
 
-    @FXML
-    private void handleClearRecentSearches() {
-        SessionManager.clearRecentSearches();
-        recentSearchesListView.refresh();
+    private Label placeholderLabel(String text) {
+        Label l = new Label(text);
+        l.setStyle("-fx-text-fill: #3d3d5c; -fx-font-size: 13px;");
+        return l;
     }
 }

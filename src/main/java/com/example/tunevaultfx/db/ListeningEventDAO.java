@@ -3,6 +3,8 @@ package com.example.tunevaultfx.db;
 import com.example.tunevaultfx.core.Song;
 
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Saves and updates listening analytics in real time.
@@ -123,6 +125,50 @@ public class ListeningEventDAO {
         recordSimpleInteraction(username, song, "PLAYLIST_REMOVE");
     }
 
+    public List<UserBehaviorEvent> getUserBehaviorEvents(String username) {
+        List<UserBehaviorEvent> events = new ArrayList<>();
+
+        if (username == null || username.isBlank()) {
+            return events;
+        }
+
+        String sql = """
+                SELECT s.song_id,
+                       COALESCE(a.name, '') AS artist_name,
+                       COALESCE(g.genre_name, '') AS genre_name,
+                       le.action_type,
+                       COALESCE(le.completion_ratio, 0.0) AS completion_ratio
+                FROM listening_event le
+                JOIN app_user u ON u.user_id = le.user_id
+                JOIN song s ON s.song_id = le.song_id
+                LEFT JOIN artist a ON a.artist_id = s.artist_id
+                LEFT JOIN genre g ON g.genre_id = s.genre_id
+                WHERE u.username = ?
+                ORDER BY le.event_timestamp DESC, le.event_id DESC
+                """;
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, username);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    events.add(new UserBehaviorEvent(
+                            rs.getInt("song_id"),
+                            rs.getString("artist_name"),
+                            rs.getString("genre_name"),
+                            rs.getString("action_type"),
+                            rs.getDouble("completion_ratio")
+                    ));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return events;
+    }
+
     private void recordSimpleInteraction(String username, Song song, String actionType) {
         if (username == null || username.isBlank() || song == null || song.songId() <= 0) {
             return;
@@ -164,5 +210,14 @@ public class ListeningEventDAO {
                 return rs.next() ? rs.getInt("user_id") : null;
             }
         }
+    }
+
+    public record UserBehaviorEvent(
+            int songId,
+            String artistName,
+            String genreName,
+            String actionType,
+            double completionRatio
+    ) {
     }
 }

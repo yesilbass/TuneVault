@@ -7,62 +7,126 @@
             xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="com.example.tunevaultfx.search.ArtistProfileController"
             prefWidth="1280.0"
-            prefHeight="760.0"
-            style="-fx-background-color: linear-gradient(to bottom right, #0f172a, #1e293b);">
+            prefHeight="820.0"
+            style="-fx-background-color: linear-gradient(to bottom right, #090912, #0f0f1e);">
 
+    <!-- ── TOP ───────────────────────────────────── -->
     <top>
-        <HBox alignment="CENTER_LEFT" spacing="12" style="-fx-padding: 20 24 18 24;">
-            <children>
-                <Button text="Back to Search"
-                        onAction="#handleBackToSearch"
-                        prefWidth="130"
-                        prefHeight="40"
-                        style="-fx-background-color: #3b82f6; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 20;" />
+        <HBox alignment="CENTER_LEFT" spacing="12"
+              style="-fx-padding: 22 32 18 32;
+                     -fx-border-color: transparent transparent rgba(255,255,255,0.06) transparent;
+                     -fx-border-width: 0 0 1 0;">
+            <Button text="← Search"
+                    onAction="#handleBackToSearch"
+                    prefWidth="110" prefHeight="38"
+                    style="-fx-background-color: rgba(255,255,255,0.07);
+                           -fx-text-fill: #94a3b8;
+                           -fx-font-size: 13px;
+                           -fx-font-weight: bold;
+                           -fx-background-radius: 19;
+                           -fx-border-color: rgba(255,255,255,0.1);
+                           -fx-border-radius: 19;
+                           -fx-border-width: 1;" />
 
-                <StackPane HBox.hgrow="ALWAYS" alignment="CENTER">
-                    <Label text="Artist Profile"
-                           style="-fx-text-fill: white; -fx-font-size: 30px; -fx-font-weight: bold;" />
-                </StackPane>
+            <StackPane HBox.hgrow="ALWAYS" alignment="CENTER">
+                <Label text="Artist Profile"
+                       style="-fx-text-fill: #ffffff; -fx-font-size: 26px; -fx-font-weight: bold;" />
+            </StackPane>
 
-                <Region prefWidth="130" />
-            </children>
+            <Region prefWidth="110" />
         </HBox>
     </top>
 
+    <!-- ── CENTER ────────────────────────────────── -->
     <center>
-        <VBox spacing="20" style="-fx-padding: 12 24 20 24;">
+        <VBox spacing="20" style="-fx-padding: 20 32 20 32;">
             <children>
-                <VBox spacing="10"
-                      style="-fx-background-color: #f8fafc; -fx-background-radius: 24; -fx-padding: 24;">
-                    <children>
-                        <Label fx:id="artistNameLabel"
-                               text="Artist Name"
-                               style="-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: #1e293b;" />
 
-                        <Label fx:id="artistSummaryLabel"
-                               text="Songs available: 0"
-                               style="-fx-text-fill: #64748b; -fx-font-size: 15px;" />
+                <!-- Hero card -->
+                <HBox spacing="28" alignment="CENTER_LEFT"
+                      style="-fx-background-color: linear-gradient(to right, #14141e, #1a0b3c);
+                             -fx-background-radius: 24;
+                             -fx-border-color: rgba(139,92,246,0.15);
+                             -fx-border-radius: 24;
+                             -fx-border-width: 1;
+                             -fx-padding: 28 32 28 32;
+                             -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.5),24,0,0,6);">
+                    <children>
+
+                        <!-- Artist avatar (large initial) -->
+                        <StackPane prefWidth="100" prefHeight="100"
+                                   minWidth="100" minHeight="100"
+                                   style="-fx-background-color: linear-gradient(to bottom right, #4c1d95, #7c3aed);
+                                          -fx-background-radius: 50;
+                                          -fx-effect: dropshadow(gaussian, rgba(139,92,246,0.5), 20, 0, 0, 4);">
+                            <Label text="♫"
+                                   style="-fx-font-size: 42px;
+                                          -fx-font-weight: bold;
+                                          -fx-text-fill: rgba(255,255,255,0.5);" />
+                        </StackPane>
+
+                        <!-- Artist info -->
+                        <VBox spacing="8" HBox.hgrow="ALWAYS">
+                            <Label text="ARTIST"
+                                   style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #52525b;" />
+                            <Label fx:id="artistNameLabel"
+                                   text="Artist Name"
+                                   style="-fx-font-size: 38px;
+                                          -fx-font-weight: bold;
+                                          -fx-text-fill: #ffffff;
+                                          -fx-line-spacing: -2;" />
+                            <Label fx:id="artistSummaryLabel"
+                                   text="Songs available: 0"
+                                   style="-fx-font-size: 14px; -fx-text-fill: #52525b;" />
+                        </VBox>
+
                     </children>
-                </VBox>
+                </HBox>
 
-                <VBox spacing="14"
-                      VBox.vgrow="ALWAYS"
-                      style="-fx-background-color: #f8fafc; -fx-background-radius: 24; -fx-padding: 24;">
+                <!-- Songs card -->
+                <VBox spacing="14" VBox.vgrow="ALWAYS"
+                      style="-fx-background-color: #14141e;
+                             -fx-background-radius: 22;
+                             -fx-border-color: rgba(255,255,255,0.08);
+                             -fx-border-radius: 22;
+                             -fx-border-width: 1;
+                             -fx-padding: 24;
+                             -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.4),18,0,0,4);">
                     <children>
-                        <Label text="Popular Songs"
-                               style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #1e293b;" />
+
+                        <HBox alignment="CENTER_LEFT" spacing="10">
+                            <StackPane prefWidth="32" prefHeight="32"
+                                       style="-fx-background-color: rgba(139,92,246,0.15);
+                                              -fx-background-radius: 10;
+                                              -fx-border-color: rgba(139,92,246,0.2);
+                                              -fx-border-radius: 10;
+                                              -fx-border-width: 1;">
+                                <Label text="♫"
+                                       style="-fx-font-size: 14px; -fx-text-fill: #a78bfa;" />
+                            </StackPane>
+                            <Label text="Discography"
+                                   style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #ffffff;" />
+                            <Label text="Double-click to play"
+                                   style="-fx-font-size: 12px; -fx-text-fill: #3f3f5a;" />
+                        </HBox>
+
+                        <Separator style="-fx-opacity: 0.5;" />
 
                         <ListView fx:id="artistSongsListView"
                                   VBox.vgrow="ALWAYS"
-                                  prefHeight="560"
-                                  style="-fx-background-radius: 12; -fx-border-radius: 12;" />
+                                  prefHeight="480"
+                                  style="-fx-background-color: transparent;
+                                         -fx-border-color: transparent;" />
                     </children>
                 </VBox>
+
             </children>
         </VBox>
     </center>
 
+    <!-- ── BOTTOM ─────────────────────────────────── -->
     <bottom>
         <fx:include source="mini-player.fxml" />
     </bottom>
+
 </BorderPane>
