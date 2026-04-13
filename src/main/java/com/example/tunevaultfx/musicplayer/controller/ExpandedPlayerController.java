@@ -22,17 +22,18 @@ import javafx.util.Duration;
 import java.io.IOException;
 
 /**
- * Controls the expanded player overlay shown above the current page.
+ * Controls the expanded player overlay.
+ * All button styles use the dark theme palette.
  */
 public class ExpandedPlayerController {
 
     @FXML private StackPane overlayRoot;
-    @FXML private VBox playerCard;
+    @FXML private VBox      playerCard;
 
-    @FXML private Label titleLabel;
+    @FXML private Label     titleLabel;
     @FXML private Hyperlink artistLink;
-    @FXML private Label albumLabel;
-    @FXML private Label timeLabel;
+    @FXML private Label     albumLabel;
+    @FXML private Label     timeLabel;
 
     @FXML private Button playPauseButton;
     @FXML private Button likeButton;
@@ -42,10 +43,64 @@ public class ExpandedPlayerController {
 
     @FXML private Slider progressSlider;
 
-    private final MusicPlayerController player = MusicPlayerController.getInstance();
-    private final PlaylistPickerService addToPlaylistDialog = new PlaylistPickerService();
+    private final MusicPlayerController  player             = MusicPlayerController.getInstance();
+    private final PlaylistPickerService  addToPlaylistDialog = new PlaylistPickerService();
 
     private boolean animatingClose = false;
+
+    // ─── Style constants (dark theme) ─────────────────────────────
+
+    private static final String BTN_NEUTRAL =
+            "-fx-background-color: rgba(255,255,255,0.07);" +
+                    "-fx-text-fill: #4a4a70;" +
+                    "-fx-font-size: 20px;" +
+                    "-fx-font-weight: bold;" +
+                    "-fx-background-radius: 22;" +
+                    "-fx-border-color: rgba(255,255,255,0.08);" +
+                    "-fx-border-radius: 22;" +
+                    "-fx-border-width: 1;";
+
+    private static final String BTN_MODE_ACTIVE =
+            "-fx-background-color: rgba(139,92,246,0.2);" +
+                    "-fx-text-fill: #a78bfa;" +
+                    "-fx-font-size: 20px;" +
+                    "-fx-font-weight: bold;" +
+                    "-fx-background-radius: 22;" +
+                    "-fx-border-color: rgba(139,92,246,0.32);" +
+                    "-fx-border-radius: 22;" +
+                    "-fx-border-width: 1;";
+
+    private static final String BTN_LIKE_ON =
+            "-fx-background-color: rgba(244,63,94,0.18);" +
+                    "-fx-text-fill: #f43f5e;" +
+                    "-fx-font-size: 20px;" +
+                    "-fx-font-weight: bold;" +
+                    "-fx-background-radius: 22;" +
+                    "-fx-border-color: rgba(244,63,94,0.28);" +
+                    "-fx-border-radius: 22;" +
+                    "-fx-border-width: 1;";
+
+    private static final String BTN_LIKE_OFF =
+            "-fx-background-color: rgba(244,63,94,0.07);" +
+                    "-fx-text-fill: #4a4a70;" +
+                    "-fx-font-size: 20px;" +
+                    "-fx-font-weight: bold;" +
+                    "-fx-background-radius: 22;" +
+                    "-fx-border-color: rgba(244,63,94,0.1);" +
+                    "-fx-border-radius: 22;" +
+                    "-fx-border-width: 1;";
+
+    private static final String BTN_ADD =
+            "-fx-background-color: rgba(139,92,246,0.07);" +
+                    "-fx-text-fill: #4a4a70;" +
+                    "-fx-font-size: 22px;" +
+                    "-fx-font-weight: bold;" +
+                    "-fx-background-radius: 22;" +
+                    "-fx-border-color: rgba(139,92,246,0.1);" +
+                    "-fx-border-radius: 22;" +
+                    "-fx-border-width: 1;";
+
+    // ─────────────────────────────────────────────────────────────
 
     @FXML
     public void initialize() {
@@ -61,39 +116,32 @@ public class ExpandedPlayerController {
                 Bindings.when(player.playingProperty()).then("⏸").otherwise("▶")
         );
 
-        player.currentSongProperty().addListener((obs, oldVal, newVal) -> {
+        player.currentSongProperty().addListener((obs, o, n) -> {
             refreshSongInfo();
             refreshLikeButton();
             refreshAddButton();
         });
 
-        player.currentSecondProperty().addListener((obs, oldVal, newVal) -> refreshTime());
-        player.currentDurationProperty().addListener((obs, oldVal, newVal) -> refreshTime());
+        player.currentSecondProperty().addListener((obs, o, n)   -> refreshTime());
+        player.currentDurationProperty().addListener((obs, o, n) -> refreshTime());
 
         progressSlider.setOnMouseReleased(e -> player.seek((int) progressSlider.getValue()));
         progressSlider.valueChangingProperty().addListener((obs, wasChanging, isChanging) -> {
-            if (!isChanging) {
-                player.seek((int) progressSlider.getValue());
-            }
+            if (!isChanging) player.seek((int) progressSlider.getValue());
         });
 
-        player.shuffleEnabledProperty().addListener((obs, oldVal, newVal) -> updateModeButtons());
-        player.loopEnabledProperty().addListener((obs, oldVal, newVal) -> updateModeButtons());
-
-        player.expandedPlayerVisibleProperty().addListener((obs, oldVal, newVal) -> {
-            if (newVal) {
-                openOverlay();
-            } else {
-                closeOverlay();
-            }
+        player.shuffleEnabledProperty().addListener((obs, o, n) -> updateModeButtons());
+        player.loopEnabledProperty().addListener((obs, o, n)    -> updateModeButtons());
+        player.expandedPlayerVisibleProperty().addListener((obs, o, n) -> {
+            if (n) openOverlay(); else closeOverlay();
         });
+        player.currentSongLikedProperty().addListener((obs, o, n) -> refreshLikeButton());
 
-        player.currentSongLikedProperty().addListener((obs, oldVal, newVal) -> refreshLikeButton());
-
-        shuffleButton.setStyle(neutralButtonStyle(18, 21));
-        loopButton.setStyle(neutralButtonStyle(18, 21));
-        likeButton.setStyle(neutralButtonStyle(20, 22));
-        addToPlaylistButton.setStyle(neutralButtonStyle(22, 22));
+        // Apply initial dark styles
+        shuffleButton.setStyle(BTN_NEUTRAL);
+        loopButton.setStyle(BTN_NEUTRAL);
+        likeButton.setStyle(BTN_LIKE_OFF);
+        addToPlaylistButton.setStyle(BTN_ADD);
 
         refreshSongInfo();
         refreshTime();
@@ -102,164 +150,84 @@ public class ExpandedPlayerController {
         updateModeButtons();
     }
 
-    @FXML
-    private void handleBackdropClick() {
-        player.setExpandedPlayerVisible(false);
-    }
+    // ─── Handlers ────────────────────────────────────────────────
 
-    @FXML
-    private void handleClose() {
-        player.setExpandedPlayerVisible(false);
-    }
+    @FXML private void handleBackdropClick() { player.setExpandedPlayerVisible(false); }
+    @FXML private void handleClose()         { player.setExpandedPlayerVisible(false); }
+    @FXML private void handleConsumeClick()  { /* absorb clicks so backdrop doesn't close */ }
 
-    @FXML
-    private void handleConsumeClick() {
-        // Prevent click from closing overlay.
-    }
-
-    @FXML
-    private void handlePrevious() {
-        player.previous();
-        refreshLikeButton();
-        refreshAddButton();
-    }
-
-    @FXML
-    private void handleNext() {
-        player.next();
-        refreshLikeButton();
-        refreshAddButton();
-    }
+    @FXML private void handlePrevious() { player.previous(); refreshLikeButton(); refreshAddButton(); }
+    @FXML private void handleNext()     { player.next();     refreshLikeButton(); refreshAddButton(); }
+    @FXML private void handlePlayPause(){ player.togglePlayPause(); }
+    @FXML private void handleLike()     { player.toggleLikeCurrentSong(); refreshLikeButton(); }
+    @FXML private void handleShuffle()  { player.toggleShuffle(); updateModeButtons(); }
+    @FXML private void handleLoop()     { player.toggleLoop();    updateModeButtons(); }
+    @FXML private void handleAddToPlaylist() { addToPlaylistDialog.show(player.getCurrentSong()); refreshAddButton(); }
 
     @FXML
     private void handleOpenArtistProfile(ActionEvent event) throws IOException {
         String artist = player.currentArtistProperty().get();
-
-        if (artist == null || artist.isBlank()) {
-            return;
-        }
-
+        if (artist == null || artist.isBlank()) return;
         SessionManager.setSelectedArtist(artist);
         SceneUtil.switchScene((Node) event.getSource(), "artist-profile-page.fxml");
     }
 
-    @FXML
-    private void handlePlayPause() {
-        player.togglePlayPause();
-    }
-
-    @FXML
-    private void handleLike() {
-        player.toggleLikeCurrentSong();
-        refreshLikeButton();
-    }
-
-    @FXML
-    private void handleShuffle() {
-        player.toggleShuffle();
-        updateModeButtons();
-    }
-
-    @FXML
-    private void handleLoop() {
-        player.toggleLoop();
-        updateModeButtons();
-    }
-
-    @FXML
-    private void handleAddToPlaylist() {
-        addToPlaylistDialog.show(player.getCurrentSong());
-        refreshAddButton();
-    }
+    // ─── UI refresh helpers ───────────────────────────────────────
 
     private void refreshSongInfo() {
         Song song = player.getCurrentSong();
-
-        if (song == null) {
-            albumLabel.setText("Album: -");
-            return;
-        }
-
+        if (song == null) { albumLabel.setText("Album: -"); return; }
         String album = song.album();
-        if (album == null || album.isBlank()) {
-            albumLabel.setText("Album: -");
-        } else {
-            albumLabel.setText("Album: " + album);
-        }
+        albumLabel.setText((album == null || album.isBlank()) ? "Album: -" : "Album: " + album);
     }
 
     private void refreshTime() {
         int current = player.currentSecondProperty().get();
-        int total = player.currentDurationProperty().get();
-
-        progressSlider.setMax(total);
+        int total   = player.currentDurationProperty().get();
+        progressSlider.setMax(Math.max(total, 1));
         progressSlider.setValue(current);
         timeLabel.setText(formatTime(current) + " / " + formatTime(total));
     }
 
     private void refreshLikeButton() {
         boolean liked = player.isCurrentSongLiked();
-
         likeButton.setText(liked ? "♥" : "♡");
-        likeButton.setStyle(
-                liked
-                        ? "-fx-background-color: #ef4444; -fx-text-fill: white; -fx-font-size: 20px; -fx-font-weight: bold; -fx-background-radius: 22;"
-                        : "-fx-background-color: #e2e8f0; -fx-text-fill: #475569; -fx-font-size: 20px; -fx-font-weight: bold; -fx-background-radius: 22;"
-        );
+        likeButton.setStyle(liked ? BTN_LIKE_ON : BTN_LIKE_OFF);
     }
 
     private void refreshAddButton() {
         boolean hasSong = player.getCurrentSong() != null;
-
         addToPlaylistButton.setDisable(!hasSong);
-        addToPlaylistButton.setStyle(
-                "-fx-background-color: #e2e8f0; " +
-                        "-fx-text-fill: #475569; " +
-                        "-fx-font-size: 22px; " +
-                        "-fx-font-weight: bold; " +
-                        "-fx-background-radius: 22;"
-        );
+        addToPlaylistButton.setStyle(BTN_ADD);
     }
 
     private void updateModeButtons() {
-        shuffleButton.setText("🔀");
+        // ⇄ is plain Unicode — renders correctly in JavaFX (unlike 🔀 emoji)
+        shuffleButton.setText("⇄");
         loopButton.setText("↻");
-
-        shuffleButton.setStyle(
-                player.isShuffleEnabled()
-                        ? "-fx-background-color: #fef3c7; -fx-text-fill: #1DB954; -fx-font-size: 18px; -fx-font-weight: bold; -fx-background-radius: 21;"
-                        : "-fx-background-color: #e2e8f0; -fx-text-fill: #334155; -fx-font-size: 18px; -fx-font-weight: bold; -fx-background-radius: 21;"
-        );
-
-        loopButton.setStyle(
-                player.isLoopEnabled()
-                        ? "-fx-background-color: #e2e8f0; -fx-text-fill: #1DB954; -fx-font-size: 18px; -fx-font-weight: bold; -fx-background-radius: 21;"
-                        : "-fx-background-color: #e2e8f0; -fx-text-fill: #334155; -fx-font-size: 18px; -fx-font-weight: bold; -fx-background-radius: 21;"
-        );
+        shuffleButton.setStyle(player.isShuffleEnabled() ? BTN_MODE_ACTIVE : BTN_NEUTRAL);
+        loopButton.setStyle(player.isLoopEnabled()       ? BTN_MODE_ACTIVE : BTN_NEUTRAL);
     }
+
+    // ─── Overlay animation ────────────────────────────────────────
 
     private void openOverlay() {
         animatingClose = false;
         overlayRoot.setManaged(true);
         overlayRoot.setVisible(true);
-
         overlayRoot.setOpacity(0);
-        playerCard.setTranslateY(120);
+        playerCard.setTranslateY(100);
         playerCard.setScaleX(0.97);
         playerCard.setScaleY(0.97);
 
-        FadeTransition fade = new FadeTransition(Duration.millis(220), overlayRoot);
-        fade.setFromValue(0);
+        FadeTransition fade = new FadeTransition(Duration.millis(200), overlayRoot);
         fade.setToValue(1);
 
-        TranslateTransition slide = new TranslateTransition(Duration.millis(280), playerCard);
-        slide.setFromY(120);
+        TranslateTransition slide = new TranslateTransition(Duration.millis(260), playerCard);
         slide.setToY(0);
 
         javafx.animation.ScaleTransition scale =
-                new javafx.animation.ScaleTransition(Duration.millis(280), playerCard);
-        scale.setFromX(0.97);
-        scale.setFromY(0.97);
+                new javafx.animation.ScaleTransition(Duration.millis(260), playerCard);
         scale.setToX(1.0);
         scale.setToY(1.0);
 
@@ -267,47 +235,32 @@ public class ExpandedPlayerController {
     }
 
     private void closeOverlay() {
-        if (!overlayRoot.isVisible() || animatingClose) {
-            return;
-        }
-
+        if (!overlayRoot.isVisible() || animatingClose) return;
         animatingClose = true;
 
-        FadeTransition fade = new FadeTransition(Duration.millis(180), overlayRoot);
-        fade.setFromValue(overlayRoot.getOpacity());
+        FadeTransition fade = new FadeTransition(Duration.millis(160), overlayRoot);
         fade.setToValue(0);
 
-        TranslateTransition slide = new TranslateTransition(Duration.millis(220), playerCard);
-        slide.setFromY(playerCard.getTranslateY());
-        slide.setToY(100);
+        TranslateTransition slide = new TranslateTransition(Duration.millis(200), playerCard);
+        slide.setToY(80);
 
         javafx.animation.ScaleTransition scale =
-                new javafx.animation.ScaleTransition(Duration.millis(220), playerCard);
-        scale.setFromX(playerCard.getScaleX());
-        scale.setFromY(playerCard.getScaleY());
+                new javafx.animation.ScaleTransition(Duration.millis(200), playerCard);
         scale.setToX(0.98);
         scale.setToY(0.98);
 
-        ParallelTransition transition = new ParallelTransition(fade, slide, scale);
-        transition.setOnFinished(e -> {
+        ParallelTransition anim = new ParallelTransition(fade, slide, scale);
+        anim.setOnFinished(e -> {
             overlayRoot.setVisible(false);
             overlayRoot.setManaged(false);
             animatingClose = false;
         });
-        transition.play();
-    }
-
-    private String neutralButtonStyle(int fontSize, int radius) {
-        return "-fx-background-color: #e2e8f0;" +
-                "-fx-text-fill: #334155;" +
-                "-fx-font-size: " + fontSize + "px;" +
-                "-fx-font-weight: bold;" +
-                "-fx-background-radius: " + radius + ";";
+        anim.play();
     }
 
     private String formatTime(int totalSeconds) {
-        int minutes = totalSeconds / 60;
-        int seconds = totalSeconds % 60;
-        return minutes + ":" + String.format("%02d", seconds);
+        int m = totalSeconds / 60;
+        int s = totalSeconds % 60;
+        return m + ":" + String.format("%02d", s);
     }
 }

@@ -1,75 +1,148 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<AnchorPane prefHeight="500.0" prefWidth="800.0"
-            xmlns="http://javafx.com/javafx/21"
-            xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="com.example.tunevaultfx.auth.CreateAccountPageController"
-            style="-fx-background-color: linear-gradient(to bottom right, #0f172a, #1e293b);">
+<HBox xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.example.tunevaultfx.auth.CreateAccountPageController"
+      prefWidth="920.0"
+      prefHeight="660.0">
 
-    <children>
-        <VBox alignment="CENTER" spacing="18.0"
-              AnchorPane.topAnchor="0.0" AnchorPane.bottomAnchor="0.0"
-              AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
+    <!-- ── LEFT: Brand Panel ──────────────────────── -->
+    <VBox prefWidth="340" minWidth="340" maxWidth="340"
+          alignment="CENTER" spacing="28"
+          style="-fx-background-color: linear-gradient(to bottom right, #0c0420, #1a0b3c);
+                 -fx-border-color: transparent rgba(255,255,255,0.07) transparent transparent;
+                 -fx-border-width: 0 1 0 0;
+                 -fx-padding: 48 36 48 36;">
+        <children>
 
-            <children>
-                <Label text="Create Account"
-                       style="-fx-text-fill: white; -fx-font-size: 30px; -fx-font-weight: bold;" />
+            <StackPane prefWidth="72" prefHeight="72" maxWidth="72" maxHeight="72"
+                       style="-fx-background-color: rgba(139,92,246,0.18);
+                              -fx-background-radius: 36;
+                              -fx-border-color: rgba(139,92,246,0.35);
+                              -fx-border-radius: 36;
+                              -fx-border-width: 1;">
+                <Label text="♫"
+                       style="-fx-font-size: 32px; -fx-text-fill: #a78bfa;" />
+            </StackPane>
 
-                <VBox maxWidth="360.0" spacing="10.0"
-                      style="-fx-background-color: white; -fx-background-radius: 18; -fx-padding: 30;">
-                    <children>
-                        <Label text="Username"
-                               style="-fx-text-fill: #334155; -fx-font-size: 13px; -fx-font-weight: bold;" />
-                        <TextField fx:id="usernameField"
-                                   promptText="Enter username"
-                                   prefHeight="40.0"
-                                   style="-fx-background-radius: 10; -fx-border-radius: 10; -fx-border-color: #cbd5e1;" />
+            <VBox spacing="6" alignment="CENTER">
+                <Label text="TuneVault"
+                       style="-fx-font-size: 34px; -fx-font-weight: bold; -fx-text-fill: #ffffff;" />
+                <Label text="Join the community"
+                       style="-fx-font-size: 14px; -fx-text-fill: #7c7c9e;" />
+            </VBox>
 
-                        <Label text="Email"
-                               style="-fx-text-fill: #334155; -fx-font-size: 13px; -fx-font-weight: bold;" />
-                        <TextField fx:id="emailField"
-                                   promptText="Enter email"
-                                   prefHeight="40.0"
-                                   style="-fx-background-radius: 10; -fx-border-radius: 10; -fx-border-color: #cbd5e1;" />
+            <VBox spacing="14" alignment="CENTER_LEFT"
+                  style="-fx-background-color: rgba(139,92,246,0.08);
+                         -fx-border-color: rgba(139,92,246,0.15);
+                         -fx-border-radius: 14;
+                         -fx-background-radius: 14;
+                         -fx-padding: 18;">
+                <Label text="Password requirements"
+                       style="-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #7c7c9e;" />
+                <VBox spacing="6">
+                    <Label text="✓  At least 8 characters"
+                           style="-fx-font-size: 12px; -fx-text-fill: #6b6b8e;" />
+                    <Label text="✓  One uppercase letter"
+                           style="-fx-font-size: 12px; -fx-text-fill: #6b6b8e;" />
+                    <Label text="✓  One lowercase letter"
+                           style="-fx-font-size: 12px; -fx-text-fill: #6b6b8e;" />
+                    <Label text="✓  One number"
+                           style="-fx-font-size: 12px; -fx-text-fill: #6b6b8e;" />
+                </VBox>
+            </VBox>
 
-                        <Label text="Password"
-                               style="-fx-text-fill: #334155; -fx-font-size: 13px; -fx-font-weight: bold;" />
-                        <PasswordField fx:id="passwordField"
-                                       promptText="Enter password"
-                                       prefHeight="40.0"
-                                       style="-fx-background-radius: 10; -fx-border-radius: 10; -fx-border-color: #cbd5e1;" />
+        </children>
+    </VBox>
 
-                        <Label text="Confirm Password"
-                               style="-fx-text-fill: #334155; -fx-font-size: 13px; -fx-font-weight: bold;" />
-                        <PasswordField fx:id="confirmPasswordField"
-                                       promptText="Confirm password"
-                                       prefHeight="40.0"
-                                       style="-fx-background-radius: 10; -fx-border-radius: 10; -fx-border-color: #cbd5e1;" />
+    <!-- ── RIGHT: Form Panel ──────────────────────── -->
+    <VBox HBox.hgrow="ALWAYS"
+          alignment="CENTER"
+          style="-fx-background-color: #0e0e1a; -fx-padding: 0 52 0 52;">
+        <children>
 
+            <VBox maxWidth="340" spacing="22">
+                <children>
+
+                    <VBox spacing="5">
+                        <Label text="Create your account"
+                               style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #ffffff;" />
+                        <Label text="It's free and takes under a minute"
+                               style="-fx-font-size: 13px; -fx-text-fill: #52525b;" />
+                    </VBox>
+
+                    <VBox spacing="14">
+
+                        <VBox spacing="6">
+                            <Label text="USERNAME"
+                                   style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #52525b;" />
+                            <TextField fx:id="usernameField"
+                                       promptText="3–30 characters, letters &amp; numbers"
+                                       prefHeight="44" />
+                        </VBox>
+
+                        <VBox spacing="6">
+                            <Label text="EMAIL"
+                                   style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #52525b;" />
+                            <TextField fx:id="emailField"
+                                       promptText="you@example.com"
+                                       prefHeight="44" />
+                        </VBox>
+
+                        <VBox spacing="6">
+                            <Label text="PASSWORD"
+                                   style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #52525b;" />
+                            <PasswordField fx:id="passwordField"
+                                           promptText="Create a strong password"
+                                           prefHeight="44" />
+                        </VBox>
+
+                        <VBox spacing="6">
+                            <Label text="CONFIRM PASSWORD"
+                                   style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #52525b;" />
+                            <PasswordField fx:id="confirmPasswordField"
+                                           promptText="Repeat your password"
+                                           prefHeight="44" />
+                        </VBox>
+
+                    </VBox>
+
+                    <VBox spacing="10">
                         <Button text="Create Account"
                                 onAction="#handleCreateAccount"
-                                prefHeight="40.0"
-                                style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 10;" />
+                                maxWidth="Infinity"
+                                prefHeight="46"
+                                style="-fx-background-color: #8b5cf6;
+                                       -fx-text-fill: white;
+                                       -fx-font-size: 15px;
+                                       -fx-font-weight: bold;
+                                       -fx-background-radius: 13;
+                                       -fx-effect: dropshadow(gaussian, rgba(139,92,246,0.38), 12, 0, 0, 4);" />
 
-                        <Button text="Back to Login"
+                        <Button text="← Back to Login"
                                 onAction="#handleBackToLogin"
-                                prefHeight="40.0"
-                                style="-fx-background-color: #64748b; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 10;" />
+                                maxWidth="Infinity"
+                                prefHeight="42"
+                                style="-fx-background-color: rgba(255,255,255,0.06);
+                                       -fx-text-fill: #94a3b8;
+                                       -fx-font-size: 14px;
+                                       -fx-font-weight: bold;
+                                       -fx-background-radius: 13;" />
+                    </VBox>
 
-                        <Label fx:id="statusLabel"
-                               text=""
-                               wrapText="true"
-                               style="-fx-text-fill: #dc2626; -fx-font-size: 12px;" />
-                    </children>
-                    <padding>
-                        <Insets top="30.0" right="30.0" bottom="30.0" left="30.0" />
-                    </padding>
-                </VBox>
-            </children>
-        </VBox>
-    </children>
-</AnchorPane>
+                    <Label fx:id="statusLabel"
+                           text=""
+                           wrapText="true"
+                           maxWidth="340"
+                           style="-fx-text-fill: #f87171; -fx-font-size: 13px;" />
+
+                </children>
+            </VBox>
+
+        </children>
+    </VBox>
+
+</HBox>

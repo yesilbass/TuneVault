@@ -32,16 +32,15 @@ public class RecommendationService {
                     continue;
                 }
 
-                if (profile.strongNegativeSongIds.contains(song.songId())) {
+                if (profile.strongNegativeSongIds().contains(song.songId())) {
                     continue;
                 }
 
-                double songScore = profile.songAffinity.getOrDefault(song.songId(), 0.0);
-                double artistScore = profile.artistAffinity.getOrDefault(normalize(song.artist()), 0.0);
-                double genreScore = profile.genreAffinity.getOrDefault(normalize(song.genre()), 0.0);
+                double songScore = profile.songAffinity().getOrDefault(song.songId(), 0.0);
+                double artistScore = profile.artistAffinity().getOrDefault(normalize(song.artist()), 0.0);
+                double genreScore = profile.genreAffinity().getOrDefault(normalize(song.genre()), 0.0);
 
                 double noveltyPenalty = songScore > 3.0 ? 2.5 : 0.0;
-
                 double finalScore = (artistScore * 2.2) + (genreScore * 1.8) + (songScore * 0.6) - noveltyPenalty;
 
                 if (finalScore > 0.0) {
@@ -96,13 +95,13 @@ public class RecommendationService {
                     continue;
                 }
 
-                if (userProfile.strongNegativeSongIds.contains(song.songId())) {
+                if (userProfile.strongNegativeSongIds().contains(song.songId())) {
                     continue;
                 }
 
-                double userSongScore = userProfile.songAffinity.getOrDefault(song.songId(), 0.0);
-                double userArtistScore = userProfile.artistAffinity.getOrDefault(normalize(song.artist()), 0.0);
-                double userGenreScore = userProfile.genreAffinity.getOrDefault(normalize(song.genre()), 0.0);
+                double userSongScore = userProfile.songAffinity().getOrDefault(song.songId(), 0.0);
+                double userArtistScore = userProfile.artistAffinity().getOrDefault(normalize(song.artist()), 0.0);
+                double userGenreScore = userProfile.genreAffinity().getOrDefault(normalize(song.genre()), 0.0);
 
                 double playlistArtistScore = playlistArtistWeights.getOrDefault(normalize(song.artist()), 0.0);
                 double playlistGenreScore = playlistGenreWeights.getOrDefault(normalize(song.genre()), 0.0);
@@ -132,6 +131,88 @@ public class RecommendationService {
         }
     }
 
+    public ObservableList<Song> getRankedSearchSongs(String username,
+                                                     String query,
+                                                     ObservableList<Song> allSongs,
+                                                     int limit) {
+        String normalizedQuery = normalize(query);
+        if (normalizedQuery.isBlank() || allSongs == null) {
+            return FXCollections.observableArrayList();
+        }
+
+        RecommendationProfile profile = buildProfileForUsername(username);
+        List<ScoredSong> ranked = new ArrayList<>();
+
+        for (Song song : allSongs) {
+            if (song == null) {
+                continue;
+            }
+
+            if (profile.strongNegativeSongIds().contains(song.songId())) {
+                continue;
+            }
+
+            double textScore = songTextMatchScore(song, normalizedQuery);
+            if (textScore <= 0.0) {
+                continue;
+            }
+
+            ranked.add(new ScoredSong(song, textScore));
+        }
+
+        ranked.sort(Comparator.comparingDouble(ScoredSong::score).reversed());
+
+        return ranked.stream()
+                .limit(limit)
+                .map(ScoredSong::song)
+                .collect(Collectors.toCollection(FXCollections::observableArrayList));
+    }
+
+    public ObservableList<String> getRankedSearchArtists(String username,
+                                                         String query,
+                                                         ObservableList<Song> allSongs,
+                                                         int limit) {
+        String normalizedQuery = normalize(query);
+        if (normalizedQuery.isBlank() || allSongs == null) {
+            return FXCollections.observableArrayList();
+        }
+
+        RecommendationProfile profile = buildProfileForUsername(username);
+        Map<String, Double> rankedArtists = new HashMap<>();
+
+        for (Song song : allSongs) {
+            if (song == null || song.artist() == null || song.artist().isBlank()) {
+                continue;
+            }
+
+            String artist = song.artist();
+            double textScore = artistTextMatchScore(artist, normalizedQuery);
+            if (textScore <= 0.0) {
+                continue;
+            }
+
+            double artistAffinity = profile.artistAffinity().getOrDefault(normalize(artist), 0.0);
+            double genreAffinity = profile.genreAffinity().getOrDefault(normalize(song.genre()), 0.0);
+            double finalScore = (textScore * 0.65) + (((artistAffinity * 1.5) + genreAffinity) * 0.35);
+
+            rankedArtists.merge(artist, finalScore, Math::max);
+        }
+
+        return rankedArtists.entrySet().stream()
+                .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
+                .limit(limit)
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toCollection(FXCollections::observableArrayList));
+    }
+
+    private RecommendationProfile buildProfileForUsername(String username) {
+        List<ListeningEventDAO.UserBehaviorEvent> events = listeningEventDAO.getUserBehaviorEvents(username);
+        if (events.isEmpty()) {
+            return new RecommendationProfile(new HashMap<>(), new HashMap<>(), new HashMap<>(), new HashSet<>());
+        }
+        return buildRecommendationProfile(events);
+    }
+
     private RecommendationProfile buildRecommendationProfile(List<ListeningEventDAO.UserBehaviorEvent> events) {
         Map<Integer, Double> songAffinity = new HashMap<>();
         Map<String, Double> artistAffinity = new HashMap<>();
@@ -154,6 +235,32 @@ public class RecommendationService {
         normalizeMap(genreAffinity);
 
         return new RecommendationProfile(songAffinity, artistAffinity, genreAffinity, strongNegativeSongIds);
+    }
+
+    private double songTextMatchScore(Song song, String query) {
+        String title = normalize(song.title());
+        String artist = normalize(song.artist());
+        String album = normalize(song.album());
+        String genre = normalize(song.genre());
+
+        double score = 0.0;
+
+        if (title.startsWith(query)) score = Math.max(score, 10.0);
+        if (artist.startsWith(query)) score = Math.max(score, 9.0);
+        if (title.contains(query)) score = Math.max(score, 7.0);
+        if (artist.contains(query)) score = Math.max(score, 6.5);
+        if (!album.isBlank() && album.contains(query)) score = Math.max(score, 4.0);
+        if (!genre.isBlank() && genre.contains(query)) score = Math.max(score, 5.0);
+
+        return score;
+    }
+
+    private double artistTextMatchScore(String artistName, String query) {
+        String artist = normalize(artistName);
+
+        if (artist.startsWith(query)) return 10.0;
+        if (artist.contains(query)) return 7.0;
+        return 0.0;
     }
 
     private double weightFor(String actionType, double completionRatio) {
