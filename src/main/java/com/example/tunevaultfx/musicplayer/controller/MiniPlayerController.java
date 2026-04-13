@@ -28,26 +28,36 @@ import java.io.IOException;
  */
 public class MiniPlayerController {
 
-    @FXML private Label     miniSongLabel;
-    @FXML private Hyperlink miniArtistLink;
-    @FXML private Label     miniTimeLabel;
-    @FXML private Hyperlink miniPlaylistLink;
+    @FXML
+    private Label miniSongLabel;
+    @FXML
+    private Hyperlink miniArtistLink;
+    @FXML
+    private Label miniTimeLabel;
+    @FXML
+    private Hyperlink miniPlaylistLink;
 
-    @FXML private Button miniPlayPauseButton;
-    @FXML private Button miniLikeButton;
-    @FXML private Button miniShuffleButton;
-    @FXML private Button miniLoopButton;
-    @FXML private Button miniAddButton;
+    @FXML
+    private Button miniPlayPauseButton;
+    @FXML
+    private Button miniLikeButton;
+    @FXML
+    private Button miniShuffleButton;
+    @FXML
+    private Button miniLoopButton;
+    @FXML
+    private Button miniAddButton;
 
-    @FXML private Slider miniProgressSlider;
+    @FXML
+    private Slider miniProgressSlider;
 
-    private final MusicPlayerController player              = MusicPlayerController.getInstance();
+    private final MusicPlayerController player = MusicPlayerController.getInstance();
     private final PlaylistPickerService addToPlaylistDialog = new PlaylistPickerService();
 
     // Size tokens for this controller's buttons (smaller than expanded player)
-    private static final String FS   = "17px";
+    private static final String FS = "17px";
     private static final String FS_S = "19px";   // slightly bigger for loop symbol
-    private static final String R    = PlayerStyleConstants.RADIUS_MINI;
+    private static final String R = PlayerStyleConstants.RADIUS_MINI;
 
     // ─────────────────────────────────────────────────────────────
 
@@ -71,11 +81,11 @@ public class MiniPlayerController {
             refreshPlaylistLink();
             refreshAddButton();
         });
-        player.currentSecondProperty().addListener((obs, o, n)   -> refreshTime());
+        player.currentSecondProperty().addListener((obs, o, n) -> refreshTime());
         player.currentDurationProperty().addListener((obs, o, n) -> refreshTime());
         player.currentSourcePlaylistNameProperty().addListener((obs, o, n) -> refreshPlaylistLink());
         player.shuffleEnabledProperty().addListener((obs, o, n) -> refreshModeButtons());
-        player.loopEnabledProperty().addListener((obs, o, n)    -> refreshModeButtons());
+        player.loopEnabledProperty().addListener((obs, o, n) -> refreshModeButtons());
         player.currentSongLikedProperty().addListener((obs, o, n) -> refreshLikeButton());
 
         refreshLikeButton();
@@ -87,13 +97,48 @@ public class MiniPlayerController {
 
     // ── Handlers ──────────────────────────────────────────────────
 
-    @FXML private void handleMiniPrevious()      { player.previous();              refreshLikeButton(); refreshAddButton(); }
-    @FXML private void handleMiniPlayPause()     { player.togglePlayPause(); }
-    @FXML private void handleMiniNext()          { player.next();                  refreshLikeButton(); refreshAddButton(); }
-    @FXML private void handleMiniLike()          { player.toggleLikeCurrentSong(); refreshLikeButton(); }
-    @FXML private void handleMiniShuffle()       { player.toggleShuffle();         refreshModeButtons(); }
-    @FXML private void handleMiniLoop()          { player.toggleLoop();            refreshModeButtons(); }
-    @FXML private void handleMiniAddToPlaylist() { addToPlaylistDialog.show(player.getCurrentSong()); refreshAddButton(); }
+    @FXML
+    private void handleMiniPrevious() {
+        player.previous();
+        refreshLikeButton();
+        refreshAddButton();
+    }
+
+    @FXML
+    private void handleMiniPlayPause() {
+        player.togglePlayPause();
+    }
+
+    @FXML
+    private void handleMiniNext() {
+        player.next();
+        refreshLikeButton();
+        refreshAddButton();
+    }
+
+    @FXML
+    private void handleMiniLike() {
+        player.toggleLikeCurrentSong();
+        refreshLikeButton();
+    }
+
+    @FXML
+    private void handleMiniShuffle() {
+        player.toggleShuffle();
+        refreshModeButtons();
+    }
+
+    @FXML
+    private void handleMiniLoop() {
+        player.toggleLoop();
+        refreshModeButtons();
+    }
+
+    @FXML
+    private void handleMiniAddToPlaylist() {
+        addToPlaylistDialog.show(player.getCurrentSong());
+        refreshAddButton();
+    }
 
     @FXML
     private void handleOpenArtistProfile(ActionEvent event) throws IOException {
@@ -159,7 +204,7 @@ public class MiniPlayerController {
 
     private void refreshTime() {
         int current = player.currentSecondProperty().get();
-        int total   = player.currentDurationProperty().get();
+        int total = player.currentDurationProperty().get();
         miniProgressSlider.setMax(Math.max(total, 1));
         miniProgressSlider.setValue(current);
         miniTimeLabel.setText(formatTime(current) + " / " + formatTime(total));

@@ -76,7 +76,7 @@
                                         onAction="#handleCreatePlaylist"
                                         maxWidth="Infinity" prefHeight="40"
                                         style="-fx-background-color: #8b5cf6;
-                                               -fx-text-fill: white;
+                                               -fx-text-fill: #14141EFF;
                                                -fx-font-size: 13px;
                                                -fx-font-weight: bold;
                                                -fx-background-radius: 20;
@@ -117,10 +117,10 @@
                                         <HBox spacing="16" alignment="CENTER_LEFT">
                                             <Label fx:id="songCountLabel"
                                                    text="Songs: 0"
-                                                   style="-fx-font-size: 13px; -fx-text-fill: #3d3d5c;" />
+                                                   style="-fx-font-size: 13px; -fx-text-fill: #a78bfa;" />
                                             <Label fx:id="totalDurationLabel"
                                                    text="Duration: 0:00"
-                                                   style="-fx-font-size: 13px; -fx-text-fill: #3d3d5c;" />
+                                                   style="-fx-font-size: 13px; -fx-text-fill: #a78bfa;" />
                                         </HBox>
                                     </VBox>
                                     <Button text="+ Add Song"

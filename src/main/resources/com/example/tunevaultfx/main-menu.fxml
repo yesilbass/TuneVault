@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
@@ -8,258 +7,222 @@
             fx:controller="com.example.tunevaultfx.mainmenu.MainMenuController"
             prefWidth="1280.0" prefHeight="820.0"
             minWidth="1180.0" minHeight="780.0"
-            style="-fx-background-color: linear-gradient(to bottom right, #090912, #0f0f1e);">
+            style="-fx-background-color: #09090f;">
 
-    <!-- ── TOP: Header ────────────────────────────── -->
+    <!-- ── TOP HEADER ──────────────────────────────────────────── -->
     <top>
-        <HBox alignment="CENTER_LEFT" spacing="0"
-              style="-fx-padding: 28 32 22 32;
-                     -fx-border-color: transparent transparent rgba(255,255,255,0.06) transparent;
+        <HBox alignment="CENTER_LEFT"
+              style="-fx-padding: 26 32 20 32;
+                     -fx-border-color: transparent transparent rgba(255,255,255,0.07) transparent;
                      -fx-border-width: 0 0 1 0;">
-            <children>
 
-                <!-- Logo + greeting -->
-                <HBox spacing="14" alignment="CENTER_LEFT">
-                    <StackPane prefWidth="44" prefHeight="44"
-                               style="-fx-background-color: rgba(139,92,246,0.18);
-                                      -fx-background-radius: 22;
-                                      -fx-border-color: rgba(139,92,246,0.3);
-                                      -fx-border-radius: 22;
-                                      -fx-border-width: 1;">
-                        <Label text="♫"
-                               style="-fx-font-size: 20px; -fx-text-fill: #a78bfa;" />
-                    </StackPane>
-                    <VBox spacing="2">
-                        <Label text="TuneVault"
-                               style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #ffffff;" />
-                        <Label fx:id="welcomeLabel"
-                               text="Welcome"
-                               style="-fx-font-size: 13px; -fx-text-fill: #52525b;" />
-                    </VBox>
-                </HBox>
+            <!-- Logo + greeting -->
+            <HBox spacing="14" alignment="CENTER_LEFT">
+                <StackPane prefWidth="46" prefHeight="46"
+                           style="-fx-background-color: linear-gradient(to bottom right, #4c1d95, #7c3aed);
+                                  -fx-background-radius: 14;
+                                  -fx-effect: dropshadow(gaussian,rgba(139,92,246,0.5),14,0,0,3);">
+                    <Label text="♫"
+                           style="-fx-font-size: 22px; -fx-text-fill: #f2f2fa;" />
+                </StackPane>
+                <VBox spacing="2">
+                    <Label text="TuneVault"
+                           style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #f2f2fa;" />
+                    <Label fx:id="welcomeLabel"
+                           text="Welcome"
+                           style="-fx-font-size: 13px; -fx-text-fill: #a0a0c0;" />
+                </VBox>
+            </HBox>
 
-                <Region HBox.hgrow="ALWAYS" />
+            <Region HBox.hgrow="ALWAYS" />
 
-                <!-- Logout -->
-                <Button text="Log out"
-                        onAction="#handleLogout"
-                        prefWidth="100" prefHeight="38"
-                        style="-fx-background-color: rgba(239,68,68,0.12);
-                               -fx-text-fill: #f87171;
-                               -fx-font-size: 13px;
-                               -fx-font-weight: bold;
-                               -fx-background-radius: 19;
-                               -fx-border-color: rgba(239,68,68,0.2);
-                               -fx-border-radius: 19;
-                               -fx-border-width: 1;" />
-            </children>
+            <!-- Logout button -->
+            <Button text="Log out"
+                    onAction="#handleLogout"
+                    prefWidth="100" prefHeight="38"
+                    style="-fx-background-color: rgba(244,63,94,0.1);
+                           -fx-text-fill: #fda4af;
+                           -fx-font-size: 13px; -fx-font-weight: bold;
+                           -fx-background-radius: 19;
+                           -fx-border-color: rgba(244,63,94,0.22);
+                           -fx-border-radius: 19; -fx-border-width: 1;" />
         </HBox>
     </top>
 
-    <!-- ── CENTER: Feature Grid ───────────────────── -->
+    <!-- ── CENTER: Feature grid ────────────────────────────────── -->
     <center>
-        <VBox alignment="CENTER" spacing="24"
-              style="-fx-padding: 28 40 28 40;">
-            <children>
+        <VBox alignment="CENTER" spacing="22"
+              style="-fx-padding: 24 40 24 40;">
 
-                <!-- Subtitle -->
-                <VBox alignment="CENTER" spacing="6">
-                    <Label text="What would you like to do?"
-                           style="-fx-font-size: 26px; -fx-font-weight: bold; -fx-text-fill: #ffffff;" />
-                    <Label text="Navigate to any feature below"
-                           style="-fx-font-size: 14px; -fx-text-fill: #3f3f5a;" />
-                </VBox>
+            <VBox alignment="CENTER" spacing="6">
+                <Label text="What would you like to do?"
+                       style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #f2f2fa;" />
+                <Label text="Choose a feature to get started"
+                       style="-fx-font-size: 14px; -fx-text-fill: #a0a0c0;" />
+            </VBox>
 
-                <!-- 2 × 2 Feature Grid -->
-                <GridPane hgap="20" vgap="20" alignment="CENTER">
-                    <columnConstraints>
-                        <ColumnConstraints prefWidth="570" />
-                        <ColumnConstraints prefWidth="570" />
-                    </columnConstraints>
-                    <rowConstraints>
-                        <RowConstraints prefHeight="206" />
-                        <RowConstraints prefHeight="206" />
-                    </rowConstraints>
-                    <children>
+            <!-- 2×2 grid -->
+            <GridPane hgap="18" vgap="18" alignment="CENTER">
+                <columnConstraints>
+                    <ColumnConstraints prefWidth="576" />
+                    <ColumnConstraints prefWidth="576" />
+                </columnConstraints>
+                <rowConstraints>
+                    <RowConstraints prefHeight="210" />
+                    <RowConstraints prefHeight="210" />
+                </rowConstraints>
+                <children>
 
-                        <!-- ▸ SEARCH ─────────────────── -->
-                        <VBox GridPane.columnIndex="0" GridPane.rowIndex="0"
-                              spacing="0"
-                              style="-fx-background-color: #14141e;
-                                     -fx-background-radius: 24;
-                                     -fx-border-color: rgba(255,255,255,0.07);
-                                     -fx-border-radius: 24;
-                                     -fx-border-width: 1;
-                                     -fx-padding: 28;
-                                     -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.45),20,0,0,6);">
-                            <HBox spacing="16" alignment="CENTER_LEFT">
-                                <StackPane prefWidth="52" prefHeight="52" minWidth="52" minHeight="52"
-                                           style="-fx-background-color: rgba(59,130,246,0.18);
-                                                  -fx-background-radius: 16;
-                                                  -fx-border-color: rgba(59,130,246,0.25);
-                                                  -fx-border-radius: 16;
-                                                  -fx-border-width: 1;">
-                                    <Label text="🔍"
-                                           style="-fx-font-size: 22px;" />
-                                </StackPane>
-                                <VBox spacing="4">
-                                    <Label text="Search"
-                                           style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #ffffff;" />
-                                    <Label text="Songs, artists, albums &amp; genres"
-                                           style="-fx-font-size: 13px; -fx-text-fill: #3f3f5a;" />
-                                </VBox>
-                            </HBox>
-                            <Region VBox.vgrow="ALWAYS" />
-                            <Button text="Open Search  →"
-                                    onAction="#openSearchPage"
-                                    maxWidth="Infinity"
-                                    prefHeight="44"
-                                    style="-fx-background-color: rgba(59,130,246,0.15);
-                                           -fx-text-fill: #60a5fa;
-                                           -fx-font-size: 14px;
-                                           -fx-font-weight: bold;
-                                           -fx-background-radius: 14;
-                                           -fx-border-color: rgba(59,130,246,0.2);
-                                           -fx-border-radius: 14;
-                                           -fx-border-width: 1;" />
-                        </VBox>
+                    <!-- ▸ SEARCH ────────────────────────────────── -->
+                    <VBox GridPane.columnIndex="0" GridPane.rowIndex="0"
+                          spacing="0"
+                          style="-fx-background-color: #0f0f1e;
+                                 -fx-background-radius: 22;
+                                 -fx-border-color: rgba(59,130,246,0.2);
+                                 -fx-border-radius: 22; -fx-border-width: 1;
+                                 -fx-padding: 28;
+                                 -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.5),20,0,0,6);">
+                        <HBox spacing="16" alignment="CENTER_LEFT">
+                            <StackPane prefWidth="52" prefHeight="52" minWidth="52" minHeight="52"
+                                       style="-fx-background-color: rgba(59,130,246,0.15);
+                                              -fx-background-radius: 16;
+                                              -fx-border-color: rgba(59,130,246,0.28);
+                                              -fx-border-radius: 16; -fx-border-width: 1;">
+                                <Label text="🔍" style="-fx-font-size: 22px;" />
+                            </StackPane>
+                            <VBox spacing="4">
+                                <Label text="Search"
+                                       style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #f2f2fa;" />
+                                <Label text="Songs, artists, albums &amp; genres"
+                                       style="-fx-font-size: 13px; -fx-text-fill: #a0a0c0;" />
+                            </VBox>
+                        </HBox>
+                        <Region VBox.vgrow="ALWAYS" />
+                        <Button text="Open Search  →"
+                                onAction="#openSearchPage"
+                                maxWidth="Infinity" prefHeight="44"
+                                style="-fx-background-color: rgba(59,130,246,0.14);
+                                       -fx-text-fill: #93c5fd;
+                                       -fx-font-size: 14px; -fx-font-weight: bold;
+                                       -fx-background-radius: 14;
+                                       -fx-border-color: rgba(59,130,246,0.22);
+                                       -fx-border-radius: 14; -fx-border-width: 1;" />
+                    </VBox>
 
-                        <!-- ▸ PLAYLISTS ───────────────── -->
-                        <VBox GridPane.columnIndex="1" GridPane.rowIndex="0"
-                              spacing="0"
-                              style="-fx-background-color: #14141e;
-                                     -fx-background-radius: 24;
-                                     -fx-border-color: rgba(255,255,255,0.07);
-                                     -fx-border-radius: 24;
-                                     -fx-border-width: 1;
-                                     -fx-padding: 28;
-                                     -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.45),20,0,0,6);">
-                            <HBox spacing="16" alignment="CENTER_LEFT">
-                                <StackPane prefWidth="52" prefHeight="52" minWidth="52" minHeight="52"
-                                           style="-fx-background-color: rgba(139,92,246,0.18);
-                                                  -fx-background-radius: 16;
-                                                  -fx-border-color: rgba(139,92,246,0.25);
-                                                  -fx-border-radius: 16;
-                                                  -fx-border-width: 1;">
-                                    <Label text="🎵"
-                                           style="-fx-font-size: 22px;" />
-                                </StackPane>
-                                <VBox spacing="4">
-                                    <Label text="Playlists"
-                                           style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #ffffff;" />
-                                    <Label text="Create and manage your music library"
-                                           style="-fx-font-size: 13px; -fx-text-fill: #3f3f5a;" />
-                                </VBox>
-                            </HBox>
-                            <Region VBox.vgrow="ALWAYS" />
-                            <Button text="Open Playlists  →"
-                                    onAction="#openPlaylistsPage"
-                                    maxWidth="Infinity"
-                                    prefHeight="44"
-                                    style="-fx-background-color: rgba(139,92,246,0.15);
-                                           -fx-text-fill: #a78bfa;
-                                           -fx-font-size: 14px;
-                                           -fx-font-weight: bold;
-                                           -fx-background-radius: 14;
-                                           -fx-border-color: rgba(139,92,246,0.2);
-                                           -fx-border-radius: 14;
-                                           -fx-border-width: 1;" />
-                        </VBox>
+                    <!-- ▸ PLAYLISTS ──────────────────────────────── -->
+                    <VBox GridPane.columnIndex="1" GridPane.rowIndex="0"
+                          spacing="0"
+                          style="-fx-background-color: #0f0f1e;
+                                 -fx-background-radius: 22;
+                                 -fx-border-color: rgba(139,92,246,0.22);
+                                 -fx-border-radius: 22; -fx-border-width: 1;
+                                 -fx-padding: 28;
+                                 -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.5),20,0,0,6);">
+                        <HBox spacing="16" alignment="CENTER_LEFT">
+                            <StackPane prefWidth="52" prefHeight="52" minWidth="52" minHeight="52"
+                                       style="-fx-background-color: rgba(139,92,246,0.15);
+                                              -fx-background-radius: 16;
+                                              -fx-border-color: rgba(139,92,246,0.28);
+                                              -fx-border-radius: 16; -fx-border-width: 1;">
+                                <Label text="🎵" style="-fx-font-size: 22px;" />
+                            </StackPane>
+                            <VBox spacing="4">
+                                <Label text="Playlists"
+                                       style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #f2f2fa;" />
+                                <Label text="Create and manage your music library"
+                                       style="-fx-font-size: 13px; -fx-text-fill: #a0a0c0;" />
+                            </VBox>
+                        </HBox>
+                        <Region VBox.vgrow="ALWAYS" />
+                        <Button text="Open Playlists  →"
+                                onAction="#openPlaylistsPage"
+                                maxWidth="Infinity" prefHeight="44"
+                                style="-fx-background-color: rgba(139,92,246,0.14);
+                                       -fx-text-fill: #c4b5fd;
+                                       -fx-font-size: 14px; -fx-font-weight: bold;
+                                       -fx-background-radius: 14;
+                                       -fx-border-color: rgba(139,92,246,0.22);
+                                       -fx-border-radius: 14; -fx-border-width: 1;" />
+                    </VBox>
 
-                        <!-- ▸ WRAPPED ──────────────────── -->
-                        <VBox GridPane.columnIndex="0" GridPane.rowIndex="1"
-                              spacing="0"
-                              style="-fx-background-color: #14141e;
-                                     -fx-background-radius: 24;
-                                     -fx-border-color: rgba(255,255,255,0.07);
-                                     -fx-border-radius: 24;
-                                     -fx-border-width: 1;
-                                     -fx-padding: 28;
-                                     -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.45),20,0,0,6);">
-                            <HBox spacing="16" alignment="CENTER_LEFT">
-                                <StackPane prefWidth="52" prefHeight="52" minWidth="52" minHeight="52"
-                                           style="-fx-background-color: rgba(249,115,22,0.18);
-                                                  -fx-background-radius: 16;
-                                                  -fx-border-color: rgba(249,115,22,0.25);
-                                                  -fx-border-radius: 16;
-                                                  -fx-border-width: 1;">
-                                    <Label text="📊"
-                                           style="-fx-font-size: 22px;" />
-                                </StackPane>
-                                <VBox spacing="4">
-                                    <Label text="Wrapped"
-                                           style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #ffffff;" />
-                                    <Label text="Your top songs, artists &amp; listening stats"
-                                           style="-fx-font-size: 13px; -fx-text-fill: #3f3f5a;" />
-                                </VBox>
-                            </HBox>
-                            <Region VBox.vgrow="ALWAYS" />
-                            <Button text="Open Wrapped  →"
-                                    onAction="#openWrappedPage"
-                                    maxWidth="Infinity"
-                                    prefHeight="44"
-                                    style="-fx-background-color: rgba(249,115,22,0.15);
-                                           -fx-text-fill: #fb923c;
-                                           -fx-font-size: 14px;
-                                           -fx-font-weight: bold;
-                                           -fx-background-radius: 14;
-                                           -fx-border-color: rgba(249,115,22,0.2);
-                                           -fx-border-radius: 14;
-                                           -fx-border-width: 1;" />
-                        </VBox>
+                    <!-- ▸ WRAPPED ────────────────────────────────── -->
+                    <VBox GridPane.columnIndex="0" GridPane.rowIndex="1"
+                          spacing="0"
+                          style="-fx-background-color: #0f0f1e;
+                                 -fx-background-radius: 22;
+                                 -fx-border-color: rgba(249,115,22,0.2);
+                                 -fx-border-radius: 22; -fx-border-width: 1;
+                                 -fx-padding: 28;
+                                 -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.5),20,0,0,6);">
+                        <HBox spacing="16" alignment="CENTER_LEFT">
+                            <StackPane prefWidth="52" prefHeight="52" minWidth="52" minHeight="52"
+                                       style="-fx-background-color: rgba(249,115,22,0.15);
+                                              -fx-background-radius: 16;
+                                              -fx-border-color: rgba(249,115,22,0.28);
+                                              -fx-border-radius: 16; -fx-border-width: 1;">
+                                <Label text="📊" style="-fx-font-size: 22px;" />
+                            </StackPane>
+                            <VBox spacing="4">
+                                <Label text="Wrapped"
+                                       style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #f2f2fa;" />
+                                <Label text="Your top songs, artists &amp; listening stats"
+                                       style="-fx-font-size: 13px; -fx-text-fill: #a0a0c0;" />
+                            </VBox>
+                        </HBox>
+                        <Region VBox.vgrow="ALWAYS" />
+                        <Button text="Open Wrapped  →"
+                                onAction="#openWrappedPage"
+                                maxWidth="Infinity" prefHeight="44"
+                                style="-fx-background-color: rgba(249,115,22,0.14);
+                                       -fx-text-fill: #fdba74;
+                                       -fx-font-size: 14px; -fx-font-weight: bold;
+                                       -fx-background-radius: 14;
+                                       -fx-border-color: rgba(249,115,22,0.22);
+                                       -fx-border-radius: 14; -fx-border-width: 1;" />
+                    </VBox>
 
-                        <!-- ▸ FIND YOUR GENRE ─────────── -->
-                        <VBox GridPane.columnIndex="1" GridPane.rowIndex="1"
-                              spacing="0"
-                              style="-fx-background-color: #14141e;
-                                     -fx-background-radius: 24;
-                                     -fx-border-color: rgba(255,255,255,0.07);
-                                     -fx-border-radius: 24;
-                                     -fx-border-width: 1;
-                                     -fx-padding: 28;
-                                     -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.45),20,0,0,6);">
-                            <HBox spacing="16" alignment="CENTER_LEFT">
-                                <StackPane prefWidth="52" prefHeight="52" minWidth="52" minHeight="52"
-                                           style="-fx-background-color: rgba(20,184,166,0.18);
-                                                  -fx-background-radius: 16;
-                                                  -fx-border-color: rgba(20,184,166,0.25);
-                                                  -fx-border-radius: 16;
-                                                  -fx-border-width: 1;">
-                                    <Label text="🎯"
-                                           style="-fx-font-size: 22px;" />
-                                </StackPane>
-                                <VBox spacing="4">
-                                    <Label text="Find Your Genre"
-                                           style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #ffffff;" />
-                                    <Label text="Take a quiz to discover your music style"
-                                           style="-fx-font-size: 13px; -fx-text-fill: #3f3f5a;" />
-                                </VBox>
-                            </HBox>
-                            <Region VBox.vgrow="ALWAYS" />
-                            <Button text="Start Quiz  →"
-                                    onAction="#openFindYourGenrePage"
-                                    maxWidth="Infinity"
-                                    prefHeight="44"
-                                    style="-fx-background-color: rgba(20,184,166,0.15);
-                                           -fx-text-fill: #2dd4bf;
-                                           -fx-font-size: 14px;
-                                           -fx-font-weight: bold;
-                                           -fx-background-radius: 14;
-                                           -fx-border-color: rgba(20,184,166,0.2);
-                                           -fx-border-radius: 14;
-                                           -fx-border-width: 1;" />
-                        </VBox>
+                    <!-- ▸ FIND YOUR GENRE ───────────────────────── -->
+                    <VBox GridPane.columnIndex="1" GridPane.rowIndex="1"
+                          spacing="0"
+                          style="-fx-background-color: #0f0f1e;
+                                 -fx-background-radius: 22;
+                                 -fx-border-color: rgba(20,184,166,0.2);
+                                 -fx-border-radius: 22; -fx-border-width: 1;
+                                 -fx-padding: 28;
+                                 -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.5),20,0,0,6);">
+                        <HBox spacing="16" alignment="CENTER_LEFT">
+                            <StackPane prefWidth="52" prefHeight="52" minWidth="52" minHeight="52"
+                                       style="-fx-background-color: rgba(20,184,166,0.15);
+                                              -fx-background-radius: 16;
+                                              -fx-border-color: rgba(20,184,166,0.28);
+                                              -fx-border-radius: 16; -fx-border-width: 1;">
+                                <Label text="🎯" style="-fx-font-size: 22px;" />
+                            </StackPane>
+                            <VBox spacing="4">
+                                <Label text="Find Your Genre"
+                                       style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #f2f2fa;" />
+                                <Label text="Take a quiz to discover your music style"
+                                       style="-fx-font-size: 13px; -fx-text-fill: #a0a0c0;" />
+                            </VBox>
+                        </HBox>
+                        <Region VBox.vgrow="ALWAYS" />
+                        <Button text="Start Quiz  →"
+                                onAction="#openFindYourGenrePage"
+                                maxWidth="Infinity" prefHeight="44"
+                                style="-fx-background-color: rgba(20,184,166,0.14);
+                                       -fx-text-fill: #5eead4;
+                                       -fx-font-size: 14px; -fx-font-weight: bold;
+                                       -fx-background-radius: 14;
+                                       -fx-border-color: rgba(20,184,166,0.22);
+                                       -fx-border-radius: 14; -fx-border-width: 1;" />
+                    </VBox>
 
-                    </children>
-                </GridPane>
-
-            </children>
+                </children>
+            </GridPane>
         </VBox>
     </center>
 
-    <!-- ── BOTTOM: Mini Player ────────────────────── -->
     <bottom>
         <fx:include source="mini-player.fxml" />
     </bottom>
-
 </BorderPane>

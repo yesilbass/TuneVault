@@ -1,150 +1,125 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<!-- Split layout: brand left, form right -->
 <HBox xmlns="http://javafx.com/javafx/21"
       xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="com.example.tunevaultfx.auth.LoginPageController"
-      prefWidth="920.0"
-      prefHeight="580.0">
+      prefWidth="960.0" prefHeight="600.0">
 
-    <!-- ── LEFT: Brand Panel ──────────────────────── -->
-    <VBox prefWidth="380" minWidth="380" maxWidth="380"
-          alignment="CENTER" spacing="32"
-          style="-fx-background-color: linear-gradient(to bottom right, #0c0420, #1a0b3c);
+    <!-- ── LEFT: Brand panel ──────────────────────────────────── -->
+    <VBox prefWidth="400" minWidth="400" maxWidth="400"
+          alignment="CENTER" spacing="36"
+          style="-fx-background-color: linear-gradient(to bottom right, #0c0420, #120835);
                  -fx-border-color: transparent rgba(255,255,255,0.07) transparent transparent;
                  -fx-border-width: 0 1 0 0;
-                 -fx-padding: 56 40 56 40;">
-        <children>
+                 -fx-padding: 60 44 60 44;">
 
-            <!-- Logo icon -->
-            <StackPane prefWidth="80" prefHeight="80" maxWidth="80" maxHeight="80"
-                       style="-fx-background-color: rgba(139,92,246,0.18);
-                              -fx-background-radius: 40;
-                              -fx-border-color: rgba(139,92,246,0.35);
-                              -fx-border-radius: 40;
-                              -fx-border-width: 1;">
-                <Label text="♫"
-                       style="-fx-font-size: 36px; -fx-text-fill: #a78bfa;" />
-            </StackPane>
+        <!-- Logo -->
+        <StackPane prefWidth="86" prefHeight="86" maxWidth="86" maxHeight="86"
+                   style="-fx-background-color: linear-gradient(to bottom right, #4c1d95, #7c3aed);
+                          -fx-background-radius: 24;
+                          -fx-effect: dropshadow(gaussian,rgba(139,92,246,0.55),20,0,0,4);">
+            <Label text="♫"
+                   style="-fx-font-size: 40px; -fx-text-fill: #f2f2fa;" />
+        </StackPane>
 
-            <!-- Brand text -->
-            <VBox spacing="8" alignment="CENTER">
-                <Label text="TuneVault"
-                       style="-fx-font-size: 38px; -fx-font-weight: bold; -fx-text-fill: #ffffff;" />
-                <Label text="Your personal music universe"
-                       style="-fx-font-size: 14px; -fx-text-fill: #7c7c9e;" />
-            </VBox>
+        <VBox spacing="10" alignment="CENTER">
+            <Label text="TuneVault"
+                   style="-fx-font-size: 40px; -fx-font-weight: bold; -fx-text-fill: #f2f2fa;" />
+            <Label text="Your personal music universe"
+                   style="-fx-font-size: 14px; -fx-text-fill: #a0a0c0;" />
+        </VBox>
 
-            <!-- Decorative feature pills -->
-            <VBox spacing="10" alignment="CENTER">
-                <HBox spacing="8" alignment="CENTER">
-                    <StackPane prefWidth="6" prefHeight="6"
-                               style="-fx-background-color: #8b5cf6; -fx-background-radius: 3;" />
-                    <Label text="Smart song recommendations"
-                           style="-fx-font-size: 13px; -fx-text-fill: #6b6b8e;" />
-                </HBox>
-                <HBox spacing="8" alignment="CENTER">
-                    <StackPane prefWidth="6" prefHeight="6"
-                               style="-fx-background-color: #22c55e; -fx-background-radius: 3;" />
-                    <Label text="Listening analytics &amp; Wrapped"
-                           style="-fx-font-size: 13px; -fx-text-fill: #6b6b8e;" />
-                </HBox>
-                <HBox spacing="8" alignment="CENTER">
-                    <StackPane prefWidth="6" prefHeight="6"
-                               style="-fx-background-color: #f43f5e; -fx-background-radius: 3;" />
-                    <Label text="Playlists that know your taste"
-                           style="-fx-font-size: 13px; -fx-text-fill: #6b6b8e;" />
-                </HBox>
-            </VBox>
+        <!-- Feature list -->
+        <VBox spacing="12" alignment="CENTER_LEFT"
+              style="-fx-background-color: rgba(139,92,246,0.08);
+                     -fx-border-color: rgba(139,92,246,0.15);
+                     -fx-border-radius: 16; -fx-background-radius: 16; -fx-border-width: 1;
+                     -fx-padding: 20 22 20 22;">
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <StackPane prefWidth="8" prefHeight="8"
+                           style="-fx-background-color: #8b5cf6; -fx-background-radius: 4;" />
+                <Label text="Smart song recommendations"
+                       style="-fx-font-size: 13px; -fx-text-fill: #c4b5fd;" />
+            </HBox>
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <StackPane prefWidth="8" prefHeight="8"
+                           style="-fx-background-color: #22c55e; -fx-background-radius: 4;" />
+                <Label text="Listening analytics &amp; Wrapped"
+                       style="-fx-font-size: 13px; -fx-text-fill: #86efac;" />
+            </HBox>
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <StackPane prefWidth="8" prefHeight="8"
+                           style="-fx-background-color: #f43f5e; -fx-background-radius: 4;" />
+                <Label text="Playlists that know your taste"
+                       style="-fx-font-size: 13px; -fx-text-fill: #fda4af;" />
+            </HBox>
+        </VBox>
 
-        </children>
     </VBox>
 
-    <!-- ── RIGHT: Form Panel ──────────────────────── -->
-    <VBox HBox.hgrow="ALWAYS"
-          alignment="CENTER"
-          style="-fx-background-color: #0e0e1a; -fx-padding: 0 56 0 56;">
-        <children>
+    <!-- ── RIGHT: Form panel ──────────────────────────────────── -->
+    <VBox HBox.hgrow="ALWAYS" alignment="CENTER"
+          style="-fx-background-color: #09090f; -fx-padding: 0 60 0 60;">
+        <VBox maxWidth="360" spacing="28">
 
-            <VBox maxWidth="340" spacing="28">
-                <children>
-
-                    <!-- Heading -->
-                    <VBox spacing="6">
-                        <Label text="Welcome back"
-                               style="-fx-font-size: 30px; -fx-font-weight: bold; -fx-text-fill: #ffffff;" />
-                        <Label text="Sign in to continue to TuneVault"
-                               style="-fx-font-size: 14px; -fx-text-fill: #52525b;" />
-                    </VBox>
-
-                    <!-- Fields -->
-                    <VBox spacing="18">
-
-                        <VBox spacing="7">
-                            <Label text="Username or Email"
-                                   style="-fx-font-size: 12px; -fx-font-weight: bold;
-                                          -fx-text-fill: #71717a; letter-spacing: 0.5px;" />
-                            <TextField fx:id="usernameField"
-                                       promptText="Enter username or email"
-                                       prefHeight="46" />
-                        </VBox>
-
-                        <VBox spacing="7">
-                            <HBox alignment="CENTER_LEFT">
-                                <Label text="Password"
-                                       style="-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #71717a;" />
-                                <Region HBox.hgrow="ALWAYS" />
-                                <Hyperlink text="Forgot password?"
-                                           onAction="#openForgotPasswordPage"
-                                           style="-fx-font-size: 12px;" />
-                            </HBox>
-                            <PasswordField fx:id="passwordField"
-                                           promptText="Enter password"
-                                           prefHeight="46" />
-                        </VBox>
-
-                    </VBox>
-
-                    <!-- Sign In button -->
-                    <VBox spacing="12">
-                        <Button fx:id="loginButton"
-                                text="Sign In"
-                                onAction="#handleLogin"
-                                maxWidth="Infinity"
-                                prefHeight="48"
-                                style="-fx-background-color: #8b5cf6;
-                                       -fx-text-fill: white;
-                                       -fx-font-size: 15px;
-                                       -fx-font-weight: bold;
-                                       -fx-background-radius: 14;
-                                       -fx-effect: dropshadow(gaussian, rgba(139,92,246,0.4), 12, 0, 0, 4);" />
-
-                        <Label fx:id="statusLabel"
-                               text=""
-                               wrapText="true"
-                               maxWidth="340"
-                               style="-fx-text-fill: #f87171; -fx-font-size: 13px;" />
-                    </VBox>
-
-                    <!-- Separator -->
-                    <Separator style="-fx-opacity: 0.5;" />
-
-                    <!-- Create account -->
-                    <HBox alignment="CENTER" spacing="5">
-                        <Label text="New to TuneVault?"
-                               style="-fx-font-size: 13px; -fx-text-fill: #52525b;" />
-                        <Hyperlink text="Create an account"
-                                   onAction="#handleCreateAccountPage"
-                                   style="-fx-font-size: 13px; -fx-font-weight: bold;" />
-                    </HBox>
-
-                </children>
+            <VBox spacing="6">
+                <Label text="Welcome back"
+                       style="-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: #f2f2fa;" />
+                <Label text="Sign in to continue"
+                       style="-fx-font-size: 14px; -fx-text-fill: #a0a0c0;" />
             </VBox>
 
-        </children>
+            <VBox spacing="18">
+                <VBox spacing="8">
+                    <Label text="USERNAME OR EMAIL"
+                           style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #a0a0c0;" />
+                    <TextField fx:id="usernameField"
+                               promptText="Enter username or email"
+                               prefHeight="48" />
+                </VBox>
+
+                <VBox spacing="8">
+                    <HBox alignment="CENTER_LEFT">
+                        <Label text="PASSWORD"
+                               style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #a0a0c0;" />
+                        <Region HBox.hgrow="ALWAYS" />
+                        <Hyperlink text="Forgot password?"
+                                   onAction="#openForgotPasswordPage"
+                                   style="-fx-font-size: 12px;" />
+                    </HBox>
+                    <PasswordField fx:id="passwordField"
+                                   promptText="Enter your password"
+                                   prefHeight="48" />
+                </VBox>
+            </VBox>
+
+            <VBox spacing="12">
+                <Button fx:id="loginButton" text="Sign In"
+                        onAction="#handleLogin"
+                        maxWidth="Infinity" prefHeight="50"
+                        style="-fx-background-color: #8b5cf6;
+                               -fx-text-fill: white;
+                               -fx-font-size: 15px; -fx-font-weight: bold;
+                               -fx-background-radius: 14;
+                               -fx-effect: dropshadow(gaussian,rgba(139,92,246,0.5),14,0,0,4);" />
+
+                <Label fx:id="statusLabel" text="" wrapText="true" maxWidth="360"
+                       style="-fx-text-fill: #fda4af; -fx-font-size: 13px;" />
+            </VBox>
+
+            <Separator />
+
+            <HBox alignment="CENTER" spacing="6">
+                <Label text="New to TuneVault?"
+                       style="-fx-font-size: 13px; -fx-text-fill: #a0a0c0;" />
+                <Hyperlink text="Create an account"
+                           onAction="#handleCreateAccountPage"
+                           style="-fx-font-size: 13px; -fx-font-weight: bold;" />
+            </HBox>
+
+        </VBox>
     </VBox>
 
 </HBox>

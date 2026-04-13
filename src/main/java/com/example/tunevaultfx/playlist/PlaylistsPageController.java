@@ -44,31 +44,42 @@ import java.util.Optional;
 public class PlaylistsPageController {
 
     // ── FXML ─────────────────────────────────────────────────────
-    @FXML private ListView<String> playlistListView;
-    @FXML private ListView<Song>   playlistSongsListView;
-    @FXML private ListView<Song>   searchResultsListView;
-    @FXML private ListView<Song>   suggestedSongsListView;
+    @FXML
+    private ListView<String> playlistListView;
+    @FXML
+    private ListView<Song> playlistSongsListView;
+    @FXML
+    private ListView<Song> searchResultsListView;
+    @FXML
+    private ListView<Song> suggestedSongsListView;
 
-    @FXML private Label selectedPlaylistLabel;
-    @FXML private Label songCountLabel;
-    @FXML private Label totalDurationLabel;
-    @FXML private Label suggestionSubtitleLabel;
+    @FXML
+    private Label selectedPlaylistLabel;
+    @FXML
+    private Label songCountLabel;
+    @FXML
+    private Label totalDurationLabel;
+    @FXML
+    private Label suggestionSubtitleLabel;
 
-    @FXML private TextField searchSongsField;
-    @FXML private VBox      searchSongsPanel;
-    @FXML private VBox      suggestionsSection;
+    @FXML
+    private TextField searchSongsField;
+    @FXML
+    private VBox searchSongsPanel;
+    @FXML
+    private VBox suggestionsSection;
 
     // ── Services ──────────────────────────────────────────────────
-    private final ObservableList<String> playlistNames   = FXCollections.observableArrayList();
-    private final ObservableList<Song>   allLibrarySongs = FXCollections.observableArrayList();
+    private final ObservableList<String> playlistNames = FXCollections.observableArrayList();
+    private final ObservableList<Song> allLibrarySongs = FXCollections.observableArrayList();
 
-    private final SongDAO                songDAO           = new SongDAO();
-    private final MusicPlayerController  player            = MusicPlayerController.getInstance();
-    private final PlaylistService        playlistService   = new PlaylistService();
-    private final SongSearchService      songSearchService = new SongSearchService();
+    private final SongDAO songDAO = new SongDAO();
+    private final MusicPlayerController player = MusicPlayerController.getInstance();
+    private final PlaylistService playlistService = new PlaylistService();
+    private final SongSearchService songSearchService = new SongSearchService();
     private final PlaylistSelectionService selectionService = new PlaylistSelectionService();
-    private final PlaylistPickerService  pickerService     = new PlaylistPickerService();
-    private final RecommendationService  recommendationService = new RecommendationService();
+    private final PlaylistPickerService pickerService = new PlaylistPickerService();
+    private final RecommendationService recommendationService = new RecommendationService();
 
     private UserProfile profile;
 
@@ -140,14 +151,17 @@ public class PlaylistsPageController {
             protected void updateItem(String name, boolean empty) {
                 super.updateItem(name, empty);
                 if (empty || name == null) {
-                    setText(null); setGraphic(null);
+                    setText(null);
+                    setGraphic(null);
                     setBackground(Background.EMPTY);
                     setStyle("-fx-background-color: transparent;");
                     return;
                 }
 
                 StackPane icon = new StackPane();
-                icon.setPrefSize(28, 28); icon.setMinSize(28, 28); icon.setMaxSize(28, 28);
+                icon.setPrefSize(28, 28);
+                icon.setMinSize(28, 28);
+                icon.setMaxSize(28, 28);
                 icon.setStyle(
                         "-fx-background-color: rgba(139,92,246,0.15);" +
                                 "-fx-background-radius: 8;" +
@@ -166,7 +180,8 @@ public class PlaylistsPageController {
                 row.setPadding(new Insets(9, 12, 9, 12));
                 row.setStyle("-fx-background-color: transparent; -fx-background-radius: 12;");
 
-                setText(null); setGraphic(row);
+                setText(null);
+                setGraphic(row);
                 setBackground(Background.EMPTY);
                 setStyle("-fx-background-color: transparent; -fx-padding: 2 0 2 0;");
             }
@@ -293,7 +308,10 @@ public class PlaylistsPageController {
 
     private void refreshSuggestions() {
         String selected = playlistListView.getSelectionModel().getSelectedItem();
-        if (selected == null || profile == null) { hideSuggestionsSection(); return; }
+        if (selected == null || profile == null) {
+            hideSuggestionsSection();
+            return;
+        }
 
         ObservableList<Song> songs = profile.getPlaylists().get(selected);
         String username = SessionManager.getCurrentUsername();
@@ -301,7 +319,10 @@ public class PlaylistsPageController {
         ObservableList<Song> suggestions =
                 recommendationService.getSuggestedSongsForPlaylist(username, songs, 4);
 
-        if (suggestions == null || suggestions.isEmpty()) { hideSuggestionsSection(); return; }
+        if (suggestions == null || suggestions.isEmpty()) {
+            hideSuggestionsSection();
+            return;
+        }
 
         suggestedSongsListView.setItems(suggestions);
         showSuggestionsSection(selected);
@@ -390,8 +411,11 @@ public class PlaylistsPageController {
                 Song s = playlistSongsListView.getSelectionModel().getSelectedItem();
                 if (s != null) {
                     SessionManager.setSelectedSong(s);
-                    try { SceneUtil.switchScene(playlistSongsListView, "song-details-page.fxml"); }
-                    catch (IOException ex) { ex.printStackTrace(); }
+                    try {
+                        SceneUtil.switchScene(playlistSongsListView, "song-details-page.fxml");
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
+                    }
                 }
             }
         });
@@ -400,8 +424,11 @@ public class PlaylistsPageController {
                 Song s = searchResultsListView.getSelectionModel().getSelectedItem();
                 if (s != null) {
                     SessionManager.setSelectedSong(s);
-                    try { SceneUtil.switchScene(searchResultsListView, "song-details-page.fxml"); }
-                    catch (IOException ex) { ex.printStackTrace(); }
+                    try {
+                        SceneUtil.switchScene(searchResultsListView, "song-details-page.fxml");
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
+                    }
                 }
             }
         });
@@ -412,7 +439,10 @@ public class PlaylistsPageController {
     @FXML
     private void handleShowSearchSongs() {
         String selected = playlistListView.getSelectionModel().getSelectedItem();
-        if (selected == null) { AlertUtil.info("No Playlist Selected", "Please select a playlist first."); return; }
+        if (selected == null) {
+            AlertUtil.info("No Playlist Selected", "Please select a playlist first.");
+            return;
+        }
         searchSongsPanel.setVisible(true);
         searchSongsPanel.setManaged(true);
         searchSongsField.clear();
@@ -421,7 +451,10 @@ public class PlaylistsPageController {
         refreshSearchResultsCellFactory();
     }
 
-    @FXML private void handleHideSearchSongs() { hideSearchPanel(); }
+    @FXML
+    private void handleHideSearchSongs() {
+        hideSearchPanel();
+    }
 
     private void hideSearchPanel() {
         searchSongsPanel.setVisible(false);
@@ -438,9 +471,13 @@ public class PlaylistsPageController {
         Optional<String> result = dialog.showAndWait();
         if (result.isEmpty()) return;
         String name = result.get().trim();
-        if (name.isEmpty()) { AlertUtil.info("Invalid Name", "Playlist name cannot be empty."); return; }
+        if (name.isEmpty()) {
+            AlertUtil.info("Invalid Name", "Playlist name cannot be empty.");
+            return;
+        }
         if (!playlistService.createPlaylist(profile, name)) {
-            AlertUtil.info("Duplicate Playlist", "A playlist with that name already exists."); return;
+            AlertUtil.info("Duplicate Playlist", "A playlist with that name already exists.");
+            return;
         }
         loadPlaylistNames();
         playlistListView.getSelectionModel().select(name);
@@ -449,9 +486,13 @@ public class PlaylistsPageController {
     @FXML
     private void handleDeletePlaylist() {
         String selected = playlistListView.getSelectionModel().getSelectedItem();
-        if (selected == null) { AlertUtil.info("No Playlist Selected", "Please select a playlist to delete."); return; }
+        if (selected == null) {
+            AlertUtil.info("No Playlist Selected", "Please select a playlist to delete.");
+            return;
+        }
         if (!playlistService.deletePlaylist(profile, selected)) {
-            AlertUtil.info("Protected Playlist", "Liked Songs cannot be deleted."); return;
+            AlertUtil.info("Protected Playlist", "Liked Songs cannot be deleted.");
+            return;
         }
         loadPlaylistNames();
         if (!playlistNames.isEmpty()) playlistListView.getSelectionModel().selectFirst();

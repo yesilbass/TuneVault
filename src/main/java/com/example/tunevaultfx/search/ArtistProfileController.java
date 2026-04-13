@@ -5,13 +5,12 @@ import com.example.tunevaultfx.db.SongDAO;
 import com.example.tunevaultfx.musicplayer.controller.MusicPlayerController;
 import com.example.tunevaultfx.session.SessionManager;
 import com.example.tunevaultfx.util.AlertUtil;
+import com.example.tunevaultfx.util.CellStyleKit;
 import com.example.tunevaultfx.util.SceneUtil;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
@@ -23,14 +22,13 @@ import java.util.List;
 
 /**
  * Artist Profile page controller.
- *
- * Songs are filtered exclusively by the selected artist name and loaded
- * off the JavaFX Application Thread so the UI never freezes.
+ * Songs filtered by songId-safe artist match, loaded on background thread.
+ * Cells use CellStyleKit for consistent, readable contrast.
  */
 public class ArtistProfileController {
 
-    @FXML private Label         artistNameLabel;
-    @FXML private Label         artistSummaryLabel;
+    @FXML private Label          artistNameLabel;
+    @FXML private Label          artistSummaryLabel;
     @FXML private ListView<Song> artistSongsListView;
 
     private final ObservableList<Song> artistSongs = FXCollections.observableArrayList();
@@ -53,49 +51,41 @@ public class ArtistProfileController {
         }
 
         artistNameLabel.setText(artistName);
-        artistSummaryLabel.setText("Loading…");
+        artistSummaryLabel.setText("Loading\u2026");
         artistSongsListView.setItems(artistSongs);
 
-        setupSongCells();
+        setupCells();
         setupDoubleClick();
         loadArtistSongs();
     }
 
-    // ─────────────────────────────────────────────────────────────
-    // Data loading — background thread, no UI freezing
-    // ─────────────────────────────────────────────────────────────
+    // ── Background loading ────────────────────────────────────────
 
     private void loadArtistSongs() {
-        final String targetArtist = artistName.trim();
+        final String target = artistName.trim();
 
         Task<List<Song>> task = new Task<>() {
             @Override
             protected List<Song> call() throws Exception {
-                // Use cached library if available, otherwise hit the DB
                 ObservableList<Song> source = SessionManager.isSongLibraryReady()
                         ? SessionManager.getSongLibrary()
                         : songDAO.getAllSongs();
-
                 return source.stream()
-                        .filter(s -> s != null
-                                && s.artist() != null
-                                && s.artist().trim().equalsIgnoreCase(targetArtist))
+                        .filter(s -> s != null && s.artist() != null
+                                && s.artist().trim().equalsIgnoreCase(target))
                         .toList();
             }
         };
 
         task.setOnSucceeded(e -> {
-            List<Song> result = task.getValue();
-            artistSongs.setAll(result);
-
-            int count = result.size();
-            artistSummaryLabel.setText(
-                    count + " song" + (count != 1 ? "s" : ""));
+            artistSongs.setAll(task.getValue());
+            int count = task.getValue().size();
+            artistSummaryLabel.setText(count + " song" + (count != 1 ? "s" : ""));
         });
 
         task.setOnFailed(e -> {
             task.getException().printStackTrace();
-            artistSummaryLabel.setText("Failed to load songs.");
+            artistSummaryLabel.setText("Could not load songs.");
             AlertUtil.info("Error", "Could not load songs for this artist.");
         });
 
@@ -104,113 +94,60 @@ public class ArtistProfileController {
         t.start();
     }
 
-    // ─────────────────────────────────────────────────────────────
-    // Cell factory — dark theme
-    // ─────────────────────────────────────────────────────────────
+    // ── Cell factory ──────────────────────────────────────────────
 
-    private void setupSongCells() {
+    private void setupCells() {
         artistSongsListView.setCellFactory(lv -> new ListCell<>() {
-
             @Override
             protected void updateItem(Song song, boolean empty) {
                 super.updateItem(song, empty);
-
                 if (empty || song == null) {
-                    setText(null);
-                    setGraphic(null);
+                    setText(null); setGraphic(null);
+                    setBackground(Background.EMPTY);
                     setStyle("-fx-background-color: transparent;");
                     return;
                 }
 
-                // Track number — based on position in the FILTERED list
+                boolean isPlaying = player.getCurrentSong() != null
+                        && player.getCurrentSong().songId() == song.songId();
+
                 int index = artistSongs.indexOf(song) + 1;
-                Label num = new Label(String.format("%02d", index));
-                num.setMinWidth(28);
-                num.setStyle("-fx-font-size: 13px; -fx-text-fill: #3d3d5c; -fx-font-weight: bold;");
+                Label  num  = CellStyleKit.trackNumber(index);
+                StackPane icon = CellStyleKit.iconBox("♫", CellStyleKit.Palette.PURPLE, false);
+                VBox   text = CellStyleKit.textBox(
+                        song.title(), CellStyleKit.albumMeta(song.album(), song.genre()));
+                Label  dur  = CellStyleKit.duration(song.durationSeconds());
 
-                // Icon box
-                StackPane iconBox = new StackPane();
-                iconBox.setPrefSize(40, 40);
-                iconBox.setMinSize(40, 40);
-                iconBox.setMaxSize(40, 40);
-                iconBox.setStyle(
-                        "-fx-background-color: rgba(139,92,246,0.1);" +
-                                "-fx-background-radius: 10;" +
-                                "-fx-border-color: rgba(139,92,246,0.15);" +
-                                "-fx-border-radius: 10;" +
-                                "-fx-border-width: 1;");
-                Label icon = new Label("♫");
-                icon.setStyle("-fx-font-size: 16px; -fx-text-fill: #6b5fa6;");
-                iconBox.getChildren().add(icon);
-                StackPane.setAlignment(icon, Pos.CENTER);
-
-                // Title
-                Label title = new Label(song.title());
-                title.setStyle(
-                        "-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #e2e8f0;");
-
-                // Subtitle: album · genre (skip blanks)
-                StringBuilder meta = new StringBuilder();
-                if (song.album() != null && !song.album().isBlank()) meta.append(song.album());
-                if (song.genre() != null && !song.genre().isBlank()) {
-                    if (!meta.isEmpty()) meta.append(" · ");
-                    meta.append(song.genre());
+                // Override title color if playing
+                if (isPlaying && !text.getChildren().isEmpty()) {
+                    text.getChildren().get(0).setStyle(
+                            "-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #c4b5fd;");
                 }
-                Label metaLabel = new Label(meta.toString());
-                metaLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #3d3d5c;");
 
-                VBox textBox = new VBox(3, title, metaLabel);
-                HBox.setHgrow(textBox, Priority.ALWAYS);
+                HBox row = CellStyleKit.row(num, icon, text,
+                        new Region() {{ HBox.setHgrow(this, Priority.ALWAYS); }}, dur);
+                CellStyleKit.markPlaying(row, isPlaying);
 
-                // Duration
-                String dur = song.durationSeconds() > 0
-                        ? (song.durationSeconds() / 60) + ":"
-                          + String.format("%02d", song.durationSeconds() % 60)
-                        : "";
-                Label durLabel = new Label(dur);
-                durLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #3d3d5c;");
-
-                HBox row = new HBox(14, num, iconBox, textBox, durLabel);
-                row.setAlignment(Pos.CENTER_LEFT);
-                row.setPadding(new Insets(8, 12, 8, 12));
-                row.setStyle("-fx-background-color: transparent; -fx-background-radius: 12;");
-
-                row.setOnMouseEntered(ev -> row.setStyle(
-                        "-fx-background-color: rgba(255,255,255,0.04); -fx-background-radius: 12;"));
-                row.setOnMouseExited(ev -> row.setStyle(
-                        "-fx-background-color: transparent; -fx-background-radius: 12;"));
-
-                setText(null);
-                setGraphic(row);
+                setText(null); setGraphic(row);
+                setBackground(Background.EMPTY);
                 setStyle("-fx-background-color: transparent; -fx-padding: 2 0 2 0;");
             }
 
-            @Override
-            public void updateSelected(boolean selected) {
-                super.updateSelected(false);
-            }
+            @Override public void updateSelected(boolean s) { super.updateSelected(false); }
         });
     }
 
-    // ─────────────────────────────────────────────────────────────
-    // Interactions
-    // ─────────────────────────────────────────────────────────────
+    // ── Interactions ──────────────────────────────────────────────
 
     private void setupDoubleClick() {
         artistSongsListView.setOnMouseClicked(event -> {
             if (event.getClickCount() == 2) {
                 Song selected = artistSongsListView.getSelectionModel().getSelectedItem();
                 if (selected == null) return;
-
-                int index = artistSongs.indexOf(selected);
-                player.playQueue(artistSongs, index, artistName);
+                player.playQueue(artistSongs, artistSongs.indexOf(selected), artistName);
                 SessionManager.setSelectedSong(selected);
-
-                try {
-                    SceneUtil.switchScene(artistSongsListView, "song-details-page.fxml");
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                try { SceneUtil.switchScene(artistSongsListView, "song-details-page.fxml"); }
+                catch (IOException e) { e.printStackTrace(); }
             }
         });
     }
