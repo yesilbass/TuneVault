@@ -1,11 +1,13 @@
 package com.example.tunevaultfx.musicplayer.controller;
 
 import com.example.tunevaultfx.core.Song;
+import com.example.tunevaultfx.musicplayer.PlayerStyleConstants;
 import com.example.tunevaultfx.playlist.service.PlaylistPickerService;
 import com.example.tunevaultfx.session.SessionManager;
 import com.example.tunevaultfx.util.SceneUtil;
 import javafx.animation.FadeTransition;
 import javafx.animation.ParallelTransition;
+import javafx.animation.ScaleTransition;
 import javafx.animation.TranslateTransition;
 import javafx.beans.binding.Bindings;
 import javafx.event.ActionEvent;
@@ -23,7 +25,11 @@ import java.io.IOException;
 
 /**
  * Controls the expanded player overlay.
- * All button styles use the dark theme palette.
+ *
+ * Style constants live in PlayerStyleConstants — change them there to
+ * re-theme the entire player in one edit.
+ *
+ * Animation logic is self-contained in openOverlay() / closeOverlay().
  */
 public class ExpandedPlayerController {
 
@@ -43,62 +49,14 @@ public class ExpandedPlayerController {
 
     @FXML private Slider progressSlider;
 
-    private final MusicPlayerController  player             = MusicPlayerController.getInstance();
-    private final PlaylistPickerService  addToPlaylistDialog = new PlaylistPickerService();
+    private final MusicPlayerController player              = MusicPlayerController.getInstance();
+    private final PlaylistPickerService addToPlaylistDialog  = new PlaylistPickerService();
 
     private boolean animatingClose = false;
 
-    // ─── Style constants (dark theme) ─────────────────────────────
-
-    private static final String BTN_NEUTRAL =
-            "-fx-background-color: rgba(255,255,255,0.07);" +
-                    "-fx-text-fill: #4a4a70;" +
-                    "-fx-font-size: 20px;" +
-                    "-fx-font-weight: bold;" +
-                    "-fx-background-radius: 22;" +
-                    "-fx-border-color: rgba(255,255,255,0.08);" +
-                    "-fx-border-radius: 22;" +
-                    "-fx-border-width: 1;";
-
-    private static final String BTN_MODE_ACTIVE =
-            "-fx-background-color: rgba(139,92,246,0.2);" +
-                    "-fx-text-fill: #a78bfa;" +
-                    "-fx-font-size: 20px;" +
-                    "-fx-font-weight: bold;" +
-                    "-fx-background-radius: 22;" +
-                    "-fx-border-color: rgba(139,92,246,0.32);" +
-                    "-fx-border-radius: 22;" +
-                    "-fx-border-width: 1;";
-
-    private static final String BTN_LIKE_ON =
-            "-fx-background-color: rgba(244,63,94,0.18);" +
-                    "-fx-text-fill: #f43f5e;" +
-                    "-fx-font-size: 20px;" +
-                    "-fx-font-weight: bold;" +
-                    "-fx-background-radius: 22;" +
-                    "-fx-border-color: rgba(244,63,94,0.28);" +
-                    "-fx-border-radius: 22;" +
-                    "-fx-border-width: 1;";
-
-    private static final String BTN_LIKE_OFF =
-            "-fx-background-color: rgba(244,63,94,0.07);" +
-                    "-fx-text-fill: #4a4a70;" +
-                    "-fx-font-size: 20px;" +
-                    "-fx-font-weight: bold;" +
-                    "-fx-background-radius: 22;" +
-                    "-fx-border-color: rgba(244,63,94,0.1);" +
-                    "-fx-border-radius: 22;" +
-                    "-fx-border-width: 1;";
-
-    private static final String BTN_ADD =
-            "-fx-background-color: rgba(139,92,246,0.07);" +
-                    "-fx-text-fill: #4a4a70;" +
-                    "-fx-font-size: 22px;" +
-                    "-fx-font-weight: bold;" +
-                    "-fx-background-radius: 22;" +
-                    "-fx-border-color: rgba(139,92,246,0.1);" +
-                    "-fx-border-radius: 22;" +
-                    "-fx-border-width: 1;";
+    // Size tokens for the expanded player (larger than mini player)
+    private static final String FS = "20px";
+    private static final String R  = PlayerStyleConstants.RADIUS_FULL;
 
     // ─────────────────────────────────────────────────────────────
 
@@ -113,56 +71,48 @@ public class ExpandedPlayerController {
         artistLink.textProperty().bind(player.currentArtistProperty());
 
         playPauseButton.textProperty().bind(
-                Bindings.when(player.playingProperty()).then("⏸").otherwise("▶")
-        );
+                Bindings.when(player.playingProperty()).then("⏸").otherwise("▶"));
 
         player.currentSongProperty().addListener((obs, o, n) -> {
-            refreshSongInfo();
+            refreshAlbum();
             refreshLikeButton();
             refreshAddButton();
         });
-
         player.currentSecondProperty().addListener((obs, o, n)   -> refreshTime());
         player.currentDurationProperty().addListener((obs, o, n) -> refreshTime());
 
         progressSlider.setOnMouseReleased(e -> player.seek((int) progressSlider.getValue()));
-        progressSlider.valueChangingProperty().addListener((obs, wasChanging, isChanging) -> {
+        progressSlider.valueChangingProperty().addListener((obs, was, isChanging) -> {
             if (!isChanging) player.seek((int) progressSlider.getValue());
         });
 
-        player.shuffleEnabledProperty().addListener((obs, o, n) -> updateModeButtons());
-        player.loopEnabledProperty().addListener((obs, o, n)    -> updateModeButtons());
+        player.shuffleEnabledProperty().addListener((obs, o, n) -> refreshModeButtons());
+        player.loopEnabledProperty().addListener((obs, o, n)    -> refreshModeButtons());
         player.expandedPlayerVisibleProperty().addListener((obs, o, n) -> {
             if (n) openOverlay(); else closeOverlay();
         });
         player.currentSongLikedProperty().addListener((obs, o, n) -> refreshLikeButton());
 
-        // Apply initial dark styles
-        shuffleButton.setStyle(BTN_NEUTRAL);
-        loopButton.setStyle(BTN_NEUTRAL);
-        likeButton.setStyle(BTN_LIKE_OFF);
-        addToPlaylistButton.setStyle(BTN_ADD);
-
-        refreshSongInfo();
+        refreshAlbum();
         refreshTime();
         refreshLikeButton();
         refreshAddButton();
-        updateModeButtons();
+        refreshModeButtons();
     }
 
-    // ─── Handlers ────────────────────────────────────────────────
+    // ── Handlers ──────────────────────────────────────────────────
 
-    @FXML private void handleBackdropClick() { player.setExpandedPlayerVisible(false); }
-    @FXML private void handleClose()         { player.setExpandedPlayerVisible(false); }
-    @FXML private void handleConsumeClick()  { /* absorb clicks so backdrop doesn't close */ }
+    @FXML private void handleBackdropClick()  { player.setExpandedPlayerVisible(false); }
+    @FXML private void handleClose()          { player.setExpandedPlayerVisible(false); }
+    @FXML private void handleConsumeClick()   { /* absorb so backdrop doesn't close */ }
 
-    @FXML private void handlePrevious() { player.previous(); refreshLikeButton(); refreshAddButton(); }
-    @FXML private void handleNext()     { player.next();     refreshLikeButton(); refreshAddButton(); }
-    @FXML private void handlePlayPause(){ player.togglePlayPause(); }
-    @FXML private void handleLike()     { player.toggleLikeCurrentSong(); refreshLikeButton(); }
-    @FXML private void handleShuffle()  { player.toggleShuffle(); updateModeButtons(); }
-    @FXML private void handleLoop()     { player.toggleLoop();    updateModeButtons(); }
-    @FXML private void handleAddToPlaylist() { addToPlaylistDialog.show(player.getCurrentSong()); refreshAddButton(); }
+    @FXML private void handlePrevious()       { player.previous();              refreshLikeButton(); refreshAddButton(); }
+    @FXML private void handleNext()           { player.next();                  refreshLikeButton(); refreshAddButton(); }
+    @FXML private void handlePlayPause()      { player.togglePlayPause(); }
+    @FXML private void handleLike()           { player.toggleLikeCurrentSong(); refreshLikeButton(); }
+    @FXML private void handleShuffle()        { player.toggleShuffle();         refreshModeButtons(); }
+    @FXML private void handleLoop()           { player.toggleLoop();            refreshModeButtons(); }
+    @FXML private void handleAddToPlaylist()  { addToPlaylistDialog.show(player.getCurrentSong()); refreshAddButton(); }
 
     @FXML
     private void handleOpenArtistProfile(ActionEvent event) throws IOException {
@@ -172,9 +122,9 @@ public class ExpandedPlayerController {
         SceneUtil.switchScene((Node) event.getSource(), "artist-profile-page.fxml");
     }
 
-    // ─── UI refresh helpers ───────────────────────────────────────
+    // ── UI refresh helpers ─────────────────────────────────────────
 
-    private void refreshSongInfo() {
+    private void refreshAlbum() {
         Song song = player.getCurrentSong();
         if (song == null) { albumLabel.setText("Album: -"); return; }
         String album = song.album();
@@ -192,24 +142,28 @@ public class ExpandedPlayerController {
     private void refreshLikeButton() {
         boolean liked = player.isCurrentSongLiked();
         likeButton.setText(liked ? "♥" : "♡");
-        likeButton.setStyle(liked ? BTN_LIKE_ON : BTN_LIKE_OFF);
+        likeButton.setStyle(liked
+                ? PlayerStyleConstants.likeOn(FS, R)
+                : PlayerStyleConstants.likeOff(FS, R));
     }
 
     private void refreshAddButton() {
-        boolean hasSong = player.getCurrentSong() != null;
-        addToPlaylistButton.setDisable(!hasSong);
-        addToPlaylistButton.setStyle(BTN_ADD);
+        addToPlaylistButton.setDisable(player.getCurrentSong() == null);
+        addToPlaylistButton.setStyle(PlayerStyleConstants.addButton("22px", R));
     }
 
-    private void updateModeButtons() {
-        // ⇄ is plain Unicode — renders correctly in JavaFX (unlike 🔀 emoji)
+    private void refreshModeButtons() {
         shuffleButton.setText("⇄");
         loopButton.setText("↻");
-        shuffleButton.setStyle(player.isShuffleEnabled() ? BTN_MODE_ACTIVE : BTN_NEUTRAL);
-        loopButton.setStyle(player.isLoopEnabled()       ? BTN_MODE_ACTIVE : BTN_NEUTRAL);
+        shuffleButton.setStyle(player.isShuffleEnabled()
+                ? PlayerStyleConstants.modeActive(FS, R)
+                : PlayerStyleConstants.modeInactive(FS, R));
+        loopButton.setStyle(player.isLoopEnabled()
+                ? PlayerStyleConstants.modeActive("22px", R)
+                : PlayerStyleConstants.modeInactive("22px", R));
     }
 
-    // ─── Overlay animation ────────────────────────────────────────
+    // ── Overlay animation ──────────────────────────────────────────
 
     private void openOverlay() {
         animatingClose = false;
@@ -220,14 +174,12 @@ public class ExpandedPlayerController {
         playerCard.setScaleX(0.97);
         playerCard.setScaleY(0.97);
 
-        FadeTransition fade = new FadeTransition(Duration.millis(200), overlayRoot);
-        fade.setToValue(1);
-
+        FadeTransition      fade  = new FadeTransition(Duration.millis(200), overlayRoot);
         TranslateTransition slide = new TranslateTransition(Duration.millis(260), playerCard);
-        slide.setToY(0);
+        ScaleTransition     scale = new ScaleTransition(Duration.millis(260), playerCard);
 
-        javafx.animation.ScaleTransition scale =
-                new javafx.animation.ScaleTransition(Duration.millis(260), playerCard);
+        fade.setToValue(1);
+        slide.setToY(0);
         scale.setToX(1.0);
         scale.setToY(1.0);
 
@@ -238,14 +190,12 @@ public class ExpandedPlayerController {
         if (!overlayRoot.isVisible() || animatingClose) return;
         animatingClose = true;
 
-        FadeTransition fade = new FadeTransition(Duration.millis(160), overlayRoot);
-        fade.setToValue(0);
-
+        FadeTransition      fade  = new FadeTransition(Duration.millis(160), overlayRoot);
         TranslateTransition slide = new TranslateTransition(Duration.millis(200), playerCard);
-        slide.setToY(80);
+        ScaleTransition     scale = new ScaleTransition(Duration.millis(200), playerCard);
 
-        javafx.animation.ScaleTransition scale =
-                new javafx.animation.ScaleTransition(Duration.millis(200), playerCard);
+        fade.setToValue(0);
+        slide.setToY(80);
         scale.setToX(0.98);
         scale.setToY(0.98);
 
@@ -259,8 +209,6 @@ public class ExpandedPlayerController {
     }
 
     private String formatTime(int totalSeconds) {
-        int m = totalSeconds / 60;
-        int s = totalSeconds % 60;
-        return m + ":" + String.format("%02d", s);
+        return (totalSeconds / 60) + ":" + String.format("%02d", totalSeconds % 60);
     }
 }

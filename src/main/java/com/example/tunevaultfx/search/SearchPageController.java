@@ -7,6 +7,7 @@ import com.example.tunevaultfx.recommendation.RecommendationService;
 import com.example.tunevaultfx.session.SessionManager;
 import com.example.tunevaultfx.util.AlertUtil;
 import com.example.tunevaultfx.util.SceneUtil;
+import javafx.animation.PauseTransition;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -15,12 +16,20 @@ import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import javafx.util.Duration;
 
 import java.io.IOException;
 
+/**
+ * Search page controller.
+ *
+ * Key fix: every custom ListCell explicitly sets a transparent background in
+ * the empty branch. Without this, JavaFX renders empty rows white, causing
+ * the large white block below actual list items.
+ */
 public class SearchPageController {
 
-    // ── FXML fields ───────────────────────────────────────────────
+    // ── FXML ─────────────────────────────────────────────────────
     @FXML private TextField  searchField;
     @FXML private Label      resultsSummaryLabel;
 
@@ -43,6 +52,10 @@ public class SearchPageController {
     private final RecommendationService recommendationService = new RecommendationService();
     private final MusicPlayerController player                = MusicPlayerController.getInstance();
 
+    // 250 ms debounce — fires search only after typing pauses
+    private final PauseTransition searchDebounce =
+            new PauseTransition(Duration.millis(250));
+
     // ─────────────────────────────────────────────────────────────
 
     @FXML
@@ -53,9 +66,9 @@ public class SearchPageController {
         artistResultsListView.setItems(filteredArtists);
         recentSearchesListView.setItems(SessionManager.getRecentSearches());
 
-        songResultsListView.setPlaceholder(placeholderLabel("No matching songs"));
-        artistResultsListView.setPlaceholder(placeholderLabel("No matching artists"));
-        recentSearchesListView.setPlaceholder(placeholderLabel("No recent searches yet"));
+        songResultsListView.setPlaceholder(placeholder("No matching songs"));
+        artistResultsListView.setPlaceholder(placeholder("No matching artists"));
+        recentSearchesListView.setPlaceholder(placeholder("No recent searches yet"));
 
         setupSongCells();
         setupArtistCells();
@@ -67,39 +80,42 @@ public class SearchPageController {
     }
 
     private void loadSongs() {
+        // Use cached library if ready, otherwise hit DB directly
+        if (SessionManager.isSongLibraryReady()) {
+            allSongs.setAll(SessionManager.getSongLibrary());
+            return;
+        }
         try {
             allSongs.setAll(songDAO.getAllSongs());
         } catch (Exception e) {
             e.printStackTrace();
-            AlertUtil.info("Database Error", "Could not load songs from the database.");
+            AlertUtil.info("Database Error", "Could not load songs.");
         }
     }
 
     // ── Cell factories ────────────────────────────────────────────
+    //
+    // IMPORTANT: every empty branch MUST call:
+    //   setBackground(Background.EMPTY);
+    //   setStyle("-fx-background-color: transparent;");
+    // Otherwise JavaFX leaves the previous background (white) on recycled cells.
 
     private void setupSongCells() {
         songResultsListView.setCellFactory(lv -> new ListCell<>() {
             @Override
             protected void updateItem(Song song, boolean empty) {
                 super.updateItem(song, empty);
-                if (empty || song == null) { setText(null); setGraphic(null); return; }
+                if (empty || song == null) {
+                    setText(null);
+                    setGraphic(null);
+                    setBackground(Background.EMPTY);
+                    setStyle("-fx-background-color: transparent;");
+                    return;
+                }
 
-                // Icon
-                StackPane icon = new StackPane();
-                icon.setPrefSize(42, 42);
-                icon.setMinSize(42, 42);
-                icon.setMaxSize(42, 42);
-                icon.setStyle("-fx-background-color: rgba(139,92,246,0.12);" +
-                        "-fx-background-radius: 11;" +
-                        "-fx-border-color: rgba(139,92,246,0.18);" +
-                        "-fx-border-radius: 11;" +
-                        "-fx-border-width: 1;");
-                Label iconLabel = new Label("♫");
-                iconLabel.setStyle("-fx-font-size: 17px; -fx-text-fill: #7c6fa6;");
-                icon.getChildren().add(iconLabel);
-                StackPane.setAlignment(iconLabel, Pos.CENTER);
+                StackPane icon = iconBox("♫",
+                        "rgba(139,92,246,0.12)", "rgba(139,92,246,0.18)", "#7c6fa6", "11");
 
-                // Text
                 Label title = new Label(song.title());
                 title.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #e2e8f0;");
 
@@ -107,12 +123,11 @@ public class SearchPageController {
                 if (song.genre() != null && !song.genre().isBlank())
                     meta += " · " + song.genre();
                 Label metaLabel = new Label(meta);
-                metaLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #3d3d5c;");
+                metaLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #52525b;");
 
                 VBox textBox = new VBox(3, title, metaLabel);
                 HBox.setHgrow(textBox, Priority.ALWAYS);
 
-                // Duration
                 Label dur = new Label(formatDuration(song.durationSeconds()));
                 dur.setStyle("-fx-font-size: 12px; -fx-text-fill: #3d3d5c;");
 
@@ -127,6 +142,7 @@ public class SearchPageController {
 
                 setText(null);
                 setGraphic(row);
+                setBackground(Background.EMPTY);
                 setStyle("-fx-background-color: transparent; -fx-padding: 2 0 2 0;");
             }
 
@@ -139,27 +155,25 @@ public class SearchPageController {
             @Override
             protected void updateItem(String artist, boolean empty) {
                 super.updateItem(artist, empty);
-                if (empty || artist == null || artist.isBlank()) { setText(null); setGraphic(null); return; }
+                if (empty || artist == null || artist.isBlank()) {
+                    setText(null);
+                    setGraphic(null);
+                    setBackground(Background.EMPTY);
+                    setStyle("-fx-background-color: transparent;");
+                    return;
+                }
 
-                // Avatar circle
-                StackPane avatar = new StackPane();
-                avatar.setPrefSize(42, 42);
-                avatar.setMinSize(42, 42);
-                avatar.setMaxSize(42, 42);
-                avatar.setStyle("-fx-background-color: rgba(244,63,94,0.12);" +
-                        "-fx-background-radius: 21;" +
-                        "-fx-border-color: rgba(244,63,94,0.18);" +
-                        "-fx-border-radius: 21;" +
-                        "-fx-border-width: 1;");
-                Label initial = new Label(artist.substring(0, 1).toUpperCase());
-                initial.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #9b4f62;");
-                avatar.getChildren().add(initial);
-                StackPane.setAlignment(initial, Pos.CENTER);
+                StackPane avatar = iconBox(
+                        artist.substring(0, 1).toUpperCase(),
+                        "rgba(244,63,94,0.12)", "rgba(244,63,94,0.18)", "#9b4f62", "16");
+                // Make avatar circular
+                avatar.setStyle(avatar.getStyle().replace("-fx-background-radius: 11;", "-fx-background-radius: 21;")
+                        .replace("-fx-border-radius: 11;", "-fx-border-radius: 21;"));
 
                 Label name = new Label(artist);
                 name.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #e2e8f0;");
                 Label type = new Label("Artist");
-                type.setStyle("-fx-font-size: 12px; -fx-text-fill: #3d3d5c;");
+                type.setStyle("-fx-font-size: 12px; -fx-text-fill: #52525b;");
                 VBox textBox = new VBox(3, name, type);
                 HBox.setHgrow(textBox, Priority.ALWAYS);
 
@@ -174,6 +188,7 @@ public class SearchPageController {
 
                 setText(null);
                 setGraphic(row);
+                setBackground(Background.EMPTY);
                 setStyle("-fx-background-color: transparent; -fx-padding: 2 0 2 0;");
             }
 
@@ -186,35 +201,40 @@ public class SearchPageController {
             @Override
             protected void updateItem(SearchRecentItem item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty || item == null) { setText(null); setGraphic(null); return; }
+                if (empty || item == null) {
+                    setText(null);
+                    setGraphic(null);
+                    setBackground(Background.EMPTY);           // ← critical
+                    setStyle("-fx-background-color: transparent;");
+                    return;
+                }
 
                 boolean isSong = item.getType() == SearchRecentItem.Type.SONG;
 
-                StackPane icon = new StackPane();
-                icon.setPrefSize(42, 42);
-                icon.setMinSize(42, 42);
-                icon.setMaxSize(42, 42);
-                icon.setStyle(isSong
-                        ? "-fx-background-color: rgba(139,92,246,0.12); -fx-background-radius: 11; -fx-border-color: rgba(139,92,246,0.18); -fx-border-radius: 11; -fx-border-width: 1;"
-                        : "-fx-background-color: rgba(244,63,94,0.12); -fx-background-radius: 21; -fx-border-color: rgba(244,63,94,0.18); -fx-border-radius: 21; -fx-border-width: 1;");
-                Label iconLabel = new Label(isSong ? "♫" : "◎");
-                iconLabel.setStyle(isSong
-                        ? "-fx-font-size: 17px; -fx-text-fill: #7c6fa6;"
-                        : "-fx-font-size: 17px; -fx-text-fill: #9b4f62;");
-                icon.getChildren().add(iconLabel);
-                StackPane.setAlignment(iconLabel, Pos.CENTER);
+                StackPane icon = iconBox(
+                        isSong ? "♫" : "◎",
+                        isSong ? "rgba(139,92,246,0.12)" : "rgba(244,63,94,0.12)",
+                        isSong ? "rgba(139,92,246,0.18)" : "rgba(244,63,94,0.18)",
+                        isSong ? "#7c6fa6" : "#9b4f62",
+                        isSong ? "17" : "17");
 
                 Label primary = new Label(item.getPrimaryText());
                 primary.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #e2e8f0;");
                 Label secondary = new Label(item.getSecondaryText());
-                secondary.setStyle("-fx-font-size: 12px; -fx-text-fill: #3d3d5c;");
+                secondary.setStyle("-fx-font-size: 12px; -fx-text-fill: #52525b;");
                 VBox textBox = new VBox(3, primary, secondary);
                 HBox.setHgrow(textBox, Priority.ALWAYS);
 
                 Label tag = new Label(isSong ? "Song" : "Artist");
-                tag.setStyle(isSong
-                        ? "-fx-background-color: rgba(139,92,246,0.12); -fx-text-fill: #7c6fa6; -fx-font-size: 11px; -fx-font-weight: bold; -fx-background-radius: 10; -fx-padding: 3 10 3 10; -fx-border-color: rgba(139,92,246,0.18); -fx-border-radius: 10; -fx-border-width: 1;"
-                        : "-fx-background-color: rgba(244,63,94,0.1); -fx-text-fill: #9b4f62; -fx-font-size: 11px; -fx-font-weight: bold; -fx-background-radius: 10; -fx-padding: 3 10 3 10; -fx-border-color: rgba(244,63,94,0.15); -fx-border-radius: 10; -fx-border-width: 1;");
+                tag.setStyle(
+                        "-fx-background-color: " + (isSong
+                                ? "rgba(139,92,246,0.12)" : "rgba(244,63,94,0.1)") + ";" +
+                                "-fx-text-fill: " + (isSong ? "#7c6fa6" : "#9b4f62") + ";" +
+                                "-fx-font-size: 11px; -fx-font-weight: bold;" +
+                                "-fx-background-radius: 10; -fx-padding: 3 10 3 10;" +
+                                "-fx-border-color: " + (isSong
+                                ? "rgba(139,92,246,0.18)" : "rgba(244,63,94,0.15)") + ";" +
+                                "-fx-border-radius: 10; -fx-border-width: 1;");
 
                 HBox row = new HBox(12, icon, textBox, tag);
                 row.setAlignment(Pos.CENTER_LEFT);
@@ -227,6 +247,7 @@ public class SearchPageController {
 
                 setText(null);
                 setGraphic(row);
+                setBackground(Background.EMPTY);
                 setStyle("-fx-background-color: transparent; -fx-padding: 2 0 2 0;");
             }
 
@@ -244,7 +265,11 @@ public class SearchPageController {
     // ── Listeners ─────────────────────────────────────────────────
 
     private void setupListeners() {
-        searchField.textProperty().addListener((obs, o, n) -> runSearch(n));
+        searchField.textProperty().addListener((obs, o, n) -> {
+            // Debounce: wait for typing to pause before running the DB-backed search
+            searchDebounce.setOnFinished(e -> runSearch(n));
+            searchDebounce.playFromStart();
+        });
     }
 
     private void setupDoubleClickActions() {
@@ -293,10 +318,10 @@ public class SearchPageController {
         int sc = filteredSongs.size();
         int ac = filteredArtists.size();
 
-        resultsSummaryLabel.setText(
-                sc == 0 && ac == 0
-                        ? "No results for \"" + query + "\""
-                        : sc + " song" + (sc != 1 ? "s" : "") + "  \u00B7  " + ac + " artist" + (ac != 1 ? "s" : ""));
+        resultsSummaryLabel.setText(sc == 0 && ac == 0
+                ? "No results for \"" + query + "\""
+                : sc + " song" + (sc != 1 ? "s" : "") + "  \u00B7  "
+                  + ac + " artist" + (ac != 1 ? "s" : ""));
 
         showResultsMode(sc > 0, ac > 0);
     }
@@ -359,12 +384,32 @@ public class SearchPageController {
 
     // ── Helpers ───────────────────────────────────────────────────
 
-    private String formatDuration(int seconds) {
+    /** Shared icon-box builder to keep cell factories DRY. */
+    private static StackPane iconBox(String symbol, String bg, String border,
+                                     String textFill, String fontSize) {
+        StackPane box = new StackPane();
+        box.setPrefSize(42, 42);
+        box.setMinSize(42, 42);
+        box.setMaxSize(42, 42);
+        box.setStyle(
+                "-fx-background-color: " + bg + ";" +
+                        "-fx-background-radius: 11;" +
+                        "-fx-border-color: " + border + ";" +
+                        "-fx-border-radius: 11;" +
+                        "-fx-border-width: 1;");
+        Label lbl = new Label(symbol);
+        lbl.setStyle("-fx-font-size: " + fontSize + "px; -fx-text-fill: " + textFill + ";");
+        box.getChildren().add(lbl);
+        StackPane.setAlignment(lbl, Pos.CENTER);
+        return box;
+    }
+
+    private static String formatDuration(int seconds) {
         if (seconds <= 0) return "";
         return (seconds / 60) + ":" + String.format("%02d", seconds % 60);
     }
 
-    private Label placeholderLabel(String text) {
+    private static Label placeholder(String text) {
         Label l = new Label(text);
         l.setStyle("-fx-text-fill: #3d3d5c; -fx-font-size: 13px;");
         return l;
