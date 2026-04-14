@@ -1,172 +1,217 @@
 # TuneVault
 
-TuneVault is a JavaFX music application project that lets a user:
+TuneVault is a JavaFX desktop music app project.
 
-- create an account
-- log in
-- manage playlists
-- play songs
-- use a mini player across screens
-- view a now playing page
-- see a wrapped-style listening summary
-- take a quiz to find a music genre match
-- open a song details page
+It currently includes:
 
-This project is organized into packages so that the code is easier to understand, edit, and maintain.
+- account creation, login, and password reset
+- playlist creation and playlist editing
+- song search and artist browsing
+- shared playback controls through a mini player
+- an expanded player overlay and queue panel
+- wrapped-style listening stats
+- a "Find Your Genre" quiz
+- recommendation and search-ranking features
+
+The project is organized by responsibility so it is easier to read, maintain, and extend.
 
 ---
 
 ## What this project is
 
-TuneVault is designed like a small music app. It is not meant to be a full streaming platform, but it is built to practice:
+TuneVault is designed like a small music application for learning and practicing:
 
 - Java
 - JavaFX
 - FXML
-- object-oriented programming
+- controller-based UI structure
+- database access with DAOs
+- shared state management
 - project organization
-- controllers and helper classes
-- file-based user/profile storage
+
+Important: the current project is **database-backed**, not file-based.
 
 ---
 
 ## Main features
 
 ### Authentication
-A user can:
+
+Users can:
+
 - create an account
-- log in
-- recover password information
+- sign in with username or email
+- reset a password by email
 
 ### Playlists
-A user can:
+
+Users can:
+
 - create playlists
 - delete playlists
 - add songs to playlists
 - remove songs from playlists
-- search songs
+- search songs while editing playlists
 - play songs from playlists
+- view recommended songs for a playlist
+
+### Search
+
+Users can:
+
+- search songs
+- search artists
+- open artist pages
+- use recent searches
+- queue songs with "Play Next"
 
 ### Music playback
-The app includes:
+
+The shared playback system includes:
+
 - play / pause
 - previous / next
 - shuffle
 - loop
-- like song
-- progress slider
-- current song tracking
+- like / unlike
+- progress tracking and seeking
+- user queue support
+- autoplay recommendations when a queue ends
 
-### Mini player
-A shared mini player appears across pages and lets the user:
-- control playback
-- see the current song
-- open the now playing screen
-- open the current playlist
-- open song details
+### Player UI
 
-### Song details
-A selected or currently playing song can be opened in a separate details page.
+The app includes:
+
+- a shared mini player across screens
+- an expanded player overlay
+- a queue panel for upcoming songs
 
 ### Wrapped
-The app includes a wrapped-style summary page for listening stats.
+
+The app includes a wrapped-style listening summary with daily and overall views.
 
 ### Find Your Genre
-The user can answer quiz questions and get a genre result.
+
+The app includes a short quiz that maps answers to a genre result.
 
 ---
 
-## Project structure
+## Current package structure
 
-The project is organized by responsibility.
+The main Java packages are:
 
-### `app`
-Contains the application startup classes.
+- `app` - startup and JavaFX launch
+- `auth` - login, account creation, and password reset controllers
+- `mainmenu` - main menu screen controller
+- `musicplayer` - playback helpers and player styling
+- `musicplayer.controller` - shared playback UI controllers
+- `musicplayer.playback` - lower-level playback state and queue logic
+- `playlist` - playlist page and playlist models
+- `playlist.cell` - custom playlist/search/suggestion row renderers
+- `playlist.service` - reusable playlist feature logic
+- `search` - search page, artist page, and recent-search model
+- `recommendation` - recommendation and ranking logic
+- `wrapped` - listening summary feature
+- `findyourgenre` - quiz feature
+- `db` - database access objects and connection setup
+- `session` - current-session state
+- `user` - user and profile domain models
+- `util` - shared helpers such as navigation, alerts, toasts, styling, and motion
 
-### `controllers`
-Contains the main screen controllers.
-
-### `controllers.auth`
-Contains account-related controllers such as login and account creation.
-
-### `core`
-Contains shared app-wide logic such as songs, playback, and demo data.
-
-### `playlist`
-Contains playlist-related classes and helpers.
-
-### `findyourgenre`
-Contains the genre quiz feature.
-
-### `session`
-Contains session-related state and logic.
-
-### `user`
-Contains user and profile storage classes.
-
-### `util`
-Contains helper classes such as alerts, time formatting, and scene switching.
+If you want a beginner-friendly package-by-package explanation, see `CODEMAP.md`.
 
 ---
 
 ## How the app flows
 
-1. The app starts from the `app` package.
-2. The login page is loaded.
-3. After login, the user reaches the main menu.
-4. From the main menu, the user can open:
-    - playlists
-    - now playing
-    - wrapped
-    - find your genre
-5. The mini player remains available across pages.
-6. Songs can be opened in a song details page.
+1. The app starts from `Launcher.java` and `HelloApplication.java`.
+2. `login-page.fxml` is loaded first.
+3. After login, `SessionManager` loads the current profile and recent search state.
+4. The user reaches the main menu.
+5. From the main menu, the user can open search, playlists, wrapped, or the genre quiz.
+6. Playback is shared across pages through `MusicPlayerController`.
+7. The mini player, expanded player overlay, and queue panel all read from the same shared playback state.
 
 ---
 
-## Why the code is organized this way
+## Data and persistence
 
-As projects grow, placing every class in one folder becomes hard to manage.
+TuneVault uses a MySQL database.
 
-This project uses packages so that someone can quickly answer questions like:
+Key persistence classes:
 
-- Where is the login code?
-- Where is the playlist logic?
-- Where is the mini player code?
-- Where are the helper methods?
-- Where are the user and session classes?
+- `DBConnection` provides pooled connections through HikariCP
+- `UserDAO` handles account queries
+- `UserProfileDAO` loads a user's playlists and liked songs
+- `SongDAO` loads songs
+- `SearchHistoryDAO` stores recent searches
+- `ListeningEventDAO` stores listening activity data
 
-This makes the project easier to work on for:
-- the original developer
-- classmates
-- professors
-- future teammates
+Database settings can be overridden with:
 
----
-
-## Important design idea
-
-This project tries to separate different responsibilities:
-
-- **controllers** handle screen behavior
-- **core** handles shared music logic and app-wide data
-- **user** handles account/profile data
-- **session** tracks current app session state
-- **util** provides reusable helper methods
-
-This makes the project easier to read and maintain.
+- `TUNEVAULT_DB_URL`
+- `TUNEVAULT_DB_USER`
+- `TUNEVAULT_DB_PASSWORD`
 
 ---
 
-## Running the project
+## UI structure
 
-The application starts through the JavaFX launcher classes in the `app` package.
+FXML views live in `src/main/resources/com/example/tunevaultfx`.
 
-Typical startup classes:
-- `Launcher.java`
-- `HelloApplication.java`
+Current views include:
 
-FXML files are loaded from the resources folder.
+- `login-page.fxml`
+- `create-account-page.fxml`
+- `forgot-password-page.fxml`
+- `main-menu.fxml`
+- `search-page.fxml`
+- `artist-profile-page.fxml`
+- `playlists-page.fxml`
+- `wrapped-page.fxml`
+- `findyourgenre-page.fxml`
+- `mini-player.fxml`
+- `expanded-page.fxml`
+- `queue-panel.fxml`
+
+Global styling is centralized in `app.css`.
+
+---
+
+## Design ideas used in the codebase
+
+The project tries to separate responsibilities clearly:
+
+- **controllers** manage user interaction and screen updates
+- **services** contain reusable feature logic
+- **DAOs** talk to the database
+- **models** store data
+- **utilities** handle shared app-wide helpers
+
+Some especially important shared helpers are:
+
+- `SceneUtil` for page switching and navigation history
+- `SessionManager` for logged-in user state
+- `MusicPlayerController` for shared playback state
+- `ToastUtil` and `AlertUtil` for user feedback
+
+---
+
+## Good places to start reading
+
+If you are new to the project, this order works well:
+
+1. `app`
+2. `auth`
+3. `session`
+4. `mainmenu`
+5. `musicplayer.controller`
+6. `playlist`
+7. `search`
+8. `db`
+9. `util`
+
+That path helps you understand startup, login, session state, navigation, playback, screens, and persistence in a sensible order.
 
 ---
 
@@ -174,18 +219,16 @@ FXML files are loaded from the resources folder.
 
 When adding a new feature:
 
-1. Decide whether it belongs to an existing package.
-2. Keep screen logic inside a controller.
-3. Move reusable helper logic into a utility or feature helper class.
-4. Keep user/account storage separate from UI logic.
-5. Keep scene switching centralized.
-
-This helps the project stay organized as it grows.
+1. Put screen logic in the right controller instead of a random helper.
+2. Put reusable business logic in a service.
+3. Put persistence logic in a DAO, not in the UI controller.
+4. Reuse `SessionManager`, `SceneUtil`, and `MusicPlayerController` instead of duplicating state.
+5. Keep CSS styling centralized in `app.css` when possible.
 
 ---
 
 ## Summary
 
-TuneVault is a JavaFX music app project built to practice both programming and project organization.
+TuneVault is a JavaFX music app focused on both user-facing features and clean project organization.
 
-The goal is not only to make the app work, but also to make the code understandable for someone who may be reading it for the first time.
+The goal is not just to make the app work, but to keep the structure understandable for the next person reading the code.

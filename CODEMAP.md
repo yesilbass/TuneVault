@@ -1,366 +1,770 @@
 # TuneVault Code Map
 
-This file explains what each package and major file is responsible for.
+This file explains what the current codebase actually contains.
 
-The purpose of this file is to help a beginner understand the project without needing to understand every line of Java code first.
+It is written for a beginner who wants to understand the project structure before reading every class.
+
+Important: this document reflects the current code, not an older version of the project. Some classes that might sound reasonable, such as `NowPlayingPageController` or `SongDetailsController`, do not currently exist in the codebase.
 
 ---
 
-# Package overview
+## Big picture
 
-## `app`
+TuneVault is a JavaFX desktop music app with:
 
-This package starts the application.
+- account login and account creation
+- playlist management
+- search and artist browsing
+- a shared mini player and an expanded player overlay
+- a queue panel
+- wrapped-style listening stats
+- a genre quiz
+- recommendation and search-ranking logic
 
-### `HelloApplication.java`
+The app is **database-backed**, not file-based:
+
+- users are stored through `UserDAO`
+- profiles/playlists are loaded through `UserProfileDAO`
+- songs come from `SongDAO`
+- recent search history and listening events are also stored in the database
+
+---
+
+## Package overview
+
+### `app`
+
+This package starts the app.
+
+#### `HelloApplication.java`
 Responsible for:
+
 - starting JavaFX
-- loading the first screen
-- creating the main application window
+- loading `login-page.fxml`
+- creating the main window
+- applying the global stylesheet
+- shutting down the database connection pool on app exit
 
 Think of it as:
-> The class that opens the app.
+> The class that opens the app window.
 
-### `Launcher.java`
+#### `Launcher.java`
 Responsible for:
-- providing the standard Java `main` method
-- launching the JavaFX application class
+
+- providing the normal Java `main` method
+- launching `HelloApplication`
 
 Think of it as:
-> The class that presses the start button.
+> The plain Java entry point.
 
 ---
 
-## `controllers`
+### `auth`
 
-This package contains the main page controllers.
+This package contains the account-related page controllers.
 
-A controller is the class that responds to user actions on a screen.
-
-### `MainMenuController.java`
+#### `LoginPageController.java`
 Responsible for:
-- showing the main menu
-- greeting the user
-- sending the user to different app features
 
-Think of it as:
-> The controller for the home page of the app.
-
-### `MiniPlayerController.java`
-Responsible for:
-- controlling the shared mini player
-- handling play, pause, next, previous, shuffle, loop, and like
-- opening song details and related screens
-
-Think of it as:
-> The small music player shown across pages.
-
-### `NowPlayingPageController.java`
-Responsible for:
-- controlling the full now playing screen
-- showing the current song
-- handling playback controls on the full player page
-
-Think of it as:
-> The large player page.
-
-### `WrappedPageController.java`
-Responsible for:
-- showing listening summary information
-- showing top songs, top artists, and favorite genre
-
-Think of it as:
-> The user’s music summary page.
-
-### `SongDetailsController.java`
-Responsible for:
-- showing detailed information about the selected song
-- displaying title, artist, album, and duration
-
-Think of it as:
-> A page just for one selected song.
-
----
-
-## `controllers.auth`
-
-This package contains controllers related to user account screens.
-
-### `LoginPageController.java`
-Responsible for:
-- reading username and password input
+- reading username/email and password
 - validating login
-- opening the main menu after a successful login
+- starting the app session
+- sending the user to the main menu after login
 
 Think of it as:
-> The controller for signing in.
+> The sign-in screen controller.
 
-### `CreateAccountPageController.java`
+#### `CreateAccountPageController.java`
 Responsible for:
-- reading account creation input
-- creating a new user account
+
+- reading sign-up input
+- validating username, email, and password rules
+- creating new accounts through `UserDAO`
 
 Think of it as:
-> The controller for signing up.
+> The sign-up screen controller.
 
-### `ForgotPasswordPageController.java`
+#### `ForgotPasswordPageController.java`
 Responsible for:
-- handling the forgot-password screen
-- helping the user recover account information
+
+- validating reset input
+- updating a password by email
+- returning the user to login
 
 Think of it as:
-> The controller for password help.
+> The password reset screen controller.
 
 ---
 
-## `core`
+### `mainmenu`
 
-This package contains shared app-wide classes.
-
-### `Song.java`
+#### `MainMenuController.java`
 Responsible for:
+
+- greeting the current user
+- showing the feature cards on the home page
+- navigating to playlists, search, wrapped, and the genre quiz
+- logging the user out
+
+Think of it as:
+> The home page controller.
+
+---
+
+### `musicplayer`
+
+This package contains shared playback logic and player styling helpers.
+
+#### `PlayerStyleConstants.java`
+Responsible for:
+
+- centralizing player-related style names and fallback style builders
+- keeping mini-player and expanded-player button states consistent
+
+Think of it as:
+> A style helper just for player controls.
+
+#### `ShuffleManager.java`
+Responsible for:
+
+- generating and navigating shuffle order
+
+Think of it as:
+> The helper that remembers random playback order.
+
+#### `ListeningSessionTracker.java`
+Responsible for:
+
+- tracking how long the user listened to a song
+- recording skip/finish progress
+
+Think of it as:
+> The helper that watches listening sessions.
+
+---
+
+### `musicplayer.controller`
+
+This package contains the shared playback controllers.
+
+#### `MusicPlayerController.java`
+Responsible for:
+
+- coordinating playback across the whole app
+- tracking the current song, queue, autoplay, shuffle, loop, and liked state
+- exposing shared playback state to UI controllers
+
+Think of it as:
+> The main playback brain of the application.
+
+#### `MiniPlayerController.java`
+Responsible for:
+
+- controlling the mini player shown across screens
+- handling play/pause, next/previous, shuffle, loop, like, queue, and add-to-playlist
+- opening related pages such as artist profile or the current playlist
+- attaching the queue panel and expanded player overlay into the current scene
+
+Think of it as:
+> The small player bar controller.
+
+#### `ExpandedPlayerController.java`
+Responsible for:
+
+- controlling the large now-playing overlay
+- showing the current song and large playback controls
+- opening artist pages from the expanded player
+
+Think of it as:
+> The large player overlay controller.
+
+#### `QueuePanelController.java`
+Responsible for:
+
+- controlling the slide-out queue panel
+- showing upcoming songs
+- letting the user play from the queue, remove queued items, and reorder queued songs
+
+Think of it as:
+> The queue sidebar controller.
+
+---
+
+### `musicplayer.playback`
+
+This package breaks playback into smaller focused classes.
+
+#### `PlaybackState.java`
+Responsible for:
+
+- storing current song state and playback properties
+
+Think of it as:
+> The current playback snapshot.
+
+#### `PlaybackQueue.java`
+Responsible for:
+
+- holding the active queue and queue index
+- knowing whether playback is continuous or single-song
+
+Think of it as:
+> The low-level queue object.
+
+#### `PlaybackLifecycleService.java`
+Responsible for:
+
+- starting playback
+- stopping playback
+- reacting when queues or playlists change
+
+Think of it as:
+> The helper that starts and stops songs safely.
+
+#### `PlaybackNavigator.java`
+Responsible for:
+
+- next/previous logic
+- shuffle and loop navigation
+
+Think of it as:
+> The helper that decides what song comes next.
+
+---
+
+### `core`
+
+This package contains small app-wide core models.
+
+#### `Song.java`
+Responsible for:
+
 - representing one song
-- storing title, artist, album, and duration
+- storing `songId`, title, artist, album, genre, and duration
 
 Think of it as:
 > One song object.
 
-### `MusicPlayerService.java`
+#### `DemoLibrary.java`
 Responsible for:
-- playing songs
-- pausing songs
-- moving to previous/next song
-- handling shuffle and loop
-- tracking the current queue and current song
+
+- providing demo/sample songs if needed by the project
 
 Think of it as:
-> The engine behind music playback.
-
-### `DemoLibrary.java`
-Responsible for:
-- providing built-in sample songs for the app
-
-Think of it as:
-> The app’s default song library.
+> Built-in sample library data.
 
 ---
 
-## `playlist`
+### `playlist`
 
-This package contains playlist-related classes.
+This package contains playlist screens and playlist-related models.
 
-### `PlaylistsPageController.java`
+#### `PlaylistsPageController.java`
 Responsible for:
-- controlling the playlists page
-- responding to playlist button actions
-- loading selected playlist data into the UI
-- connecting the page to playlist helper classes
+
+- showing playlists
+- selecting a playlist
+- showing songs in the selected playlist
+- handling song search/add/remove flows inside playlists
+- refreshing playlist suggestions
 
 Think of it as:
-> The main controller for the playlist screen.
+> The main playlist screen controller.
 
-### `PlaylistService.java`
+#### `PlaylistSummary.java`
 Responsible for:
+
+- storing display-ready summary data for one playlist
+- keeping playlist name, songs, count, total duration, and formatted duration together
+
+Think of it as:
+> The summary object for one playlist view.
+
+---
+
+### `playlist.cell`
+
+This package contains custom `ListCell` classes used by the playlist UI.
+
+#### `PlayableSongCell.java`
+Responsible for:
+
+- rendering a playlist song row
+- showing play state, metadata, and row actions
+
+Think of it as:
+> The custom UI for one playlist song row.
+
+#### `SearchSongToggleCell.java`
+Responsible for:
+
+- rendering search results in the playlist screen
+- showing whether a song is already in the selected playlist
+
+Think of it as:
+> The custom row used when adding songs to a playlist.
+
+#### `SuggestedSongCell.java`
+Responsible for:
+
+- rendering recommended songs in the playlist suggestions section
+
+Think of it as:
+> The custom row for playlist suggestions.
+
+---
+
+### `playlist.service`
+
+This package contains reusable playlist logic.
+
+#### `PlaylistService.java`
+Responsible for:
+
 - creating playlists
 - deleting playlists
-- adding songs to playlists
-- removing songs from playlists
+- adding/removing songs
+- toggling liked songs
+- writing those changes to the database
 
 Think of it as:
-> The class that handles playlist actions.
+> The main playlist action service.
 
-### `PlaylistSelectionService.java`
+#### `PlaylistSelectionService.java`
 Responsible for:
-- building summary information for the selected playlist
-- calculating song count and total duration
+
+- building summary data for the selected playlist
 
 Think of it as:
-> The class that summarizes one playlist for display.
+> The helper that prepares playlist data for display.
 
-### `SongSearchService.java`
+#### `SongSearchService.java`
 Responsible for:
-- filtering songs based on search text
-- searching by title, artist, or album
+
+- filtering songs by title, artist, album, or genre
 
 Think of it as:
-> The search helper for songs.
+> The song search helper for playlist flows.
 
-### `PlaylistSummary.java`
+#### `PlaylistPickerService.java`
 Responsible for:
-- storing playlist display data
-- keeping playlist name, songs, count, and total duration together
+
+- showing the UI that lets the user pick a playlist to add a song into
 
 Think of it as:
-> A summary object for one playlist.
-
-### `PlayableSongCell.java`
-Responsible for:
-- customizing how a song row looks in a `ListView`
-- showing a play button, title, and artist in each row
-
-Think of it as:
-> The custom design for one song row.
+> The helper that asks “which playlist should this song go into?”
 
 ---
 
-## `findyourgenre`
+### `search`
 
-This package contains the genre quiz feature.
+This package contains the general search feature.
 
-### `FindYourGenrePageController.java`
+#### `SearchPageController.java`
 Responsible for:
-- showing quiz questions
-- handling answer button clicks
-- calculating and displaying the result
+
+- loading and filtering the song library
+- showing song and artist search results
+- maintaining recent searches
+- handling search-result actions such as play and “Play Next”
 
 Think of it as:
-> The controller for the genre quiz page.
+> The main search screen controller.
 
-If this class keeps the quiz logic inside itself, then it is both:
-- the UI controller
-- the quiz logic holder
+#### `ArtistProfileController.java`
+Responsible for:
 
-That is acceptable for a small feature.
+- showing all songs by one selected artist
+- loading artist songs in the background
+- letting the user play that artist’s songs as a queue
+
+Think of it as:
+> The artist page controller.
+
+#### `SearchRecentItem.java`
+Responsible for:
+
+- representing one recent search item
+- storing whether it was a song or artist search
+
+Think of it as:
+> One row in the recent-search list.
 
 ---
 
-## `session`
+### `recommendation`
 
-This package contains session-related classes.
+This package contains recommendation and ranking logic.
 
-### `Session.java`
+#### `RecommendationService.java`
 Responsible for:
-- storing simple session state such as current user id or username
+
+- serving as the public API for recommendations and search ranking
+- returning suggested songs for a user
+- returning suggested songs for a playlist
+- delegating search ranking to `SearchRankingService`
 
 Think of it as:
-> Temporary memory about the current app session.
+> The recommendation entry point used by controllers.
 
-### `SessionManager.java`
+#### `RecommendationEngine.java`
 Responsible for:
-- remembering the current logged-in user
-- loading and saving the current user profile
-- storing temporary shared state, such as selected song or requested playlist
+
+- the main scoring logic behind recommendations
 
 Think of it as:
-> The manager for current user/session state.
+> The engine that scores songs.
+
+#### `SearchRankingService.java`
+Responsible for:
+
+- ranking songs and artists for search results
+
+Think of it as:
+> The helper that sorts search results.
+
+#### `RecommendationProfile.java`
+Responsible for:
+
+- storing the normalized preference/profile data used during recommendation
+
+Think of it as:
+> The user taste profile used by the recommendation engine.
 
 ---
 
-## `user`
+### `wrapped`
 
-This package contains user and profile-related classes.
+This package contains the listening-summary feature.
 
-### `User.java`
+#### `WrappedPageController.java`
 Responsible for:
-- representing one user account
-- storing username, email, and password
+
+- showing wrapped-style listening stats
+- switching between daily and overall ranges
+- displaying top song, top artist, favorite genre, total time, and summary text
 
 Think of it as:
-> One account object.
+> The listening summary screen controller.
 
-### `UserStore.java`
+#### `WrappedStatsService.java`
 Responsible for:
-- storing user account information
-- checking login credentials
-- saving and loading account data
+
+- loading wrapped data for a username and range
 
 Think of it as:
-> The file/storage handler for login accounts.
+> The data loader for the wrapped page.
 
-### `UserProfile.java`
+#### `WrappedStats.java`
 Responsible for:
-- storing one user’s playlists and liked songs
-- representing the user’s music-related data
+
+- storing all wrapped page result values
 
 Think of it as:
-> One user’s music profile.
+> The wrapped summary data object.
 
-### `UserProfileData.java`
+#### `StatsRange.java`
 Responsible for:
-- providing a save/load friendly version of the profile
+
+- representing whether wrapped data is daily or overall
 
 Think of it as:
-> A data-transfer version of the profile.
-
-### `UserProfileStore.java`
-Responsible for:
-- saving profile data to file
-- loading profile data from file
-
-Think of it as:
-> The file manager for user profiles.
+> The range selector enum for wrapped data.
 
 ---
 
-## `util`
+### `findyourgenre`
 
-This package contains helper classes used in multiple places.
+This package contains the quiz feature.
 
-### `SceneUtil.java`
+#### `FindYourGenrePageController.java`
 Responsible for:
-- switching between screens
-- loading FXML files
-- replacing the current scene in the window
+
+- moving through quiz questions
+- collecting answers
+- showing the final genre result
 
 Think of it as:
-> The helper for page navigation.
+> The quiz screen controller.
 
-### `AlertUtil.java`
+#### `GenreQuiz.java`
 Responsible for:
-- showing alert messages to the user
+
+- holding the quiz questions and answer-to-genre mapping
 
 Think of it as:
-> The helper for pop-up messages.
+> The quiz data source.
 
-### `TimeUtil.java`
+#### `Question.java`
 Responsible for:
-- formatting seconds into readable time text like `3:45`
+
+- representing one quiz question and its answers
 
 Think of it as:
-> The helper for displaying song time nicely.
+> One quiz question object.
 
 ---
 
-# How to understand the project quickly
+### `db`
 
-If you are new to the project, a good reading order is:
+This package contains all database access classes.
+
+This is one of the most important corrections from the old document:
+the app does **not** use file-based stores anymore. It uses a MySQL database and HikariCP connection pooling.
+
+#### `DBConnection.java`
+Responsible for:
+
+- creating pooled database connections
+- reading optional DB config overrides from environment variables/system properties
+- shutting down the connection pool cleanly
+
+Think of it as:
+> The shared database connection provider.
+
+#### `UserDAO.java`
+Responsible for:
+
+- user existence checks
+- account creation
+- login authentication
+- password updates
+
+Think of it as:
+> The DAO for account records.
+
+#### `UserProfileDAO.java`
+Responsible for:
+
+- loading a user’s playlists and liked songs
+- delegating playlist and playlist-song mutations to smaller DAOs
+
+Think of it as:
+> The DAO that loads the music profile for one user.
+
+#### `SongDAO.java`
+Responsible for:
+
+- loading songs from the database
+
+Think of it as:
+> The DAO for songs.
+
+#### `PlaylistDAO.java` and `PlaylistSongDAO.java`
+Responsible for:
+
+- lower-level playlist table operations
+- lower-level playlist-song relation operations
+
+Think of them as:
+> The focused DAOs behind playlist persistence.
+
+#### `SearchHistoryDAO.java`
+Responsible for:
+
+- saving and loading recent searches
+
+Think of it as:
+> The DAO for search history.
+
+#### `ListeningEventDAO.java`
+Responsible for:
+
+- recording listening actions such as likes, unlikes, adds, removes, skips, and listens
+
+Think of it as:
+> The DAO for listening analytics.
+
+---
+
+### `session`
+
+This package contains current-session state.
+
+#### `Session.java`
+Responsible for:
+
+- representing basic session information
+
+Think of it as:
+> A small session data holder.
+
+#### `SessionManager.java`
+Responsible for:
+
+- starting and ending the current session
+- holding the logged-in username and loaded `UserProfile`
+- caching the song library
+- tracking selected song, selected artist, and requested playlist
+- managing recent searches
+
+Think of it as:
+> The central session state manager.
+
+---
+
+### `user`
+
+This package contains user-related domain classes.
+
+#### `User.java`
+Responsible for:
+
+- representing one account record
+
+Think of it as:
+> One user object.
+
+#### `UserProfile.java`
+Responsible for:
+
+- storing one user’s playlists and liked songs in memory
+- providing helpers like `isLiked()` and `toggleLike()`
+
+Think of it as:
+> The in-memory music profile for the current user.
+
+#### `UserLibraryService.java`
+Responsible for:
+
+- convenience operations around the current user’s library
+- checking liked state
+- adding a song to a playlist for the current user
+
+Think of it as:
+> A helper for common library actions.
+
+---
+
+### `util`
+
+This package contains shared helpers used across the app.
+
+#### `SceneUtil.java`
+Responsible for:
+
+- switching FXML pages
+- reusing the current JavaFX scene
+- maintaining navigation history so “Back” returns to the real previous page
+
+Think of it as:
+> The central navigation helper.
+
+#### `AlertUtil.java`
+Responsible for:
+
+- showing information alerts
+
+Think of it as:
+> A small pop-up helper.
+
+#### `ToastUtil.java`
+Responsible for:
+
+- showing temporary toast notifications
+
+Think of it as:
+> A small non-blocking message helper.
+
+#### `TimeUtil.java`
+Responsible for:
+
+- formatting durations like `3:45`
+
+Think of it as:
+> The time formatting helper.
+
+#### `CellStyleKit.java`
+Responsible for:
+
+- building consistent list-row UI pieces
+
+Think of it as:
+> A reusable style helper for song rows.
+
+#### `UiMotionUtil.java`
+Responsible for:
+
+- lightweight entrance and hover animations
+
+Think of it as:
+> The animation helper.
+
+#### `PasswordUtil.java`
+Responsible for:
+
+- hashing passwords before storing them
+
+Think of it as:
+> The password helper.
+
+---
+
+## FXML screens currently present
+
+The app currently includes these FXML views:
+
+- `login-page.fxml`
+- `create-account-page.fxml`
+- `forgot-password-page.fxml`
+- `main-menu.fxml`
+- `search-page.fxml`
+- `artist-profile-page.fxml`
+- `playlists-page.fxml`
+- `wrapped-page.fxml`
+- `findyourgenre-page.fxml`
+- `mini-player.fxml`
+- `expanded-page.fxml`
+- `queue-panel.fxml`
+
+Note: the Java code still contains navigation references to `nowplaying-page.fxml` and `song-details-page.fxml`, but those FXML files are not currently present in `src/main/resources/com/example/tunevaultfx`.
+
+---
+
+## How to understand the project quickly
+
+If you are new to the project, this reading order works well:
 
 1. `app`
-2. `controllers.auth`
-3. `controllers`
-4. `playlist`
-5. `core`
-6. `session`
-7. `user`
-8. `util`
+2. `auth`
+3. `session`
+4. `mainmenu`
+5. `musicplayer.controller`
+6. `playlist` and `playlist.service`
+7. `search`
+8. `recommendation`
+9. `db`
+10. `util`
 
-This helps you move from:
-- app startup
-- to login
+This takes you from:
+
+- startup
+- to login/session state
 - to UI screens
+- to playback
 - to feature logic
-- to shared state
-- to storage
+- to persistence
 
 ---
 
-# Responsibility rule
+## Responsibility rule
 
-A simple way to understand each class:
+A simple way to understand most classes:
 
 - **Controller** = talks to the screen
-- **Service/helper** = contains actions or reusable logic
-- **Data class** = stores information
-- **Utility** = helps other classes do common tasks
+- **Service** = contains feature logic used by controllers
+- **DAO** = talks to the database
+- **Model/data class** = stores information
+- **Utility** = helps many parts of the app with common tasks
 
 If one class starts doing too many of these at once, it may need to be split.
 
 ---
 
-# Final note
+## Final note
 
-The most important question for any file is:
+The best question to ask about any file is:
 
 > What is this file mainly responsible for?
 
-If that answer is clear, the codebase is much easier to understand and maintain.
+If that answer is clear, the codebase becomes much easier to read, debug, and extend.
