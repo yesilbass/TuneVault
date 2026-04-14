@@ -18,6 +18,7 @@ import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseButton;
 import javafx.scene.layout.*;
 import javafx.util.Duration;
 
@@ -112,8 +113,8 @@ public class SearchPageController {
                 }
 
                 StackPane icon = CellStyleKit.iconBox("♫", CellStyleKit.Palette.PURPLE, false);
-                VBox      text = CellStyleKit.textBox(
-                        song.title(), CellStyleKit.songMeta(song.artist(), song.genre()));
+                VBox      text = CellStyleKit.songTextBox(
+                        song.title(), song.artist(), song.genre(), SearchPageController.this::openArtistProfile);
                 Label     dur  = CellStyleKit.duration(song.durationSeconds());
 
                 Button moreBtn = new Button("⋯");
@@ -135,6 +136,15 @@ public class SearchPageController {
                 if (player.getCurrentSong() != null && player.getCurrentSong().songId() == song.songId()) {
                     CellStyleKit.markPlaying(row, true);
                 }
+
+                row.setOnMouseClicked(ev -> {
+                    if (ev.getButton() == MouseButton.PRIMARY && ev.getClickCount() == 2) {
+                        int idx = filteredSongs.indexOf(song);
+                        player.playQueue(filteredSongs, Math.max(idx, 0), "Search Results");
+                        SessionManager.addRecentSearch(SearchRecentItem.song(song));
+                        ev.consume();
+                    }
+                });
 
                 setText(null); setGraphic(row);
                 setBackground(Background.EMPTY);
@@ -260,14 +270,17 @@ public class SearchPageController {
         });
     }
 
-    private void setupDoubleClickActions() {
-        songResultsListView.setOnMouseClicked(e -> {
-            if (e.getClickCount() == 2) {
-                Song s = songResultsListView.getSelectionModel().getSelectedItem();
-                if (s != null) { player.playSingleSong(s); SessionManager.addRecentSearch(SearchRecentItem.song(s)); }
-            }
-        });
+    private void openArtistProfile(String artist) {
+        if (artist == null || artist.isBlank()) return;
+        SessionManager.setSelectedArtist(artist.trim());
+        try {
+            SceneUtil.switchScene(songResultsListView, "artist-profile-page.fxml");
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
 
+    private void setupDoubleClickActions() {
         artistResultsListView.setOnMouseClicked(e -> {
             if (e.getClickCount() == 2) {
                 String artist = artistResultsListView.getSelectionModel().getSelectedItem();

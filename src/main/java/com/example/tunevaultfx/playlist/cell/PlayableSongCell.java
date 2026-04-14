@@ -9,6 +9,7 @@ import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
+import javafx.scene.input.MouseButton;
 import javafx.scene.layout.*;
 import javafx.stage.Popup;
 
@@ -26,18 +27,18 @@ public class PlayableSongCell extends ListCell<Song> {
     private final Button   playButton = new Button("▶");
     private final Button   moreButton = new Button("⋯");
     private final Label    titleLabel  = new Label();
-    private final Label    metaLabel   = new Label();
-    private final VBox     textBox     = new VBox(3, titleLabel, metaLabel);
+    private final VBox     textBox     = new VBox(3);
     private final Region   spacer      = new Region();
     private final HBox     row         = new HBox(12);
 
     // Now-playing indicator — thin left-edge bar
     private final Region   nowPlayingBar = new Region();
 
-    private final Consumer<Song>   onPlay;
-    private final Consumer<Song>   onAddToPlaylist;
-    private final Consumer<Song>   onRemoveFromPlaylist;
-    private final Supplier<String> playlistNameSupplier;
+    private final Consumer<Song>    onPlay;
+    private final Consumer<Song>    onAddToPlaylist;
+    private final Consumer<Song>    onRemoveFromPlaylist;
+    private final Supplier<String>  playlistNameSupplier;
+    private final Consumer<String>  onOpenArtist;
 
     private final MusicPlayerController player = MusicPlayerController.getInstance();
     private Popup activePopup;
@@ -59,7 +60,7 @@ public class PlayableSongCell extends ListCell<Song> {
     private static final String PLAY_PLAYING =
             "-fx-background-color: rgba(139,92,246,0.25);" +
                     "-fx-text-fill: #c4b5fd;" +
-                    "-fx-font-size: 14px; -fx-font-weight: bold;" +
+                    "-fx-font-size: 12px; -fx-font-weight: bold;" +
                     "-fx-background-radius: 17;";
 
     private static final String MORE_DEFAULT =
@@ -79,11 +80,13 @@ public class PlayableSongCell extends ListCell<Song> {
     public PlayableSongCell(Consumer<Song> onPlay,
                             Consumer<Song> onAddToPlaylist,
                             Consumer<Song> onRemoveFromPlaylist,
-                            Supplier<String> playlistNameSupplier) {
+                            Supplier<String> playlistNameSupplier,
+                            Consumer<String> onOpenArtist) {
         this.onPlay               = onPlay;
         this.onAddToPlaylist      = onAddToPlaylist;
         this.onRemoveFromPlaylist = onRemoveFromPlaylist;
         this.playlistNameSupplier = playlistNameSupplier;
+        this.onOpenArtist         = onOpenArtist;
 
         // Now-playing bar — hidden by default
         nowPlayingBar.setPrefWidth(3);
@@ -112,9 +115,8 @@ public class PlayableSongCell extends ListCell<Song> {
         titleLabel.setStyle(
                 "-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: "
                         + CellStyleKit.TEXT_PRIMARY + ";");
-        metaLabel.setStyle(
-                "-fx-font-size: 12px; -fx-text-fill: " + CellStyleKit.TEXT_SECONDARY + ";");
 
+        textBox.getChildren().add(titleLabel);
         textBox.setMaxWidth(Double.MAX_VALUE);
         HBox.setHgrow(textBox, Priority.ALWAYS);
         HBox.setHgrow(spacer,  Priority.ALWAYS);
@@ -154,6 +156,15 @@ public class PlayableSongCell extends ListCell<Song> {
             ev.consume();
         });
 
+        row.setOnMouseClicked(ev -> {
+            if (ev.getButton() != MouseButton.PRIMARY || ev.getClickCount() != 2) return;
+            Song s = getItem();
+            if (s != null && onPlay != null) {
+                onPlay.accept(s);
+                ev.consume();
+            }
+        });
+
         setOnMousePressed(ev -> {
             if (!isEmpty() && getListView() != null)
                 getListView().getSelectionModel().clearSelection();
@@ -179,11 +190,17 @@ public class PlayableSongCell extends ListCell<Song> {
         titleLabel.setText(song.title());
         titleLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: "
                 + (isPlaying ? "#c4b5fd" : CellStyleKit.TEXT_PRIMARY) + ";");
-        metaLabel.setText(CellStyleKit.songMeta(song.artist(), song.genre()));
+        while (textBox.getChildren().size() > 1) {
+            textBox.getChildren().remove(1);
+        }
+        HBox meta = CellStyleKit.songMetaLine(song.artist(), song.genre(), onOpenArtist);
+        if (!meta.getChildren().isEmpty()) {
+            textBox.getChildren().add(meta);
+        }
 
         nowPlayingBar.setVisible(isPlaying);
         nowPlayingBar.setManaged(isPlaying);
-        playButton.setText(isPlaying ? "||" : "▶");
+        playButton.setText(isPlaying ? "⏸" : "▶");
         playButton.setStyle(isPlaying ? PLAY_PLAYING : PLAY_DEFAULT);
         row.setStyle(isPlaying ? CellStyleKit.ROW_PLAYING : CellStyleKit.ROW_DEFAULT);
         CellStyleKit.markPlaying(row, isPlaying);

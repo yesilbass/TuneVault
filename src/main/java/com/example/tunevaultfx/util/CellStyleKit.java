@@ -2,8 +2,11 @@ package com.example.tunevaultfx.util;
 
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
 import javafx.scene.layout.*;
+
+import java.util.function.Consumer;
 
 /**
  * Shared factory for list cell components.
@@ -167,6 +170,66 @@ public final class CellStyleKit {
         VBox box = new VBox(3, primary(title), secondary(meta));
         HBox.setHgrow(box, Priority.ALWAYS);
         return box;
+    }
+
+    /**
+     * Song title plus meta row where the artist is a hyperlink when {@code onOpenArtist} is non-null.
+     */
+    public static VBox songTextBox(String title, String artist, String genre, Consumer<String> onOpenArtist) {
+        VBox box = new VBox(3, primary(title));
+        HBox meta = songMetaLine(artist, genre, onOpenArtist);
+        if (!meta.getChildren().isEmpty()) {
+            box.getChildren().add(meta);
+        }
+        HBox.setHgrow(box, Priority.ALWAYS);
+        return box;
+    }
+
+    /**
+     * Second line for song rows: artist (link or plain) and optional genre, separated by " · ".
+     */
+    public static HBox songMetaLine(String artist, String genre, Consumer<String> onOpenArtist) {
+        HBox row = new HBox(0);
+        row.setAlignment(Pos.CENTER_LEFT);
+
+        boolean hasArtist = artist != null && !artist.isBlank();
+        boolean hasGenre  = genre != null && !genre.isBlank();
+        if (!hasArtist && !hasGenre) {
+            return row;
+        }
+
+        if (hasArtist) {
+            String a = artist.trim();
+            if (onOpenArtist != null) {
+                Hyperlink link = new Hyperlink(a);
+                link.setVisited(false);
+                link.setFocusTraversable(false);
+                link.setPadding(Insets.EMPTY);
+                link.setUnderline(false);
+                link.setStyle(
+                        "-fx-font-size: 12px; -fx-text-fill: " + TEXT_SECONDARY + ";"
+                                + "-fx-border-width: 0; -fx-underline: false;"
+                                + "-fx-background-color: transparent;");
+                link.setOnAction(e -> {
+                    onOpenArtist.accept(a);
+                    e.consume();
+                });
+                row.getChildren().add(link);
+            } else {
+                row.getChildren().add(secondary(a));
+            }
+        }
+
+        if (hasGenre) {
+            if (!row.getChildren().isEmpty()) {
+                Label dot = new Label(" \u00B7 ");
+                dot.setStyle("-fx-font-size: 12px; -fx-text-fill: " + TEXT_SECONDARY + ";");
+                row.getChildren().add(dot);
+            }
+            row.getChildren().add(secondary(genre.trim()));
+        }
+
+        return row;
     }
 
     /**

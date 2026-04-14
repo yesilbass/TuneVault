@@ -1,7 +1,9 @@
 package com.example.tunevaultfx.musicplayer.controller;
 
 import com.example.tunevaultfx.core.Song;
+import com.example.tunevaultfx.session.SessionManager;
 import com.example.tunevaultfx.util.CellStyleKit;
+import com.example.tunevaultfx.util.SceneUtil;
 import javafx.animation.FadeTransition;
 import javafx.animation.ParallelTransition;
 import javafx.animation.TranslateTransition;
@@ -29,6 +31,8 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.util.Duration;
+
+import java.io.IOException;
 
 public class QueuePanelController {
 
@@ -185,6 +189,16 @@ public class QueuePanelController {
         anim.play();
     }
 
+    private void openArtistProfile(String artist) {
+        if (artist == null || artist.isBlank()) return;
+        SessionManager.setSelectedArtist(artist.trim());
+        try {
+            SceneUtil.switchScene(queueListView, "artist-profile-page.fxml");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     // ── Data model ─────────────────────────────────────────────
 
     record QueueEntry(Song song, int upcomingIndex, boolean userQueued) {}
@@ -222,18 +236,21 @@ public class QueuePanelController {
 
             VBox info = new VBox(1);
             HBox.setHgrow(info, Priority.ALWAYS);
+            info.setMaxWidth(220);
 
             Label title = new Label(song.title());
             title.setStyle("-fx-text-fill: " + CellStyleKit.TEXT_PRIMARY
                     + "; -fx-font-size: 13px; -fx-font-weight: bold;");
             title.setMaxWidth(220);
 
-            Label meta = new Label(CellStyleKit.songMeta(song.artist(), song.genre()));
-            meta.setStyle("-fx-text-fill: " + CellStyleKit.TEXT_SECONDARY
-                    + "; -fx-font-size: 11px;");
+            HBox meta = CellStyleKit.songMetaLine(
+                    song.artist(), song.genre(), QueuePanelController.this::openArtistProfile);
             meta.setMaxWidth(220);
 
-            info.getChildren().addAll(title, meta);
+            info.getChildren().add(title);
+            if (!meta.getChildren().isEmpty()) {
+                info.getChildren().add(meta);
+            }
 
             Label duration = new Label(formatDuration(song.durationSeconds()));
             duration.setStyle("-fx-text-fill: " + CellStyleKit.TEXT_MUTED
@@ -271,7 +288,7 @@ public class QueuePanelController {
             }
 
             row.setOnMouseClicked(e -> {
-                if (e.getButton() == MouseButton.PRIMARY && e.getClickCount() == 1) {
+                if (e.getButton() == MouseButton.PRIMARY && e.getClickCount() == 2) {
                     player.playFromUpcomingQueue(entry.upcomingIndex());
                     refreshAll();
                     e.consume();

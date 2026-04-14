@@ -123,7 +123,7 @@ public class ExpandedPlayerController {
     @FXML private void handleLike()           { player.toggleLikeCurrentSong(); refreshLikeButton(); }
     @FXML private void handleShuffle()        { player.toggleShuffle();         refreshModeButtons(); }
     @FXML private void handleLoop()           { player.toggleLoop();            refreshModeButtons(); }
-    @FXML private void handleAddToPlaylist()  { addToPlaylistDialog.show(player.getCurrentSong()); refreshAddButton(); }
+    @FXML private void handleAddToPlaylist()  { addToPlaylistDialog.show(player.getCurrentSong(), overlayRoot.getScene()); refreshAddButton(); }
 
     @FXML
     private void handleOpenArtistProfile(ActionEvent event) throws IOException {
@@ -146,8 +146,20 @@ public class ExpandedPlayerController {
         int current = player.currentSecondProperty().get();
         int total   = player.currentDurationProperty().get();
         progressSlider.setMax(Math.max(total, 1));
-        progressSlider.setValue(current);
+        if (!progressSlider.isValueChanging()) {
+            progressSlider.setValue(current);
+        }
         timeLabel.setText(formatTime(current) + " / " + formatTime(total));
+        paintSliderTrack(progressSlider, current, total);
+    }
+
+    private static void paintSliderTrack(Slider slider, int current, int total) {
+        javafx.scene.Node track = slider.lookup(".track");
+        if (track == null) return;
+        double pct = (total > 0) ? (current * 100.0 / total) : 0;
+        track.setStyle(
+            "-fx-background-color: linear-gradient(to right, #8b5cf6 " + pct + "%, rgba(255,255,255,0.08) " + pct + "%);" +
+            "-fx-background-radius: 3; -fx-pref-height: 5; -fx-background-insets: 0;");
     }
 
     private void refreshLikeButton() {

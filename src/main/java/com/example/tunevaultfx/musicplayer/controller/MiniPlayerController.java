@@ -138,7 +138,7 @@ public class MiniPlayerController {
 
     @FXML
     private void handleMiniAddToPlaylist() {
-        addToPlaylistDialog.show(player.getCurrentSong());
+        addToPlaylistDialog.show(player.getCurrentSong(), miniPlayPauseButton.getScene());
         refreshAddButton();
     }
 
@@ -218,8 +218,20 @@ public class MiniPlayerController {
         int current = player.currentSecondProperty().get();
         int total = player.currentDurationProperty().get();
         miniProgressSlider.setMax(Math.max(total, 1));
-        miniProgressSlider.setValue(current);
+        if (!miniProgressSlider.isValueChanging()) {
+            miniProgressSlider.setValue(current);
+        }
         miniTimeLabel.setText(formatTime(current) + " / " + formatTime(total));
+        paintSliderTrack(miniProgressSlider, current, total);
+    }
+
+    private static void paintSliderTrack(Slider slider, int current, int total) {
+        javafx.scene.Node track = slider.lookup(".track");
+        if (track == null) return;
+        double pct = (total > 0) ? (current * 100.0 / total) : 0;
+        track.setStyle(
+            "-fx-background-color: linear-gradient(to right, #8b5cf6 " + pct + "%, rgba(255,255,255,0.08) " + pct + "%);" +
+            "-fx-background-radius: 3; -fx-pref-height: 5; -fx-background-insets: 0;");
     }
 
     // ── Queue panel overlay ──────────────────────────────────────────

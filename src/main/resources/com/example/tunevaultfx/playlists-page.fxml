@@ -32,14 +32,15 @@
         <StackPane style="-fx-padding: 16 32 16 32;">
 
             <!-- Main scrollable content -->
-            <ScrollPane fitToWidth="true"
+            <ScrollPane fitToWidth="true" fitToHeight="true"
                         hbarPolicy="NEVER"
                         vbarPolicy="AS_NEEDED">
                 <content>
-                    <HBox fx:id="contentRow" spacing="20" alignment="TOP_LEFT" style="-fx-padding: 0 0 24 0;">
+                    <HBox fx:id="contentRow" spacing="20" alignment="TOP_LEFT"
+                          fillHeight="true" style="-fx-padding: 0 0 24 0;">
 
                         <!-- ── LEFT: Playlist list ──────────── -->
-                        <VBox fx:id="playlistSidebarCard" spacing="16"
+                        <VBox fx:id="playlistSidebarCard" spacing="12"
                               minWidth="280" prefWidth="280" maxWidth="280"
                               styleClass="card">
 
@@ -47,9 +48,11 @@
                                 <Label text="Your Playlists" styleClass="heading-md"/>
                             </HBox>
 
-                            <ListView fx:id="playlistListView" prefHeight="380"/>
+                            <ListView fx:id="playlistListView"
+                                      VBox.vgrow="ALWAYS"
+                                      minHeight="120"/>
 
-                            <VBox spacing="8">
+                            <VBox spacing="8" style="-fx-padding: 4 0 0 0;">
                                 <Button text="+ New Playlist"
                                         onAction="#handleCreatePlaylist"
                                         maxWidth="Infinity"

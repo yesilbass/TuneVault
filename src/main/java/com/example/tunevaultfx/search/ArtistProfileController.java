@@ -15,6 +15,7 @@ import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.input.MouseButton;
 import javafx.scene.layout.*;
 
 import java.io.IOException;
@@ -55,7 +56,6 @@ public class ArtistProfileController {
         artistSongsListView.setItems(artistSongs);
 
         setupCells();
-        setupDoubleClick();
         loadArtistSongs();
     }
 
@@ -128,6 +128,13 @@ public class ArtistProfileController {
                         new Region() {{ HBox.setHgrow(this, Priority.ALWAYS); }}, dur);
                 CellStyleKit.markPlaying(row, isPlaying);
 
+                row.setOnMouseClicked(ev -> {
+                    if (ev.getButton() == MouseButton.PRIMARY && ev.getClickCount() == 2) {
+                        player.playQueue(artistSongs, artistSongs.indexOf(song), artistName);
+                        ev.consume();
+                    }
+                });
+
                 setText(null); setGraphic(row);
                 setBackground(Background.EMPTY);
                 setStyle("-fx-background-color: transparent; -fx-padding: 2 0 2 0;");
@@ -138,19 +145,6 @@ public class ArtistProfileController {
     }
 
     // ── Interactions ──────────────────────────────────────────────
-
-    private void setupDoubleClick() {
-        artistSongsListView.setOnMouseClicked(event -> {
-            if (event.getClickCount() == 2) {
-                Song selected = artistSongsListView.getSelectionModel().getSelectedItem();
-                if (selected == null) return;
-                player.playQueue(artistSongs, artistSongs.indexOf(selected), artistName);
-                SessionManager.setSelectedSong(selected);
-                try { SceneUtil.switchScene(artistSongsListView, "song-details-page.fxml"); }
-                catch (IOException e) { e.printStackTrace(); }
-            }
-        });
-    }
 
     @FXML
     private void handleBackToSearch(javafx.event.ActionEvent event) throws IOException {

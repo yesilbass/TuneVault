@@ -8,6 +8,7 @@ import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
+import javafx.scene.input.MouseButton;
 import javafx.scene.layout.*;
 import javafx.util.Duration;
 
@@ -21,11 +22,12 @@ public class SearchSongToggleCell extends ListCell<Song> {
 
     private final Predicate<Song> isSongInPlaylist;
     private final Consumer<Song>  onToggleSong;
+    private final Consumer<Song>  onPlay;
+    private final Consumer<String> onOpenArtist;
 
     private final HBox   root        = new HBox(12);
     private final VBox   textBox     = new VBox(3);
     private final Label  titleLabel  = new Label();
-    private final Label  metaLabel   = new Label();
     private final Region spacer      = new Region();
     private final Button actionButton = new Button();
 
@@ -49,9 +51,14 @@ public class SearchSongToggleCell extends ListCell<Song> {
 
     // ─────────────────────────────────────────────────────────────
 
-    public SearchSongToggleCell(Predicate<Song> isSongInPlaylist, Consumer<Song> onToggleSong) {
+    public SearchSongToggleCell(Predicate<Song> isSongInPlaylist,
+                                Consumer<Song> onToggleSong,
+                                Consumer<Song> onPlay,
+                                Consumer<String> onOpenArtist) {
         this.isSongInPlaylist = isSongInPlaylist;
         this.onToggleSong     = onToggleSong;
+        this.onPlay           = onPlay;
+        this.onOpenArtist     = onOpenArtist;
 
         root.setSpacing(12);
         root.setPadding(new Insets(9, 12, 9, 12));
@@ -64,10 +71,7 @@ public class SearchSongToggleCell extends ListCell<Song> {
         titleLabel.setStyle(
                 "-fx-font-size: 14px; -fx-font-weight: bold;" +
                         "-fx-text-fill: " + CellStyleKit.TEXT_PRIMARY + ";");
-        metaLabel.setStyle(
-                "-fx-font-size: 12px; -fx-text-fill: " + CellStyleKit.TEXT_SECONDARY + ";");
-
-        textBox.getChildren().addAll(titleLabel, metaLabel);
+        textBox.getChildren().add(titleLabel);
 
         actionButton.setPrefWidth(44);
         actionButton.setPrefHeight(34);
@@ -81,7 +85,10 @@ public class SearchSongToggleCell extends ListCell<Song> {
 
         root.setOnMouseClicked(ev -> {
             if (getItem() == null || isEmpty()) return;
-            toggleSong(getItem()); ev.consume();
+            if (ev.getButton() == MouseButton.PRIMARY && ev.getClickCount() == 2 && onPlay != null) {
+                onPlay.accept(getItem());
+                ev.consume();
+            }
         });
 
         setOnMousePressed(ev -> {
@@ -102,7 +109,13 @@ public class SearchSongToggleCell extends ListCell<Song> {
         }
 
         titleLabel.setText(song.title());
-        metaLabel.setText(CellStyleKit.songMeta(song.artist(), song.genre()));
+        while (textBox.getChildren().size() > 1) {
+            textBox.getChildren().remove(1);
+        }
+        HBox meta = CellStyleKit.songMetaLine(song.artist(), song.genre(), onOpenArtist);
+        if (!meta.getChildren().isEmpty()) {
+            textBox.getChildren().add(meta);
+        }
         refreshButton(song);
 
         setText(null); setGraphic(root);

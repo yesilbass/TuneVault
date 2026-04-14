@@ -177,6 +177,14 @@ public class MusicPlayerController {
             }
         }
 
+        // When a single song finishes with no queue context, start autoplay
+        // instead of silently stopping. This covers songs played from search,
+        // recent searches, and any other one-off play.
+        if (state.getCurrentSong() != null && !state.isLoopEnabled()) {
+            startAutoplaySuggestions();
+            return;
+        }
+
         playbackNavigator.next();
     }
 

@@ -3,180 +3,306 @@ package com.example.tunevaultfx.playlist.service;
 import com.example.tunevaultfx.core.Song;
 import com.example.tunevaultfx.session.SessionManager;
 import com.example.tunevaultfx.user.UserProfile;
+import javafx.animation.FadeTransition;
 import javafx.animation.PauseTransition;
+import javafx.animation.ParallelTransition;
+import javafx.animation.TranslateTransition;
 import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
-import javafx.scene.control.ButtonBar;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
-import javafx.scene.layout.CornerRadii;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.Region;
-import javafx.scene.paint.Color;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.*;
 import javafx.util.Duration;
 
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Shows a dark-themed in-scene overlay for picking playlists to add a song to.
+ */
 public class PlaylistPickerService {
 
     private final PlaylistService playlistService = new PlaylistService();
 
     public void show(Song song) {
-        UserProfile profile = SessionManager.getCurrentUserProfile();
+        show(song, null);
+    }
 
-        if (song == null || profile == null || profile.getPlaylists().isEmpty()) {
-            return;
+    public void show(Song song, Scene scene) {
+        UserProfile profile = SessionManager.getCurrentUserProfile();
+        if (song == null || profile == null || profile.getPlaylists().isEmpty()) return;
+
+        if (scene == null) return;
+
+        // Backdrop
+        StackPane backdrop = new StackPane();
+        backdrop.setStyle("-fx-background-color: rgba(3,2,14,0.72);");
+        backdrop.setOnMouseClicked(e -> closeOverlay(scene, backdrop));
+
+        // Card
+        VBox card = new VBox(16);
+        card.setMaxWidth(400);
+        card.setMaxHeight(480);
+        card.setPadding(new Insets(28, 24, 20, 24));
+        card.setStyle(
+            "-fx-background-color: #0f0f1c;" +
+            "-fx-background-radius: 24;" +
+            "-fx-border-color: rgba(139,92,246,0.16);" +
+            "-fx-border-radius: 24;" +
+            "-fx-border-width: 1;" +
+            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.70), 48, 0, 0, 16);");
+        card.setOnMouseClicked(e -> e.consume());
+
+        // Title
+        Label title = new Label("Add to Playlist");
+        title.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #eeeef6;");
+
+        Label subtitle = new Label("Choose playlists for \u201c" + song.title() + "\u201d");
+        subtitle.setStyle("-fx-font-size: 13px; -fx-text-fill: #9d9db8;");
+        subtitle.setWrapText(true);
+
+        VBox header = new VBox(4, title, subtitle);
+
+        // Playlist list
+        List<String> names = new ArrayList<>(profile.getPlaylists().keySet());
+        ListView<String> listView = new ListView<>(FXCollections.observableArrayList(names));
+        listView.setPrefHeight(300);
+        listView.setFocusTraversable(false);
+        listView.getSelectionModel().clearSelection();
+        listView.setCellFactory(lv -> new PickerCell(profile, song, listView));
+        VBox.setVgrow(listView, Priority.ALWAYS);
+
+        // Done button
+        Button doneBtn = new Button("Done");
+        doneBtn.setMaxWidth(Double.MAX_VALUE);
+        doneBtn.setStyle(
+            "-fx-background-color: #8b5cf6;" +
+            "-fx-text-fill: white;" +
+            "-fx-font-size: 14px;" +
+            "-fx-font-weight: bold;" +
+            "-fx-background-radius: 14;" +
+            "-fx-padding: 12 24 12 24;" +
+            "-fx-cursor: hand;" +
+            "-fx-effect: dropshadow(gaussian, rgba(139,92,246,0.45), 14, 0, 0, 4);");
+        doneBtn.setOnMouseEntered(e -> doneBtn.setStyle(
+            "-fx-background-color: #7c3aed;" +
+            "-fx-text-fill: white;" +
+            "-fx-font-size: 14px;" +
+            "-fx-font-weight: bold;" +
+            "-fx-background-radius: 14;" +
+            "-fx-padding: 12 24 12 24;" +
+            "-fx-cursor: hand;"));
+        doneBtn.setOnMouseExited(e -> doneBtn.setStyle(
+            "-fx-background-color: #8b5cf6;" +
+            "-fx-text-fill: white;" +
+            "-fx-font-size: 14px;" +
+            "-fx-font-weight: bold;" +
+            "-fx-background-radius: 14;" +
+            "-fx-padding: 12 24 12 24;" +
+            "-fx-cursor: hand;" +
+            "-fx-effect: dropshadow(gaussian, rgba(139,92,246,0.45), 14, 0, 0, 4);"));
+        doneBtn.setOnAction(e -> closeOverlay(scene, backdrop));
+
+        card.getChildren().addAll(header, listView, doneBtn);
+        StackPane.setAlignment(card, Pos.CENTER);
+        backdrop.getChildren().add(card);
+
+        backdrop.addEventFilter(KeyEvent.KEY_PRESSED, e -> {
+            if (e.getCode() == KeyCode.ESCAPE) {
+                closeOverlay(scene, backdrop);
+                e.consume();
+            }
+        });
+
+        // Add to scene
+        if (scene.getRoot() instanceof StackPane sp) {
+            sp.getChildren().add(backdrop);
+        } else {
+            StackPane wrapper = new StackPane();
+            wrapper.getChildren().addAll(scene.getRoot(), backdrop);
+            scene.setRoot(wrapper);
         }
 
-        Dialog<Void> dialog = new Dialog<>();
-        dialog.setTitle("Add to Playlist");
-        dialog.setHeaderText("Choose playlists for \"" + song.title() + "\"");
+        // Animate in
+        backdrop.setOpacity(0);
+        card.setTranslateY(40);
+        FadeTransition fade = new FadeTransition(Duration.millis(180), backdrop);
+        fade.setToValue(1);
+        TranslateTransition slide = new TranslateTransition(Duration.millis(220), card);
+        slide.setToY(0);
+        new ParallelTransition(fade, slide).play();
 
-        ButtonType closeButtonType = new ButtonType("Done", ButtonBar.ButtonData.OK_DONE);
-        dialog.getDialogPane().getButtonTypes().add(closeButtonType);
-        dialog.getDialogPane().setPrefWidth(420);
+        backdrop.requestFocus();
+    }
 
-        List<String> playlistNames = new ArrayList<>(profile.getPlaylists().keySet());
-        ListView<String> playlistListView = new ListView<>(FXCollections.observableArrayList(playlistNames));
-        playlistListView.setPrefHeight(320);
-        playlistListView.setFocusTraversable(false);
-        playlistListView.getSelectionModel().clearSelection();
-        playlistListView.setCellFactory(listView -> new PlaylistPickerCell(profile, song));
-
-        dialog.getDialogPane().setContent(playlistListView);
-        dialog.showAndWait();
+    private void closeOverlay(Scene scene, StackPane backdrop) {
+        FadeTransition fade = new FadeTransition(Duration.millis(140), backdrop);
+        fade.setToValue(0);
+        fade.setOnFinished(e -> {
+            if (scene.getRoot() instanceof StackPane sp) {
+                sp.getChildren().remove(backdrop);
+            }
+        });
+        fade.play();
     }
 
     private boolean songIsInPlaylist(UserProfile profile, String playlistName, Song song) {
         List<Song> songs = profile.getPlaylists().get(playlistName);
-        return songs != null && songs.contains(song);
+        if (songs == null || song == null) return false;
+        return songs.stream().anyMatch(s -> s != null && s.songId() == song.songId());
     }
 
-    private class PlaylistPickerCell extends ListCell<String> {
+    // ── Dark-themed cell ──────────────────────────────────────────
+
+    private class PickerCell extends ListCell<String> {
         private final UserProfile profile;
         private final Song song;
+        private final ListView<String> parentList;
 
-        private final HBox root = new HBox();
+        private final HBox row = new HBox(12);
+        private final StackPane icon = new StackPane();
+        private final Label iconLbl = new Label();
         private final Label nameLabel = new Label();
         private final Region spacer = new Region();
-        private final Button actionButton = new Button();
+        private final Button actionBtn = new Button();
 
-        PlaylistPickerCell(UserProfile profile, Song song) {
+        private static final String BTN_ADD =
+            "-fx-background-color: rgba(139,92,246,0.16);" +
+            "-fx-text-fill: #c4b5fd;" +
+            "-fx-font-size: 16px; -fx-font-weight: bold;" +
+            "-fx-background-radius: 16;" +
+            "-fx-border-color: rgba(139,92,246,0.28);" +
+            "-fx-border-radius: 16; -fx-border-width: 1;" +
+            "-fx-cursor: hand;";
+
+        private static final String BTN_ADDED =
+            "-fx-background-color: rgba(34,197,94,0.18);" +
+            "-fx-text-fill: #86efac;" +
+            "-fx-font-size: 16px; -fx-font-weight: bold;" +
+            "-fx-background-radius: 16;" +
+            "-fx-border-color: rgba(34,197,94,0.28);" +
+            "-fx-border-radius: 16; -fx-border-width: 1;" +
+            "-fx-cursor: hand;";
+
+        private static final String BTN_REMOVE =
+            "-fx-background-color: rgba(239,68,68,0.14);" +
+            "-fx-text-fill: #fca5a5;" +
+            "-fx-font-size: 13px; -fx-font-weight: bold;" +
+            "-fx-background-radius: 16;" +
+            "-fx-cursor: hand;";
+
+        PickerCell(UserProfile profile, Song song, ListView<String> parentList) {
             this.profile = profile;
             this.song = song;
+            this.parentList = parentList;
+
+            icon.setPrefSize(32, 32);
+            icon.setMinSize(32, 32);
+            icon.setMaxSize(32, 32);
+            icon.setStyle(
+                "-fx-background-color: rgba(139,92,246,0.14);" +
+                "-fx-background-radius: 10;" +
+                "-fx-border-color: rgba(139,92,246,0.22);" +
+                "-fx-border-radius: 10; -fx-border-width: 1;");
+            iconLbl.setStyle("-fx-font-size: 12px; -fx-text-fill: #a78bfa;");
+            icon.getChildren().add(iconLbl);
+            StackPane.setAlignment(iconLbl, Pos.CENTER);
+
+            nameLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #eeeef6;");
+
+            actionBtn.setPrefSize(38, 32);
+            actionBtn.setMinSize(38, 32);
+            actionBtn.setMaxSize(38, 32);
+            actionBtn.setFocusTraversable(false);
 
             HBox.setHgrow(spacer, Priority.ALWAYS);
+            row.setAlignment(Pos.CENTER_LEFT);
+            row.setPadding(new Insets(8, 12, 8, 12));
+            row.setStyle("-fx-background-color: transparent; -fx-background-radius: 14;");
+            row.getChildren().addAll(icon, nameLabel, spacer, actionBtn);
 
-            root.setSpacing(12);
-            root.setPadding(new Insets(8, 10, 8, 10));
-            root.setStyle("-fx-background-color: transparent; -fx-background-radius: 14;");
+            row.setOnMouseEntered(e ->
+                row.setStyle("-fx-background-color: rgba(139,92,246,0.06); -fx-background-radius: 14;"));
+            row.setOnMouseExited(e ->
+                row.setStyle("-fx-background-color: transparent; -fx-background-radius: 14;"));
 
-            nameLabel.setStyle("-fx-text-fill: #0f172a; -fx-font-size: 14px; -fx-font-weight: bold;");
-
-            actionButton.setPrefWidth(42);
-            actionButton.setPrefHeight(32);
-            actionButton.setFocusTraversable(false);
-
-            root.getChildren().addAll(nameLabel, spacer, actionButton);
-
-            root.setOnMouseClicked(event -> {
-                String playlistName = getItem();
-                if (playlistName == null || isEmpty()) {
-                    return;
+            actionBtn.setOnMouseEntered(e -> {
+                String name = getItem();
+                if (name != null && songIsInPlaylist(profile, name, song)) {
+                    actionBtn.setText("−");
+                    actionBtn.setStyle(BTN_REMOVE);
                 }
-
-                togglePlaylistMembership(playlistName);
-                event.consume();
+            });
+            actionBtn.setOnMouseExited(e -> {
+                String name = getItem();
+                if (name != null) refreshBtn(name);
             });
 
-            setOnMousePressed(event -> {
-                if (!isEmpty() && getListView() != null) {
+            actionBtn.setOnAction(e -> {
+                String name = getItem();
+                if (name != null) toggle(name);
+                e.consume();
+            });
+            row.setOnMouseClicked(e -> {
+                String name = getItem();
+                if (name != null && !isEmpty()) toggle(name);
+                e.consume();
+            });
+
+            setOnMousePressed(e -> {
+                if (!isEmpty() && getListView() != null)
                     getListView().getSelectionModel().clearSelection();
-                    event.consume();
-                }
             });
         }
 
         @Override
-        protected void updateItem(String playlistName, boolean empty) {
-            super.updateItem(playlistName, empty);
-
-            if (empty || playlistName == null) {
-                setText(null);
-                setGraphic(null);
+        protected void updateItem(String name, boolean empty) {
+            super.updateItem(name, empty);
+            if (empty || name == null) {
+                setText(null); setGraphic(null);
                 setBackground(Background.EMPTY);
                 setStyle("-fx-background-color: transparent;");
                 return;
             }
-
-            nameLabel.setText(playlistName);
-            refreshActionButton(playlistName);
-
-            setText(null);
-            setGraphic(root);
+            iconLbl.setText("Liked Songs".equals(name) ? "♥" : "♫");
+            nameLabel.setText(name);
+            refreshBtn(name);
+            setText(null); setGraphic(row);
             setBackground(Background.EMPTY);
             setStyle("-fx-background-color: transparent; -fx-padding: 2 0 2 0;");
         }
 
         @Override
-        public void updateSelected(boolean selected) {
-            super.updateSelected(false);
+        public void updateSelected(boolean s) { super.updateSelected(false); }
+
+        private void toggle(String name) {
+            boolean wasIn = songIsInPlaylist(profile, name, song);
+            if (wasIn) playlistService.removeSongFromPlaylist(profile, name, song);
+            else playlistService.addSongToPlaylist(profile, name, song);
+            flashRow(!wasIn);
+            parentList.refresh();
         }
 
-        private void togglePlaylistMembership(String playlistName) {
-            boolean wasInPlaylist = songIsInPlaylist(profile, playlistName, song);
-            boolean changed;
-
-            if (wasInPlaylist) {
-                changed = playlistService.removeSongFromPlaylist(profile, playlistName, song);
-            } else {
-                changed = playlistService.addSongToPlaylist(profile, playlistName, song);
-            }
-
-            if (changed) {
-                playClickFlash(!wasInPlaylist);
-            }
-
-            refreshActionButton(playlistName);
-
-            if (getListView() != null) {
-                getListView().refresh();
-                getListView().getSelectionModel().clearSelection();
-            }
+        private void refreshBtn(String name) {
+            boolean inPlaylist = songIsInPlaylist(profile, name, song);
+            actionBtn.setText(inPlaylist ? "✓" : "+");
+            actionBtn.setStyle(inPlaylist ? BTN_ADDED : BTN_ADD);
         }
 
-        private void refreshActionButton(String playlistName) {
-            boolean alreadyInPlaylist = songIsInPlaylist(profile, playlistName, song);
-
-            actionButton.setText(alreadyInPlaylist ? "✓" : "+");
-            actionButton.setStyle(alreadyInPlaylist
-                    ? "-fx-background-color: #dbeafe; -fx-text-fill: #2563eb; -fx-font-size: 16px; -fx-font-weight: bold; -fx-background-radius: 16;"
-                    : "-fx-background-color: #e2e8f0; -fx-text-fill: #334155; -fx-font-size: 16px; -fx-font-weight: bold; -fx-background-radius: 16;");
-
-            actionButton.setOnAction(event -> {
-                togglePlaylistMembership(playlistName);
-                event.consume();
-            });
-        }
-
-        private void playClickFlash(boolean added) {
-            Color flashColor = added ? Color.web("#dbeafe") : Color.web("#fee2e2");
-
-            root.setBackground(new Background(
-                    new BackgroundFill(flashColor, new CornerRadii(14), Insets.EMPTY)
-            ));
-
-            PauseTransition pause = new PauseTransition(Duration.millis(180));
-            pause.setOnFinished(e -> root.setBackground(Background.EMPTY));
-            pause.play();
+        private void flashRow(boolean added) {
+            String flash = added
+                ? "-fx-background-color: rgba(34,197,94,0.12); -fx-background-radius: 14;"
+                : "-fx-background-color: rgba(239,68,68,0.10); -fx-background-radius: 14;";
+            row.setStyle(flash);
+            PauseTransition p = new PauseTransition(Duration.millis(200));
+            p.setOnFinished(e -> row.setStyle("-fx-background-color: transparent; -fx-background-radius: 14;"));
+            p.play();
         }
     }
 }
