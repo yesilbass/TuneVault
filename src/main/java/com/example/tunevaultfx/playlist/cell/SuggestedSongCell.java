@@ -22,7 +22,7 @@ import java.util.function.Consumer;
 /**
  * Suggested song row.
  *
- * Layout: [♫] [▶] [title / artist · genre] [+]
+ * Layout: [♫] [▶] [title / artist] [+] (genre not shown on playlist page)
  *
  * The play button sits between the icon and the song name.
  * The [+] add button is on the far right, invisible at rest and
@@ -279,7 +279,7 @@ public class SuggestedSongCell extends ListCell<Song> {
         while (textBox.getChildren().size() > 1) {
             textBox.getChildren().remove(1);
         }
-        HBox meta = CellStyleKit.songMetaLine(song.artist(), song.genre(), onOpenArtist);
+        HBox meta = CellStyleKit.songMetaLine(song.artist(), null, onOpenArtist);
         if (!meta.getChildren().isEmpty()) {
             textBox.getChildren().add(meta);
         }

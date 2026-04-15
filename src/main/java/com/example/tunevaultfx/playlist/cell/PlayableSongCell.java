@@ -265,7 +265,8 @@ public class PlayableSongCell extends ListCell<Song> {
         while (textBox.getChildren().size() > 1) {
             textBox.getChildren().remove(1);
         }
-        HBox meta = CellStyleKit.songMetaLine(song.artist(), song.genre(), onOpenArtist);
+        // Genre omitted on playlist page UI; search still matches genre in SongSearchService.
+        HBox meta = CellStyleKit.songMetaLine(song.artist(), null, onOpenArtist);
         if (!meta.getChildren().isEmpty()) {
             textBox.getChildren().add(meta);
         }

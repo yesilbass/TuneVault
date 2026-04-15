@@ -125,7 +125,8 @@ public class RecommendationService {
 
             for (Song song : allSongs) {
                 if (song == null || existing.contains(song.songId())) continue;
-                double base = engine.scoreForPlaylist(profile, artistWeights, genreWeights, song);
+                double base = engine.scoreForPlaylist(
+                        profile, artistWeights, genreWeights, playlistSongCount, song);
                 if (base == Double.NEGATIVE_INFINITY) {
                     continue;
                 }
@@ -134,7 +135,18 @@ public class RecommendationService {
             }
 
             scored.sort(Comparator.comparingDouble(ScoredSong::score).reversed());
-            List<Song> picks = scored.stream().limit(limit).map(ScoredSong::song).toList();
+            List<Song> picks =
+                    new ArrayList<>(scored.stream().limit(limit).map(ScoredSong::song).toList());
+
+            Set<Integer> pickedIds = new HashSet<>(existing);
+            for (Song s : picks) {
+                if (s != null && s.songId() > 0) {
+                    pickedIds.add(s.songId());
+                }
+            }
+            if (picks.size() < limit && !allSongs.isEmpty()) {
+                picks.addAll(shuffleExcluding(allSongs, pickedIds, limit - picks.size(), scopeKey));
+            }
             if (picks.isEmpty() && !allSongs.isEmpty()) {
                 return FXCollections.observableArrayList(
                         shuffleExcluding(allSongs, existing, limit, scopeKey));

@@ -109,11 +109,14 @@ class RecommendationEngine {
 
     /**
      * Scores a song against both user behaviour AND the playlist's
-     * artist/genre distribution.
+     * artist/genre distribution. When the playlist has tracks, blends playlist match
+     * vs user taste using {@link RecommendationConstants#PLAYLIST_VS_USER_BLEND_PLAYLIST_SHARE}
+     * (Spotify-style: mostly “sounds like this playlist”, still personalized).
      */
     double scoreForPlaylist(RecommendationProfile profile,
                             Map<String, Double> playlistArtistWeights,
                             Map<String, Double> playlistGenreWeights,
+                            int playlistSongCount,
                             Song song) {
         if (profile.strongNegativeSongIds().contains(song.songId())) return Double.NEGATIVE_INFINITY;
 
@@ -123,11 +126,14 @@ class RecommendationEngine {
         double plArtist    = playlistArtistWeights.getOrDefault(normalize(song.artist()), 0.0);
         double plGenre     = playlistGenreWeights.getOrDefault(normalize(song.genre()), 0.0);
 
-        return (userSong   * 0.5)
-                + (userArtist * 1.6)
-                + (userGenre  * 1.3)
-                + (plArtist   * 2.4)
-                + (plGenre    * 2.0);
+        double userPart = (userSong * 0.5) + (userArtist * 1.6) + (userGenre * 1.3);
+        double plPart   = (plArtist * 2.4) + (plGenre * 2.0);
+
+        if (playlistSongCount <= 0) {
+            return userPart;
+        }
+        double w = RecommendationConstants.PLAYLIST_VS_USER_BLEND_PLAYLIST_SHARE;
+        return w * plPart + (1.0 - w) * userPart;
     }
 
     // ── Helpers ───────────────────────────────────────────────────

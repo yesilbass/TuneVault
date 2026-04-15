@@ -149,7 +149,8 @@ public class SearchSongToggleCell extends ListCell<Song> {
         while (textBox.getChildren().size() > 1) {
             textBox.getChildren().remove(1);
         }
-        HBox meta = CellStyleKit.songMetaLine(song.artist(), song.genre(), onOpenArtist);
+        // Genre omitted in list UI; search field still filters by genre.
+        HBox meta = CellStyleKit.songMetaLine(song.artist(), null, onOpenArtist);
         if (!meta.getChildren().isEmpty()) {
             textBox.getChildren().add(meta);
         }
