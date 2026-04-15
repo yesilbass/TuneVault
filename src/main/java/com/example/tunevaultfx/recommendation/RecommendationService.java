@@ -2,6 +2,7 @@ package com.example.tunevaultfx.recommendation;
 
 import com.example.tunevaultfx.core.Song;
 import com.example.tunevaultfx.db.SongDAO;
+import com.example.tunevaultfx.db.UserGenreDiscoveryDAO;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
@@ -23,9 +24,10 @@ import java.util.stream.Collectors;
  */
 public class RecommendationService {
 
-    private final SongDAO              songDAO              = new SongDAO();
-    private final RecommendationEngine engine               = new RecommendationEngine();
-    private final SearchRankingService searchRankingService = new SearchRankingService();
+    private final SongDAO                 songDAO              = new SongDAO();
+    private final UserGenreDiscoveryDAO   genreDiscoveryDAO  = new UserGenreDiscoveryDAO();
+    private final RecommendationEngine    engine               = new RecommendationEngine();
+    private final SearchRankingService    searchRankingService = new SearchRankingService();
 
     // ── Playlist suggestions ───────────────────────────────────────
 
@@ -36,9 +38,14 @@ public class RecommendationService {
     public ObservableList<Song> getSuggestedSongsForUser(String username, int limit) {
         try {
             ObservableList<Song> allSongs = songDAO.getAllSongs();
-            RecommendationProfile profile = engine.buildProfileForUser(username);
+            RecommendationProfile profile =
+                    engine.buildProfileForUser(username, loadGenreBoost(username));
 
-            if (profile.songAffinity().isEmpty()) return fallback(allSongs, limit);
+            if (profile.songAffinity().isEmpty()
+                    && profile.artistAffinity().isEmpty()
+                    && profile.genreAffinity().isEmpty()) {
+                return fallback(allSongs, limit);
+            }
 
             record ScoredSong(Song song, double score) {}
             List<ScoredSong> scored = new ArrayList<>();
@@ -72,7 +79,8 @@ public class RecommendationService {
                                                              int limit) {
         try {
             ObservableList<Song> allSongs = songDAO.getAllSongs();
-            RecommendationProfile profile = engine.buildProfileForUser(username);
+            RecommendationProfile profile =
+                    engine.buildProfileForUser(username, loadGenreBoost(username));
 
             Map<String, Double> artistWeights = new HashMap<>();
             Map<String, Double> genreWeights  = new HashMap<>();
@@ -135,7 +143,8 @@ public class RecommendationService {
                 exclude.add(anchor.songId());
             }
 
-            RecommendationProfile profile = engine.buildProfileForUser(username);
+            RecommendationProfile profile =
+                    engine.buildProfileForUser(username, loadGenreBoost(username));
             record ScoredSong(Song song, double score) {}
             List<ScoredSong> scored = new ArrayList<>();
 
@@ -184,6 +193,15 @@ public class RecommendationService {
     }
 
     // ── Helpers ───────────────────────────────────────────────────
+
+    private Map<String, Double> loadGenreBoost(String username) {
+        try {
+            return genreDiscoveryDAO.loadBoostWeights(username);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return Map.of();
+        }
+    }
 
     private ObservableList<Song> fallback(ObservableList<Song> all, int limit) {
         return FXCollections.observableArrayList(fallbackShuffle(all, limit));

@@ -8,6 +8,7 @@ import com.example.tunevaultfx.util.AlertUtil;
 import com.example.tunevaultfx.util.CellStyleKit;
 import com.example.tunevaultfx.util.SceneUtil;
 import com.example.tunevaultfx.util.SongContextMenuBuilder;
+import com.example.tunevaultfx.view.FxmlResources;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
@@ -76,12 +77,14 @@ public class ArtistProfileController {
         }
         backButton.setText(
                 switch (prev) {
-                    case "search-page.fxml" -> "Back to Search";
-                    case "main-menu.fxml" -> "Back to Home";
-                    case "playlists-page.fxml" -> "Back to Library";
-                    case "wrapped-page.fxml" -> "Back to Wrapped";
-                    case "findyourgenre-page.fxml" -> "Back to Genre Quiz";
-                    case "artist-profile-page.fxml" -> "Back";
+                    case FxmlResources.SEARCH -> "Back to Search";
+                    case FxmlResources.MAIN_MENU -> "Back to Home";
+                    case FxmlResources.PLAYLISTS -> "Back to Library";
+                    case FxmlResources.WRAPPED -> "Back to Wrapped";
+                    case FxmlResources.FIND_YOUR_GENRE -> "Back to Genre Quiz";
+                    case FxmlResources.PROFILE -> "Back to Profile";
+                    case FxmlResources.SETTINGS -> "Back to Settings";
+                    case FxmlResources.ARTIST_PROFILE -> "Back";
                     default -> "Back";
                 });
     }

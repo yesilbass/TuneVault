@@ -3,6 +3,9 @@ module com.example.tunevaultfx {
     requires javafx.fxml;
     requires javafx.graphics;
     requires javafx.base;
+    requires javafx.swing;
+
+    requires java.desktop;
 
     requires com.fasterxml.jackson.databind;
     requires com.fasterxml.jackson.core;
@@ -73,4 +76,15 @@ module com.example.tunevaultfx {
 
     exports com.example.tunevaultfx.chrome;
     opens com.example.tunevaultfx.chrome to com.fasterxml.jackson.databind, javafx.fxml;
+
+    exports com.example.tunevaultfx.profile;
+    opens com.example.tunevaultfx.profile to com.fasterxml.jackson.databind, javafx.fxml;
+
+    exports com.example.tunevaultfx.profile.media;
+    opens com.example.tunevaultfx.profile.media to com.fasterxml.jackson.databind, javafx.fxml;
+
+    exports com.example.tunevaultfx.settings;
+    opens com.example.tunevaultfx.settings to com.fasterxml.jackson.databind, javafx.fxml;
+
+    exports com.example.tunevaultfx.view;
 }

@@ -40,7 +40,7 @@ This package starts the app.
 Responsible for:
 
 - starting JavaFX
-- loading `login-page.fxml`
+- loading `auth/login-page.fxml`
 - creating the main window
 - applying the global stylesheet
 - shutting down the database connection pool on app exit
@@ -581,14 +581,6 @@ Think of it as:
 
 This package contains current-session state.
 
-#### `Session.java`
-Responsible for:
-
-- representing basic session information
-
-Think of it as:
-> A small session data holder.
-
 #### `SessionManager.java`
 Responsible for:
 
@@ -633,6 +625,18 @@ Responsible for:
 
 Think of it as:
 > A helper for common library actions.
+
+---
+
+### `view`
+
+#### `FxmlResources.java`
+Responsible for:
+
+- classpath-relative paths to every FXML root (mirroring resource folders under `com/example/tunevaultfx/`)
+
+Think of it as:
+> One place to reference screen FXML paths so navigation does not scatter string literals.
 
 ---
 
@@ -702,22 +706,17 @@ Think of it as:
 
 ## FXML screens currently present
 
-The app currently includes these FXML views:
+FXML files live under package-style folders (e.g. `auth/`, `search/`). Scene roots and paths are defined in `com.example.tunevaultfx.view.FxmlResources`.
 
-- `login-page.fxml`
-- `create-account-page.fxml`
-- `forgot-password-page.fxml`
-- `main-menu.fxml`
-- `search-page.fxml`
-- `artist-profile-page.fxml`
-- `playlists-page.fxml`
-- `wrapped-page.fxml`
-- `findyourgenre-page.fxml`
-- `mini-player.fxml`
-- `expanded-page.fxml`
-- `queue-panel.fxml`
-
-Note: the Java code still contains navigation references to `nowplaying-page.fxml` and `song-details-page.fxml`, but those FXML files are not currently present in `src/main/resources/com/example/tunevaultfx`.
+- `auth/login-page.fxml`, `auth/create-account-page.fxml`, `auth/forgot-password-page.fxml`
+- `chrome/app-top-bar.fxml`, `chrome/app-sidebar.fxml`
+- `mainmenu/main-menu.fxml`
+- `search/search-page.fxml`, `search/artist-profile-page.fxml`
+- `playlist/playlists-page.fxml`
+- `wrapped/wrapped-page.fxml`
+- `findyourgenre/findyourgenre-page.fxml`
+- `profile/profile-page.fxml`, `settings/settings-page.fxml`
+- `musicplayer/controller/mini-player.fxml`, `musicplayer/controller/expanded-page.fxml`, `musicplayer/controller/queue-panel.fxml`
 
 ---
 
@@ -734,7 +733,7 @@ If you are new to the project, this reading order works well:
 7. `search`
 8. `recommendation`
 9. `db`
-10. `util`
+10. `view` (FXML path constants) and `util`
 
 This takes you from:
 

@@ -5,6 +5,7 @@ import com.example.tunevaultfx.core.Song;
 import com.example.tunevaultfx.session.SessionManager;
 import com.example.tunevaultfx.user.UserProfile;
 import com.example.tunevaultfx.util.SceneUtil;
+import com.example.tunevaultfx.view.FxmlResources;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.MapChangeListener;
@@ -116,7 +117,7 @@ public class AppSidebarController {
     private void openPlaylist(String playlistName) {
         SessionManager.requestPlaylistToOpen(playlistName);
         try {
-            navigate("playlists-page.fxml", sidebarRoot);
+            navigate(FxmlResources.PLAYLISTS, sidebarRoot);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -124,32 +125,32 @@ public class AppSidebarController {
 
     @FXML
     private void handleBrandClick(MouseEvent e) throws IOException {
-        navigate("main-menu.fxml", e.getSource());
+        navigate(FxmlResources.MAIN_MENU, e.getSource());
     }
 
     @FXML
     private void goHome(ActionEvent e) throws IOException {
-        navigate("main-menu.fxml", e.getSource());
+        navigate(FxmlResources.MAIN_MENU, e.getSource());
     }
 
     @FXML
     private void goSearch(ActionEvent e) throws IOException {
-        navigate("search-page.fxml", e.getSource());
+        navigate(FxmlResources.SEARCH, e.getSource());
     }
 
     @FXML
     private void goLibrary(ActionEvent e) throws IOException {
-        navigate("playlists-page.fxml", e.getSource());
+        navigate(FxmlResources.PLAYLISTS, e.getSource());
     }
 
     @FXML
     private void goWrapped(ActionEvent e) throws IOException {
-        navigate("wrapped-page.fxml", e.getSource());
+        navigate(FxmlResources.WRAPPED, e.getSource());
     }
 
     @FXML
     private void goGenre(ActionEvent e) throws IOException {
-        navigate("findyourgenre-page.fxml", e.getSource());
+        navigate(FxmlResources.FIND_YOUR_GENRE, e.getSource());
     }
 
     private void navigate(String fxml, Object source) throws IOException {
@@ -164,16 +165,16 @@ public class AppSidebarController {
 
         // Artist profile is opened from many places; highlight the section we came from, not Search.
         String navPage = page;
-        if ("artist-profile-page.fxml".equals(page)) {
+        if (FxmlResources.ARTIST_PROFILE.equals(page)) {
             String from = SceneUtil.peekHistory();
             navPage = from != null ? from : "";
         }
 
-        setNavActive(navHome, "main-menu.fxml".equals(navPage));
-        setNavActive(navSearch, "search-page.fxml".equals(navPage));
-        setNavActive(navLibrary, "playlists-page.fxml".equals(navPage));
-        setNavActive(navWrapped, "wrapped-page.fxml".equals(navPage));
-        setNavActive(navGenre, "findyourgenre-page.fxml".equals(navPage));
+        setNavActive(navHome, FxmlResources.MAIN_MENU.equals(navPage));
+        setNavActive(navSearch, FxmlResources.SEARCH.equals(navPage));
+        setNavActive(navLibrary, FxmlResources.PLAYLISTS.equals(navPage));
+        setNavActive(navWrapped, FxmlResources.WRAPPED.equals(navPage));
+        setNavActive(navGenre, FxmlResources.FIND_YOUR_GENRE.equals(navPage));
     }
 
     private void setNavActive(Button b, boolean active) {

@@ -2,6 +2,7 @@ package com.example.tunevaultfx.auth;
 
 import com.example.tunevaultfx.db.UserDAO;
 import com.example.tunevaultfx.util.SceneUtil;
+import com.example.tunevaultfx.view.FxmlResources;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -97,7 +98,7 @@ public class CreateAccountPageController {
                 return;
             }
 
-            SceneUtil.switchSceneNoHistory((Node) event.getSource(), "login-page.fxml");
+            SceneUtil.switchSceneNoHistory((Node) event.getSource(), FxmlResources.AUTH_LOGIN);
 
         } catch (SQLException e) {
             e.printStackTrace();
@@ -107,7 +108,7 @@ public class CreateAccountPageController {
 
     @FXML
     private void handleBackToLogin(ActionEvent event) throws IOException {
-        SceneUtil.switchSceneNoHistory((Node) event.getSource(), "login-page.fxml");
+        SceneUtil.switchSceneNoHistory((Node) event.getSource(), FxmlResources.AUTH_LOGIN);
     }
 
     private String validateCreateAccountInput(String username,

@@ -7,6 +7,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Optional;
 
 public class UserDAO {
 
@@ -86,5 +87,98 @@ public class UserDAO {
 
     public boolean emailRegistered(String email) throws SQLException {
         return emailExists(email);
+    }
+
+    /** Public profile fields only (password not loaded). */
+    public Optional<User> findByUsername(String username) throws SQLException {
+        if (username == null || username.isBlank()) {
+            return Optional.empty();
+        }
+        try {
+            return findByUsernameWithProfileMedia(username.trim());
+        } catch (SQLException e) {
+            if (isUnknownColumnError(e)) {
+                return findByUsernameLegacy(username.trim());
+            }
+            throw e;
+        }
+    }
+
+    private Optional<User> findByUsernameWithProfileMedia(String username) throws SQLException {
+        String sql = """
+                SELECT user_id, username, email, profile_avatar_key
+                FROM app_user
+                WHERE username = ?
+                LIMIT 1
+                """;
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, username);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (!rs.next()) {
+                    return Optional.empty();
+                }
+                return Optional.of(mapPublicUserRow(rs));
+            }
+        }
+    }
+
+    /** When app_user has not been migrated with profile_avatar_key yet. */
+    private Optional<User> findByUsernameLegacy(String username) throws SQLException {
+        String sql = """
+                SELECT user_id, username, email
+                FROM app_user
+                WHERE username = ?
+                LIMIT 1
+                """;
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, username);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (!rs.next()) {
+                    return Optional.empty();
+                }
+                return Optional.of(
+                        new User(
+                                rs.getInt("user_id"),
+                                rs.getString("username"),
+                                rs.getString("email"),
+                                null,
+                                null));
+            }
+        }
+    }
+
+    private static boolean isUnknownColumnError(SQLException e) {
+        if ("42S22".equals(e.getSQLState())) {
+            return true;
+        }
+        String m = e.getMessage();
+        return m != null && m.contains("Unknown column") && m.contains("profile_");
+    }
+
+    public void updateProfileAvatarKey(int userId, String relativeKeyOrNull) throws SQLException {
+        String sql = "UPDATE app_user SET profile_avatar_key = ? WHERE user_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            if (relativeKeyOrNull == null || relativeKeyOrNull.isBlank()) {
+                stmt.setNull(1, java.sql.Types.VARCHAR);
+            } else {
+                stmt.setString(1, relativeKeyOrNull.trim());
+            }
+            stmt.setInt(2, userId);
+            stmt.executeUpdate();
+        }
+    }
+
+    private static User mapPublicUserRow(ResultSet rs) throws SQLException {
+        int id = rs.getInt("user_id");
+        String username = rs.getString("username");
+        String email = rs.getString("email");
+        String av = rs.getString("profile_avatar_key");
+        if (rs.wasNull()) {
+            av = null;
+        }
+        return new User(id, username, email, null, av);
     }
 }

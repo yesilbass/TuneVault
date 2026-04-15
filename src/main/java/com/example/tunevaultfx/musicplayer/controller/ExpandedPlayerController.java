@@ -5,6 +5,7 @@ import com.example.tunevaultfx.musicplayer.PlayerStyleConstants;
 import com.example.tunevaultfx.playlist.service.PlaylistPickerService;
 import com.example.tunevaultfx.session.SessionManager;
 import com.example.tunevaultfx.util.SceneUtil;
+import com.example.tunevaultfx.view.FxmlResources;
 import javafx.animation.FadeTransition;
 import javafx.animation.ParallelTransition;
 import javafx.animation.ScaleTransition;
@@ -130,7 +131,7 @@ public class ExpandedPlayerController {
         String artist = player.currentArtistProperty().get();
         if (artist == null || artist.isBlank()) return;
         SessionManager.setSelectedArtist(artist);
-        SceneUtil.switchScene((Node) event.getSource(), "artist-profile-page.fxml");
+        SceneUtil.switchScene((Node) event.getSource(), FxmlResources.ARTIST_PROFILE);
     }
 
     // ── UI refresh helpers ─────────────────────────────────────────

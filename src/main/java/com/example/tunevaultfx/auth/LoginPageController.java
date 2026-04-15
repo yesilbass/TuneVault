@@ -5,6 +5,7 @@ import com.example.tunevaultfx.musicplayer.controller.MusicPlayerController;
 import com.example.tunevaultfx.session.SessionManager;
 import com.example.tunevaultfx.user.User;
 import com.example.tunevaultfx.util.SceneUtil;
+import com.example.tunevaultfx.view.FxmlResources;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -79,7 +80,7 @@ public class LoginPageController {
             MusicPlayerController.getInstance().resetForNewSession();
             SessionManager.startSession(user.getUsername());
             SceneUtil.clearHistory();
-            SceneUtil.switchSceneNoHistory((Node) event.getSource(), "main-menu.fxml");
+            SceneUtil.switchSceneNoHistory((Node) event.getSource(), FxmlResources.MAIN_MENU);
 
         } catch (SQLException e) {
             e.printStackTrace();
@@ -92,12 +93,12 @@ public class LoginPageController {
 
     @FXML
     private void openCreateAccountPage(ActionEvent event) throws IOException {
-        SceneUtil.switchSceneNoHistory((Node) event.getSource(), "create-account-page.fxml");
+        SceneUtil.switchSceneNoHistory((Node) event.getSource(), FxmlResources.AUTH_CREATE_ACCOUNT);
     }
 
     @FXML
     private void openForgotPasswordPage(ActionEvent event) throws IOException {
-        SceneUtil.switchSceneNoHistory((Node) event.getSource(), "forgot-password-page.fxml");
+        SceneUtil.switchSceneNoHistory((Node) event.getSource(), FxmlResources.AUTH_FORGOT_PASSWORD);
     }
 
     @FXML

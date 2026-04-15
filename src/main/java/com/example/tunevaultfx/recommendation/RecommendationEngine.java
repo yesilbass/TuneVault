@@ -4,7 +4,11 @@ import com.example.tunevaultfx.core.Song;
 import com.example.tunevaultfx.db.ListeningEventDAO;
 import com.example.tunevaultfx.db.ListeningEventDAO.UserBehaviorEvent;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Core recommendation engine.
@@ -24,9 +28,38 @@ class RecommendationEngine {
     // ── Profile building ───────────────────────────────────────────
 
     RecommendationProfile buildProfileForUser(String username) {
+        return buildProfileForUser(username, null);
+    }
+
+    /**
+     * @param genreDiscoveryBoost normalized genre keys (e.g. from Find Your Genre quiz); merged into
+     *                            genre affinity so recommendations reflect declared taste even with thin history.
+     */
+    RecommendationProfile buildProfileForUser(String username, Map<String, Double> genreDiscoveryBoost) {
         List<UserBehaviorEvent> events = listeningEventDAO.getUserBehaviorEvents(username);
-        if (events.isEmpty()) return RecommendationProfile.empty();
-        return buildProfile(events);
+        RecommendationProfile base =
+                events.isEmpty() ? RecommendationProfile.empty() : buildProfile(events);
+        if (genreDiscoveryBoost == null || genreDiscoveryBoost.isEmpty()) {
+            return base;
+        }
+        return mergeGenreDiscovery(base, genreDiscoveryBoost);
+    }
+
+    private RecommendationProfile mergeGenreDiscovery(RecommendationProfile base,
+                                                        Map<String, Double> boost) {
+        Map<String, Double> genres = new HashMap<>(base.genreAffinity());
+        for (var e : boost.entrySet()) {
+            String k = normalize(e.getKey());
+            if (!k.isEmpty()) {
+                genres.merge(k, e.getValue(), Double::sum);
+            }
+        }
+        normalizeMap(genres);
+        return new RecommendationProfile(
+                new HashMap<>(base.songAffinity()),
+                new HashMap<>(base.artistAffinity()),
+                genres,
+                new HashSet<>(base.strongNegativeSongIds()));
     }
 
     RecommendationProfile buildProfile(List<UserBehaviorEvent> events) {

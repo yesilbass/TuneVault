@@ -1,6 +1,8 @@
 package com.example.tunevaultfx.app;
 
 import com.example.tunevaultfx.db.DBConnection;
+import com.example.tunevaultfx.util.SceneUtil;
+import com.example.tunevaultfx.view.FxmlResources;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -18,9 +20,10 @@ public class HelloApplication extends Application {
 
     @Override
     public void start(Stage stage) throws Exception {
-        FXMLLoader loader = new FXMLLoader(
-                HelloApplication.class.getResource(
-                        "/com/example/tunevaultfx/login-page.fxml"));
+        FXMLLoader loader =
+                new FXMLLoader(
+                        HelloApplication.class.getResource(
+                                FxmlResources.CLASSPATH_PREFIX + FxmlResources.AUTH_LOGIN));
 
         Scene scene = new Scene(loader.load());
 
@@ -28,6 +31,8 @@ public class HelloApplication extends Application {
         scene.getStylesheets().add(
                 HelloApplication.class.getResource(
                         "/com/example/tunevaultfx/app.css").toExternalForm());
+
+        SceneUtil.applySavedTheme(scene);
 
         stage.setTitle("TuneVault");
         stage.setScene(scene);
