@@ -1,12 +1,12 @@
 package com.example.tunevaultfx.musicplayer.controller;
 
 import com.example.tunevaultfx.core.Song;
-import com.example.tunevaultfx.util.AppTheme;
-import com.example.tunevaultfx.util.SceneUtil;
 import com.example.tunevaultfx.musicplayer.PlayerStyleConstants;
 import com.example.tunevaultfx.playlist.service.PlaylistPickerService;
 import com.example.tunevaultfx.session.SessionManager;
+import com.example.tunevaultfx.util.AppTheme;
 import com.example.tunevaultfx.util.SceneUtil;
+import com.example.tunevaultfx.view.FxmlResources;
 import javafx.beans.binding.Bindings;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -157,7 +157,7 @@ public class MiniPlayerController {
         String artist = player.currentArtistProperty().get();
         if (artist == null || artist.isBlank()) return;
         SessionManager.setSelectedArtist(artist);
-        SceneUtil.switchScene((Node) event.getSource(), "artist-profile-page.fxml");
+        SceneUtil.switchScene((Node) event.getSource(), FxmlResources.ARTIST_PROFILE);
     }
 
     @FXML
@@ -165,7 +165,7 @@ public class MiniPlayerController {
         String name = player.getCurrentSourcePlaylistName();
         if (name == null || name.isBlank()) return;
         SessionManager.requestPlaylistToOpen(name);
-        SceneUtil.switchScene((Node) event.getSource(), "playlists-page.fxml");
+        SceneUtil.switchScene((Node) event.getSource(), FxmlResources.PLAYLISTS);
     }
 
     @FXML
@@ -249,8 +249,7 @@ public class MiniPlayerController {
         }
 
         try {
-            FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/com/example/tunevaultfx/queue-panel.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("queue-panel.fxml"));
             Parent overlay = loader.load();
             queuePanelController = loader.getController();
 
@@ -290,8 +289,7 @@ public class MiniPlayerController {
         if (root.lookup("#expandedPlayerOverlay") != null) return;
 
         try {
-            FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/com/example/tunevaultfx/expanded-page.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("expanded-page.fxml"));
             Parent overlay = loader.load();
 
             StackPane wrapper = new StackPane();

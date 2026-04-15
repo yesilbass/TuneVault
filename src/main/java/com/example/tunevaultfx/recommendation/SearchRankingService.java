@@ -1,9 +1,11 @@
 package com.example.tunevaultfx.recommendation;
 
 import com.example.tunevaultfx.core.Song;
+import com.example.tunevaultfx.db.UserGenreDiscoveryDAO;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
+import java.sql.SQLException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -17,7 +19,8 @@ import java.util.stream.Collectors;
  */
 public class SearchRankingService {
 
-    private final RecommendationEngine engine = new RecommendationEngine();
+    private final RecommendationEngine   engine            = new RecommendationEngine();
+    private final UserGenreDiscoveryDAO genreDiscoveryDAO = new UserGenreDiscoveryDAO();
 
     /**
      * Returns songs matching {@code query}, ranked so the best fit for
@@ -36,7 +39,8 @@ public class SearchRankingService {
         if (normalizedQuery.isBlank() || allSongs == null)
             return FXCollections.observableArrayList();
 
-        RecommendationProfile profile = engine.buildProfileForUser(username);
+        RecommendationProfile profile =
+                engine.buildProfileForUser(username, loadGenreBoost(username));
 
         record ScoredSong(Song song, double score) {}
         List<ScoredSong> ranked = new ArrayList<>();
@@ -76,7 +80,8 @@ public class SearchRankingService {
         if (normalizedQuery.isBlank() || allSongs == null)
             return FXCollections.observableArrayList();
 
-        RecommendationProfile profile = engine.buildProfileForUser(username);
+        RecommendationProfile profile =
+                engine.buildProfileForUser(username, loadGenreBoost(username));
         Map<String, Double> ranked = new HashMap<>();
 
         for (Song song : allSongs) {
@@ -99,6 +104,15 @@ public class SearchRankingService {
                 .limit(limit)
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toCollection(FXCollections::observableArrayList));
+    }
+
+    private Map<String, Double> loadGenreBoost(String username) {
+        try {
+            return genreDiscoveryDAO.loadBoostWeights(username);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return Map.of();
+        }
     }
 
     // ── Text match scoring ─────────────────────────────────────────

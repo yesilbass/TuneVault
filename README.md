@@ -125,7 +125,7 @@ If you want a beginner-friendly package-by-package explanation, see `CODEMAP.md`
 ## How the app flows
 
 1. The app starts from `Launcher.java` and `HelloApplication.java`.
-2. `login-page.fxml` is loaded first.
+2. `auth/login-page.fxml` is loaded first.
 3. After login, `SessionManager` loads the current profile and recent search state.
 4. The user reaches the main menu.
 5. From the main menu, the user can open search, playlists, wrapped, or the genre quiz.
@@ -157,22 +157,19 @@ Database settings can be overridden with:
 
 ## UI structure
 
-FXML views live in `src/main/resources/com/example/tunevaultfx`.
+FXML views live under `src/main/resources/com/example/tunevaultfx/`, in subfolders that mirror Java packages (e.g. `auth/`, `search/`, `chrome/`). Navigation paths are centralized in `com.example.tunevaultfx.view.FxmlResources`.
 
 Current views include:
 
-- `login-page.fxml`
-- `create-account-page.fxml`
-- `forgot-password-page.fxml`
-- `main-menu.fxml`
-- `search-page.fxml`
-- `artist-profile-page.fxml`
-- `playlists-page.fxml`
-- `wrapped-page.fxml`
-- `findyourgenre-page.fxml`
-- `mini-player.fxml`
-- `expanded-page.fxml`
-- `queue-panel.fxml`
+- `auth/login-page.fxml`, `auth/create-account-page.fxml`, `auth/forgot-password-page.fxml`
+- `chrome/app-top-bar.fxml`, `chrome/app-sidebar.fxml`
+- `mainmenu/main-menu.fxml`
+- `search/search-page.fxml`, `search/artist-profile-page.fxml`
+- `playlist/playlists-page.fxml`
+- `wrapped/wrapped-page.fxml`
+- `findyourgenre/findyourgenre-page.fxml`
+- `profile/profile-page.fxml`, `settings/settings-page.fxml`
+- `musicplayer/controller/mini-player.fxml`, `expanded-page.fxml`, `queue-panel.fxml`
 
 Global styling is centralized in `app.css`.
 

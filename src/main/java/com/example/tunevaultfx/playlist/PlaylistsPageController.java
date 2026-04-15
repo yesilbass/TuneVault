@@ -17,6 +17,7 @@ import com.example.tunevaultfx.user.UserProfile;
 import com.example.tunevaultfx.util.AppTheme;
 import com.example.tunevaultfx.util.OverlayTheme;
 import com.example.tunevaultfx.util.SceneUtil;
+import com.example.tunevaultfx.view.FxmlResources;
 import com.example.tunevaultfx.util.UiMotionUtil;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
@@ -529,7 +530,7 @@ public class PlaylistsPageController {
         if (artist == null || artist.isBlank()) return;
         SessionManager.setSelectedArtist(artist.trim());
         try {
-            SceneUtil.switchScene(contentRow, "artist-profile-page.fxml");
+            SceneUtil.switchScene(contentRow, FxmlResources.ARTIST_PROFILE);
         } catch (IOException e) {
             e.printStackTrace();
         }

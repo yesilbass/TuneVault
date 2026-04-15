@@ -349,10 +349,16 @@ public class MusicPlayerController {
     }
 
     public void toggleShuffle() {
-        boolean newValue = !state.isShuffleEnabled();
-        state.setShuffleEnabled(newValue);
+        setShuffleEnabled(!state.isShuffleEnabled());
+    }
 
-        if (newValue) {
+    /** Applies shuffle on/off and refreshes the shuffle order when turning on. */
+    public void setShuffleEnabled(boolean enabled) {
+        if (state.isShuffleEnabled() == enabled) {
+            return;
+        }
+        state.setShuffleEnabled(enabled);
+        if (enabled) {
             if (!queue.isEmpty() && queue.getCurrentIndex() >= 0) {
                 shuffleManager.createShuffleOrderStartingFrom(queue.size(), queue.getCurrentIndex());
             }

@@ -8,6 +8,7 @@ import com.example.tunevaultfx.session.SessionManager;
 import com.example.tunevaultfx.util.AlertUtil;
 import com.example.tunevaultfx.util.CellStyleKit;
 import com.example.tunevaultfx.util.SceneUtil;
+import com.example.tunevaultfx.view.FxmlResources;
 import com.example.tunevaultfx.util.SongContextMenuBuilder;
 import com.example.tunevaultfx.util.UiMotionUtil;
 import javafx.application.Platform;
@@ -271,7 +272,7 @@ public class SearchPageController {
         if (artist == null || artist.isBlank()) return;
         SessionManager.setSelectedArtist(artist.trim());
         try {
-            SceneUtil.switchScene(songResultsListView, "artist-profile-page.fxml");
+            SceneUtil.switchScene(songResultsListView, FxmlResources.ARTIST_PROFILE);
         } catch (IOException ex) {
             ex.printStackTrace();
         }
@@ -284,7 +285,7 @@ public class SearchPageController {
                 if (artist != null && !artist.isBlank()) {
                     SessionManager.setSelectedArtist(artist);
                     SessionManager.addRecentSearch(SearchRecentItem.artist(artist));
-                    try { SceneUtil.switchScene(artistResultsListView, "artist-profile-page.fxml"); }
+                    try { SceneUtil.switchScene(artistResultsListView, FxmlResources.ARTIST_PROFILE); }
                     catch (IOException ex) { ex.printStackTrace(); }
                 }
             }
@@ -338,7 +339,7 @@ public class SearchPageController {
         if (item.getType() == SearchRecentItem.Type.ARTIST && item.getArtistName() != null) {
             SessionManager.setSelectedArtist(item.getArtistName());
             SessionManager.addRecentSearch(SearchRecentItem.artist(item.getArtistName()));
-            try { SceneUtil.switchScene(recentSearchesListView, "artist-profile-page.fxml"); }
+            try { SceneUtil.switchScene(recentSearchesListView, FxmlResources.ARTIST_PROFILE); }
             catch (IOException e) { e.printStackTrace(); }
         }
     }

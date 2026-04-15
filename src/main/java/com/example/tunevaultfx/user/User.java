@@ -9,15 +9,27 @@ public class User {
     private String username;
     private String email;
     private String password;
+    /** Relative path under app profile-media dir, or null */
+    private String profileAvatarKey;
 
     public User() {
     }
 
     public User(int userId, String username, String email, String password) {
+        this(userId, username, email, password, null);
+    }
+
+    public User(
+            int userId,
+            String username,
+            String email,
+            String password,
+            String profileAvatarKey) {
         this.userId = userId;
         this.username = username;
         this.email = email;
         this.password = password;
+        this.profileAvatarKey = profileAvatarKey;
     }
 
     public User(String username, String email, String password) {
@@ -38,5 +50,9 @@ public class User {
 
     public String getPassword() {
         return password;
+    }
+
+    public String getProfileAvatarKey() {
+        return profileAvatarKey;
     }
 }

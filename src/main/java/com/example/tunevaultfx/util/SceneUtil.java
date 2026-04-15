@@ -7,11 +7,11 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
+import com.example.tunevaultfx.view.FxmlResources;
+
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.Deque;
-import java.util.prefs.Preferences;
-
 /**
  * Centralized scene switching with navigation history.
  * Every {@link #switchScene} call pushes the current page onto a stack
@@ -20,9 +20,7 @@ import java.util.prefs.Preferences;
 public final class SceneUtil {
 
     private static final String CSS_PATH  = "/com/example/tunevaultfx/app.css";
-    private static final String FXML_BASE = "/com/example/tunevaultfx/";
-    private static final String PREF_NODE_UI = "com/example/tunevaultfx/ui";
-    private static final String PREF_THEME_LIGHT = "themeLight";
+    private static final String FXML_BASE = FxmlResources.CLASSPATH_PREFIX;
 
     private static final Deque<String> history = new ArrayDeque<>();
     private static String currentPage = null;
@@ -41,7 +39,7 @@ public final class SceneUtil {
      * Go back to the previous page. If there's no history, goes to main-menu.
      */
     public static void goBack(Node sourceNode) throws IOException {
-        String target = history.isEmpty() ? "main-menu.fxml" : history.pop();
+        String target = history.isEmpty() ? FxmlResources.MAIN_MENU : history.pop();
         currentPage = target;
         loadScene(sourceNode, target);
     }
@@ -75,7 +73,7 @@ public final class SceneUtil {
         return history.isEmpty() ? null : history.peek();
     }
 
-    /** Current FXML filename (e.g. {@code "search-page.fxml"}), or null before first navigation. */
+    /** Current FXML path relative to {@link FxmlResources#CLASSPATH_PREFIX} (e.g. {@code search/search-page.fxml}). */
     public static String getCurrentPage() {
         return currentPage;
     }
@@ -94,7 +92,7 @@ public final class SceneUtil {
         if (scene == null || scene.getRoot() == null) {
             return;
         }
-        boolean light = Preferences.userRoot().node(PREF_NODE_UI).getBoolean(PREF_THEME_LIGHT, false);
+        boolean light = UiPrefs.prefs().getBoolean(UiPrefs.KEY_THEME_LIGHT, false);
         AppTheme.setLightMode(light);
         Parent root = scene.getRoot();
         root.getStyleClass().removeAll("theme-light");

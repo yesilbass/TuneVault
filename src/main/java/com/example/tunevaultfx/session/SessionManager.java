@@ -1,11 +1,14 @@
 package com.example.tunevaultfx.session;
 
 import com.example.tunevaultfx.core.Song;
+import com.example.tunevaultfx.db.DbSchemaPatches;
 import com.example.tunevaultfx.db.SearchHistoryDAO;
 import com.example.tunevaultfx.db.SongDAO;
 import com.example.tunevaultfx.db.UserProfileDAO;
+import com.example.tunevaultfx.musicplayer.controller.MusicPlayerController;
 import com.example.tunevaultfx.search.SearchRecentItem;
 import com.example.tunevaultfx.user.UserProfile;
+import com.example.tunevaultfx.util.UiPrefs;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
@@ -65,6 +68,8 @@ public final class SessionManager {
         requestedPlaylistToOpen = null;
         songLibrary             = null;
 
+        DbSchemaPatches.ensureAppUserProfileMediaColumns();
+
         // ── 1. Load user profile (playlists + liked songs) ────────
         // Must be synchronous: every page depends on this being non-null.
         try {
@@ -99,6 +104,10 @@ public final class SessionManager {
         Thread libraryThread = new Thread(libraryTask, "song-library-loader");
         libraryThread.setDaemon(true);
         libraryThread.start();
+
+        boolean shuffleOnLogin =
+                UiPrefs.prefs().getBoolean(UiPrefs.KEY_DEFAULT_SHUFFLE_ON_LOGIN, false);
+        MusicPlayerController.getInstance().setShuffleEnabled(shuffleOnLogin);
     }
 
     /**

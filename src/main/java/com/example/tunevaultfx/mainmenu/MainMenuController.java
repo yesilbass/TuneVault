@@ -3,6 +3,8 @@ package com.example.tunevaultfx.mainmenu;
 import com.example.tunevaultfx.core.PlaylistNames;
 import com.example.tunevaultfx.core.Song;
 import com.example.tunevaultfx.db.SongDAO;
+import com.example.tunevaultfx.db.UserGenreDiscoveryDAO;
+import com.example.tunevaultfx.db.UserGenreDiscoverySummary;
 import com.example.tunevaultfx.musicplayer.controller.MusicPlayerController;
 import com.example.tunevaultfx.recommendation.RecommendationService;
 import com.example.tunevaultfx.session.SessionManager;
@@ -11,6 +13,7 @@ import com.example.tunevaultfx.util.CellStyleKit;
 import com.example.tunevaultfx.util.SceneUtil;
 import com.example.tunevaultfx.util.SongContextMenuBuilder;
 import com.example.tunevaultfx.util.UiMotionUtil;
+import com.example.tunevaultfx.view.FxmlResources;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
@@ -32,6 +35,7 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.layout.*;
 
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -49,6 +53,8 @@ public class MainMenuController {
     @FXML private FlowPane playlistChipsContainer;
     @FXML private Label homeGreetingLabel;
     @FXML private Label homeStatsLabel;
+    @FXML private Label homeVibeLabel;
+    @FXML private Label homeVibeSubLabel;
     @FXML private Label noPlaylistsHint;
     @FXML private ListView<Song> forYouListView;
     @FXML private ListView<Song> freshTracksListView;
@@ -56,6 +62,7 @@ public class MainMenuController {
     private final RecommendationService recommendationService = new RecommendationService();
     private final MusicPlayerController player = MusicPlayerController.getInstance();
     private final SongDAO songDAO = new SongDAO();
+    private final UserGenreDiscoveryDAO genreDiscoveryDAO = new UserGenreDiscoveryDAO();
 
     private final MapChangeListener<String, ObservableList<Song>> homePlaylistKeysChanged =
             c -> Platform.runLater(this::refreshHomeLibraryStrip);
@@ -83,6 +90,7 @@ public class MainMenuController {
 
         buildPlaylistChips(profile);
         loadFeedLists(user);
+        applyHomeVibe(user);
 
         setupHomeListView(forYouListView);
         setupHomeListView(freshTracksListView);
@@ -126,6 +134,65 @@ public class MainMenuController {
                             + songTotal + " saved song" + (songTotal != 1 ? "s" : ""));
         }
         buildPlaylistChips(profile);
+    }
+
+    private void applyHomeVibe(String username) {
+        if (homeVibeLabel == null) {
+            return;
+        }
+        if (username == null || username.isBlank()) {
+            homeVibeLabel.setVisible(false);
+            homeVibeLabel.setManaged(false);
+            if (homeVibeSubLabel != null) {
+                homeVibeSubLabel.setVisible(false);
+                homeVibeSubLabel.setManaged(false);
+            }
+            return;
+        }
+        try {
+            Optional<UserGenreDiscoverySummary> opt = genreDiscoveryDAO.loadSummary(username);
+            if (opt.isEmpty()) {
+                homeVibeLabel.getStyleClass().setAll("caption");
+                homeVibeLabel.setText(
+                        "When you\u2019re ready, use Account \u2192 Profile (or Genre Quiz in the sidebar) "
+                                + "to shape recommendations.");
+                homeVibeLabel.setVisible(true);
+                homeVibeLabel.setManaged(true);
+                if (homeVibeSubLabel != null) {
+                    homeVibeSubLabel.setText("");
+                    homeVibeSubLabel.setVisible(false);
+                    homeVibeSubLabel.setManaged(false);
+                }
+                return;
+            }
+            UserGenreDiscoverySummary s = opt.get();
+            homeVibeLabel.getStyleClass().setAll("home-vibe-line");
+            homeVibeLabel.setText("Your vibe: " + s.blendLine());
+            homeVibeLabel.setVisible(true);
+            homeVibeLabel.setManaged(true);
+            if (homeVibeSubLabel != null) {
+                String mode = s.quizModeLabel();
+                String modeBit =
+                        mode.isEmpty()
+                                ? "Saved from Find Your Genre."
+                                : "Saved from your " + mode + " quiz.";
+                homeVibeSubLabel.setText(
+                        modeBit
+                                + " This nudges picks, search, and autoplay. Update from Account \u2192 Profile or Genre Quiz.");
+                homeVibeSubLabel.setVisible(true);
+                homeVibeSubLabel.setManaged(true);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            homeVibeLabel.setText("");
+            homeVibeLabel.setVisible(false);
+            homeVibeLabel.setManaged(false);
+            if (homeVibeSubLabel != null) {
+                homeVibeSubLabel.setText("");
+                homeVibeSubLabel.setVisible(false);
+                homeVibeSubLabel.setManaged(false);
+            }
+        }
     }
 
     private static int countUniqueSavedSongs(UserProfile profile) {
@@ -245,14 +312,14 @@ public class MainMenuController {
     private void goToPlaylist(String playlistName) {
         SessionManager.requestPlaylistToOpen(playlistName);
         try {
-            SceneUtil.switchSceneNoHistory(menuContent, "playlists-page.fxml");
+            SceneUtil.switchSceneNoHistory(menuContent, FxmlResources.PLAYLISTS);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
     private void openPlaylistsPageFromHome() throws IOException {
-        SceneUtil.switchSceneNoHistory(menuContent, "playlists-page.fxml");
+        SceneUtil.switchSceneNoHistory(menuContent, FxmlResources.PLAYLISTS);
     }
 
     private void loadFeedLists(String username) {
@@ -373,7 +440,7 @@ public class MainMenuController {
         SessionManager.setSelectedArtist(artist.trim());
         try {
             Node n = forYouListView != null ? forYouListView : menuContent;
-            SceneUtil.switchScene(n, "artist-profile-page.fxml");
+            SceneUtil.switchScene(n, FxmlResources.ARTIST_PROFILE);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -389,6 +456,6 @@ public class MainMenuController {
 
     @FXML
     private void openPlaylistsPage(ActionEvent event) throws IOException {
-        SceneUtil.switchSceneNoHistory(menuContent, "playlists-page.fxml");
+        SceneUtil.switchSceneNoHistory(menuContent, FxmlResources.PLAYLISTS);
     }
 }

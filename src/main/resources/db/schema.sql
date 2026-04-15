@@ -22,9 +22,13 @@ CREATE TABLE IF NOT EXISTS app_user (
     username      VARCHAR(64)  NOT NULL,
     email         VARCHAR(255) NOT NULL,
     password_hash CHAR(64)     NOT NULL COMMENT 'SHA-256 hex from PasswordUtil',
+    profile_avatar_key VARCHAR(512) NULL COMMENT 'Relative path under ~/.tunevaultfx/profile-media',
     CONSTRAINT uq_app_user_username UNIQUE (username),
     CONSTRAINT uq_app_user_email    UNIQUE (email)
 ) ENGINE=InnoDB;
+
+-- Existing databases: run once if columns are missing (ignore errors if already applied):
+-- ALTER TABLE app_user ADD COLUMN profile_avatar_key VARCHAR(512) NULL COMMENT 'Relative path under ~/.tunevaultfx/profile-media';
 
 CREATE TABLE IF NOT EXISTS artist (
     artist_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -98,6 +102,20 @@ CREATE TABLE IF NOT EXISTS search_history (
     CONSTRAINT fk_sh_song FOREIGN KEY (song_id) REFERENCES song (song_id)
         ON DELETE SET NULL ON UPDATE CASCADE,
     INDEX idx_sh_user_searched (user_id, searched_at)
+) ENGINE=InnoDB;
+
+-- Genre Discovery quiz — boosts recommendation genre affinity (merged in RecommendationEngine)
+-- Note: No FOREIGN KEY on user_id — Error 3780 appears if app_user.user_id type differs (e.g. legacy INT
+-- vs INT UNSIGNED). The app enforces user_id via DAO; delete orphans manually if you drop users in SQL.
+CREATE TABLE IF NOT EXISTS user_genre_discovery (
+    user_id       INT UNSIGNED PRIMARY KEY,
+    top_genre     VARCHAR(128) NOT NULL,
+    second_genre  VARCHAR(128) NULL,
+    third_genre   VARCHAR(128) NULL,
+    quiz_mode     VARCHAR(16)  NOT NULL DEFAULT 'FULL' COMMENT 'QUICK or FULL',
+    weights_boost VARCHAR(768) NOT NULL COMMENT 'pipe-separated normalized boosts, e.g. pop:0.9|rock:0.4',
+    updated_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_ugd_user (user_id)
 ) ENGINE=InnoDB;
 
 -- ---------------------------------------------------------------------------

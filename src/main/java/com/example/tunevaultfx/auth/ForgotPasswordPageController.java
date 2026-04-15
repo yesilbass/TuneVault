@@ -2,6 +2,7 @@ package com.example.tunevaultfx.auth;
 
 import com.example.tunevaultfx.db.UserDAO;
 import com.example.tunevaultfx.util.SceneUtil;
+import com.example.tunevaultfx.view.FxmlResources;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -95,7 +96,7 @@ public class ForgotPasswordPageController {
 
     @FXML
     private void handleBackToLogin(ActionEvent event) throws IOException {
-        SceneUtil.switchSceneNoHistory((Node) event.getSource(), "login-page.fxml");
+        SceneUtil.switchSceneNoHistory((Node) event.getSource(), FxmlResources.AUTH_LOGIN);
     }
 
     private String validateResetInput(String email, String newPassword, String confirmPassword) {

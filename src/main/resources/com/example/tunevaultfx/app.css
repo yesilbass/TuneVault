@@ -343,6 +343,246 @@
     -fx-border-color: rgba(251, 113, 133, 0.5);
 }
 
+/* Account MenuButton — readable on dark top bar (Modena arrow + label) */
+.top-bar-account-menu {
+    -fx-cursor: hand;
+}
+.menu-button.top-bar-account-menu {
+    -fx-background-color: rgba(255, 255, 255, 0.14);
+    -fx-border-color: rgba(199, 210, 254, 0.42);
+    -fx-text-fill: #f4f4ff;
+}
+.menu-button.top-bar-account-menu .label {
+    -fx-text-fill: #f4f4ff;
+}
+.menu-button.top-bar-account-menu:hover {
+    -fx-background-color: rgba(139, 92, 246, 0.5);
+    -fx-border-color: rgba(221, 214, 254, 0.75);
+    -fx-text-fill: white;
+}
+.menu-button.top-bar-account-menu:hover .label {
+    -fx-text-fill: white;
+}
+.menu-button.top-bar-account-menu > .arrow-button {
+    -fx-background-color: transparent;
+    -fx-padding: 0 6 0 0;
+}
+.menu-button.top-bar-account-menu > .arrow-button > .arrow {
+    -fx-background-color: #e8e8ff;
+}
+/* Same look as MenuButton account control (explicit ContextMenu anchor uses Button). */
+.button.top-bar-account-menu {
+    -fx-background-color: rgba(255, 255, 255, 0.14);
+    -fx-border-color: rgba(199, 210, 254, 0.42);
+    -fx-text-fill: #f4f4ff;
+}
+.button.top-bar-account-menu:hover {
+    -fx-background-color: rgba(139, 92, 246, 0.5);
+    -fx-border-color: rgba(221, 214, 254, 0.75);
+    -fx-text-fill: white;
+}
+
+/* Discord-style avatar crop modal */
+.profile-crop-dialog {
+    -fx-background-color: #12121c;
+    -fx-background-radius: 16;
+    -fx-border-color: rgba(139, 92, 246, 0.35);
+    -fx-border-radius: 16;
+    -fx-border-width: 1;
+}
+/* Compact rows on Account dropdown (MenuItem styleClass in app-top-bar.fxml) */
+.menu-item.top-bar-account-menu-item {
+    -fx-padding: 9 18 9 18;
+    -fx-font-size: 13px;
+}
+
+/* ── Profile page ───────────────────────────────────────────────── */
+.profile-header-shell {
+    -fx-background-color: #0f0f1c;
+    -fx-background-radius: 20;
+    -fx-border-color: rgba(255, 255, 255, 0.08);
+    -fx-border-radius: 20;
+    -fx-border-width: 1;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.38), 22, 0, 0, 6);
+}
+.profile-media-chip {
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #f8fafc;
+    -fx-background-color: rgba(0, 0, 0, 0.48);
+    -fx-background-radius: 999;
+    -fx-border-color: rgba(255, 255, 255, 0.22);
+    -fx-border-radius: 999;
+    -fx-border-width: 1;
+    -fx-padding: 7 14 7 14;
+}
+.profile-media-chip:hover {
+    -fx-background-color: rgba(0, 0, 0, 0.58);
+    -fx-text-fill: white;
+}
+.profile-media-chip-sm {
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #f8fafc;
+    -fx-background-color: rgba(0, 0, 0, 0.5);
+    -fx-background-radius: 999;
+    -fx-border-color: rgba(255, 255, 255, 0.25);
+    -fx-border-radius: 999;
+    -fx-border-width: 1;
+    -fx-padding: 5 10 5 10;
+}
+.profile-media-chip-sm:hover {
+    -fx-background-color: rgba(0, 0, 0, 0.62);
+}
+.profile-avatar {
+    -fx-background-color: linear-gradient(to bottom right, #3730a3, #5b21b6);
+    -fx-background-radius: 48;
+    -fx-border-color: rgba(255, 255, 255, 0.28);
+    -fx-border-radius: 48;
+    -fx-border-width: 3;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.5), 14, 0, 0, 4);
+}
+.profile-avatar-initial {
+    -fx-font-size: 32px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #f5f3ff;
+}
+.profile-display-name {
+    -fx-font-size: 26px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #f4f4ff;
+}
+.profile-handle {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #a78bfa;
+}
+.profile-email {
+    -fx-font-size: 14px;
+    -fx-text-fill: #c8c8e0;
+}
+.profile-stat-tile {
+    -fx-background-color: rgba(255, 255, 255, 0.05);
+    -fx-background-radius: 14;
+    -fx-border-color: rgba(255, 255, 255, 0.08);
+    -fx-border-radius: 14;
+    -fx-border-width: 1;
+    -fx-padding: 14 12 14 12;
+}
+.profile-stat-value {
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #eeeef6;
+}
+.profile-stat-label {
+    -fx-font-size: 12px;
+    -fx-text-fill: #9898b8;
+}
+.profile-section-heading {
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #8888a8;
+    -fx-letter-spacing: 0.12em;
+    -fx-padding: 0 0 8 2;
+}
+.profile-detail-card {
+    -fx-border-color: rgba(139, 92, 246, 0.12);
+}
+.profile-genre-flow {
+    -fx-padding: 2 0 0 0;
+}
+.profile-genre-chip {
+    -fx-background-color: rgba(139, 92, 246, 0.18);
+    -fx-text-fill: #ddd6fe;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 999;
+    -fx-padding: 7 14 7 14;
+    -fx-border-color: rgba(167, 139, 250, 0.35);
+    -fx-border-radius: 999;
+    -fx-border-width: 1;
+}
+.profile-genre-chip-muted {
+    -fx-background-color: rgba(255, 255, 255, 0.06);
+    -fx-text-fill: #9898b8;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 999;
+    -fx-padding: 7 14 7 14;
+    -fx-border-color: rgba(255, 255, 255, 0.1);
+    -fx-border-radius: 999;
+    -fx-border-width: 1;
+}
+
+/* ── Settings page ──────────────────────────────────────────────── */
+.settings-section-heading {
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #8888a8;
+    -fx-letter-spacing: 0.12em;
+    -fx-padding: 0 0 8 2;
+}
+.settings-panel {
+    -fx-border-color: rgba(139, 92, 246, 0.12);
+}
+
+.root.theme-light .profile-media-chip,
+.root.theme-light .profile-media-chip-sm {
+    -fx-background-color: rgba(15, 23, 42, 0.55);
+    -fx-text-fill: white;
+    -fx-border-color: rgba(255, 255, 255, 0.35);
+}
+.root.theme-light .profile-media-chip:hover,
+.root.theme-light .profile-media-chip-sm:hover {
+    -fx-background-color: rgba(15, 23, 42, 0.68);
+}
+
+.root.theme-light .profile-header-shell {
+    -fx-background-color: rgba(255, 255, 255, 0.95);
+    -fx-border-color: rgba(124, 58, 237, 0.14);
+}
+.root.theme-light .profile-display-name {
+    -fx-text-fill: #0f172a;
+}
+.root.theme-light .profile-handle {
+    -fx-text-fill: #6d28d9;
+}
+.root.theme-light .profile-email {
+    -fx-text-fill: #475569;
+}
+.root.theme-light .profile-stat-tile {
+    -fx-background-color: rgba(124, 58, 237, 0.06);
+    -fx-border-color: rgba(124, 58, 237, 0.14);
+}
+.root.theme-light .profile-stat-value {
+    -fx-text-fill: #1e1b4b;
+}
+.root.theme-light .profile-stat-label {
+    -fx-text-fill: #64748b;
+}
+.root.theme-light .profile-section-heading,
+.root.theme-light .settings-section-heading {
+    -fx-text-fill: #64748b;
+}
+.root.theme-light .profile-genre-chip {
+    -fx-background-color: rgba(124, 58, 237, 0.12);
+    -fx-text-fill: #5b21b6;
+    -fx-border-color: rgba(124, 58, 237, 0.28);
+}
+.root.theme-light .profile-genre-chip-muted {
+    -fx-background-color: rgba(15, 23, 42, 0.05);
+    -fx-text-fill: #64748b;
+    -fx-border-color: rgba(15, 23, 42, 0.1);
+}
+
+/* Home hero — saved genre blend from Find Your Genre */
+.home-vibe-line {
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #c4b5fd;
+    -fx-padding: 4 0 0 0;
+}
+
 /* Auth pages — centered card on gradient */
 .auth-bg {
     -fx-background-color: linear-gradient(to bottom right, #07070e, #100820, #07070e);
@@ -987,6 +1227,7 @@
 
 .context-menu.tv-song-actions-menu { -fx-min-width: 232px; }
 .context-menu.tv-search-song-menu { -fx-min-width: 188px; }
+.context-menu.tv-account-dropdown { -fx-min-width: 160px; }
 
 /*
  * Context menus render in a separate PopupWindow — they are not descendants of the
@@ -1443,6 +1684,47 @@
     -fx-background-color: rgba(139,92,246,0.24);
 }
 
+/* Find Your Genre — quiz card, progress, chips */
+.genre-quiz-card {
+    -fx-border-color: rgba(139, 92, 246, 0.14);
+}
+.genre-quiz-mode-row {
+    -fx-padding: 4 0 0 0;
+}
+.genre-quiz-progress {
+    -fx-accent: #8b5cf6;
+    -fx-control-inner-background: rgba(255, 255, 255, 0.06);
+}
+.genre-quiz-progress .track {
+    -fx-background-color: rgba(255, 255, 255, 0.08);
+    -fx-background-radius: 8;
+}
+.genre-quiz-progress .bar {
+    -fx-background-color: linear-gradient(to right, #7c3aed, #a78bfa);
+    -fx-background-insets: 0;
+    -fx-background-radius: 8;
+}
+.genre-quiz-answer {
+    -fx-min-height: 72;
+    -fx-padding: 12 16 12 16;
+    -fx-wrap-text: true;
+    -fx-text-alignment: center;
+}
+.genre-quiz-skip {
+    -fx-font-size: 13px;
+}
+.genre-result-chip {
+    -fx-background-color: rgba(139, 92, 246, 0.16);
+    -fx-text-fill: #ddd6fe;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 999;
+    -fx-padding: 8 16 8 16;
+    -fx-border-color: rgba(167, 139, 250, 0.35);
+    -fx-border-radius: 999;
+    -fx-border-width: 1;
+}
+
 /* Status label styling (auth pages) */
 .status-error {
     -fx-text-fill: #ef4444;
@@ -1556,6 +1838,36 @@
 /* Descendant when scene root is an overlay StackPane wrapper */
 .root.theme-light .page-bg {
     -fx-background-color: linear-gradient(to bottom right, #f2f0f8 0%, #e4e0f2 55%, #ebe7f5 100%);
+}
+
+/* Login, create account, forgot password — card was still dark while root went light */
+.root.theme-light.auth-bg {
+    -fx-background-color: linear-gradient(to bottom right, #f2f0f8 0%, #e4e0f2 55%, #ebe7f5 100%);
+}
+
+.root.theme-light .auth-card {
+    -fx-background-color: rgba(255, 255, 255, 0.97);
+    -fx-border-color: rgba(124, 58, 237, 0.22);
+    -fx-effect: dropshadow(gaussian, rgba(76, 29, 149, 0.12), 32, 0, 0, 8);
+}
+
+.root.theme-light .auth-brand {
+    -fx-text-fill: #0f172a;
+}
+
+.root.theme-light .auth-subtitle {
+    -fx-text-fill: #64748b;
+}
+
+.root.theme-light .auth-card .field-label {
+    -fx-text-fill: #64748b;
+}
+
+.root.theme-light .auth-card .hyperlink {
+    -fx-text-fill: #7c3aed;
+}
+.root.theme-light .auth-card .hyperlink:hover {
+    -fx-text-fill: #5b21b6;
 }
 
 .root.theme-light .chrome-bar {
@@ -1725,6 +2037,39 @@
     -fx-background-color: rgba(124, 58, 237, 0.1);
     -fx-text-fill: #312e81;
 }
+.root.theme-light .menu-button.top-bar-account-menu {
+    -fx-background-color: rgba(124, 58, 237, 0.14);
+    -fx-border-color: rgba(91, 33, 182, 0.4);
+    -fx-text-fill: #312e81;
+}
+.root.theme-light .menu-button.top-bar-account-menu .label {
+    -fx-text-fill: #312e81;
+}
+.root.theme-light .menu-button.top-bar-account-menu:hover {
+    -fx-background-color: rgba(124, 58, 237, 0.24);
+    -fx-border-color: rgba(76, 29, 149, 0.55);
+    -fx-text-fill: #1e1b4b;
+}
+.root.theme-light .menu-button.top-bar-account-menu:hover .label {
+    -fx-text-fill: #1e1b4b;
+}
+.root.theme-light .menu-button.top-bar-account-menu > .arrow-button > .arrow {
+    -fx-background-color: #4338ca;
+}
+.root.theme-light .button.top-bar-account-menu {
+    -fx-background-color: rgba(124, 58, 237, 0.14);
+    -fx-border-color: rgba(91, 33, 182, 0.4);
+    -fx-text-fill: #312e81;
+}
+.root.theme-light .button.top-bar-account-menu:hover {
+    -fx-background-color: rgba(124, 58, 237, 0.24);
+    -fx-border-color: rgba(76, 29, 149, 0.55);
+    -fx-text-fill: #1e1b4b;
+}
+.root.theme-light .profile-crop-dialog {
+    -fx-background-color: rgba(255, 255, 255, 0.98);
+    -fx-border-color: rgba(124, 58, 237, 0.22);
+}
 .root.theme-light .top-bar-logout-btn {
     -fx-background-color: rgba(225, 29, 72, 0.1);
     -fx-text-fill: #be123c;
@@ -1737,6 +2082,10 @@
     -fx-background-color: rgba(225, 29, 72, 0.16);
     -fx-text-fill: #9f1239;
     -fx-border-color: rgba(190, 18, 60, 0.4);
+}
+
+.root.theme-light .home-vibe-line {
+    -fx-text-fill: #5b21b6;
 }
 
 .root.theme-light .heading-2xl,
@@ -1897,4 +2246,33 @@
 .root.theme-light .list-view,
 .root.theme-light .list-view:focused {
     -fx-background-color: transparent;
+}
+
+.root.theme-light .genre-quiz-card {
+    -fx-border-color: rgba(124, 58, 237, 0.18);
+}
+.root.theme-light .genre-quiz-progress {
+    -fx-control-inner-background: rgba(15, 23, 42, 0.06);
+}
+.root.theme-light .genre-quiz-progress .track {
+    -fx-background-color: rgba(15, 23, 42, 0.08);
+}
+.root.theme-light .genre-quiz-progress .bar {
+    -fx-background-color: linear-gradient(to right, #6d28d9, #8b5cf6);
+}
+.root.theme-light .quiz-answer,
+.root.theme-light .genre-quiz-answer {
+    -fx-background-color: rgba(124, 58, 237, 0.08);
+    -fx-text-fill: #5b21b6;
+    -fx-border-color: rgba(124, 58, 237, 0.22);
+}
+.root.theme-light .quiz-answer:hover,
+.root.theme-light .genre-quiz-answer:hover {
+    -fx-background-color: rgba(124, 58, 237, 0.14);
+    -fx-border-color: rgba(124, 58, 237, 0.35);
+}
+.root.theme-light .genre-result-chip {
+    -fx-background-color: rgba(124, 58, 237, 0.12);
+    -fx-text-fill: #5b21b6;
+    -fx-border-color: rgba(124, 58, 237, 0.28);
 }

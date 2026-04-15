@@ -5,6 +5,7 @@ import com.example.tunevaultfx.core.Song;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Saves and updates listening analytics in real time.
@@ -125,6 +126,35 @@ public class ListeningEventDAO {
         recordSimpleInteraction(username, song, "PLAYLIST_REMOVE");
     }
 
+    /**
+     * Aggregate listening totals for profile / Wrapped-style UI.
+     */
+    public Optional<ListeningProfileStats> loadListeningProfileStats(String username) throws SQLException {
+        if (username == null || username.isBlank()) {
+            return Optional.empty();
+        }
+        String sql = """
+                SELECT COALESCE(SUM(CASE WHEN le.count_as_play THEN 1 ELSE 0 END), 0) AS play_count,
+                       COALESCE(SUM(le.played_seconds), 0) AS listened_seconds
+                FROM app_user u
+                LEFT JOIN listening_event le ON le.user_id = u.user_id
+                WHERE u.username = ?
+                GROUP BY u.user_id
+                """;
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, username.trim());
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (!rs.next()) {
+                    return Optional.empty();
+                }
+                return Optional.of(
+                        new ListeningProfileStats(
+                                rs.getInt("play_count"), rs.getLong("listened_seconds")));
+            }
+        }
+    }
+
     public List<UserBehaviorEvent> getUserBehaviorEvents(String username) {
         List<UserBehaviorEvent> events = new ArrayList<>();
 
@@ -220,4 +250,6 @@ public class ListeningEventDAO {
             double completionRatio
     ) {
     }
+
+    public record ListeningProfileStats(int countedPlays, long listenedSeconds) {}
 }

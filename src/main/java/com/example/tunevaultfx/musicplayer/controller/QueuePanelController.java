@@ -4,6 +4,7 @@ import com.example.tunevaultfx.core.Song;
 import com.example.tunevaultfx.session.SessionManager;
 import com.example.tunevaultfx.util.CellStyleKit;
 import com.example.tunevaultfx.util.SceneUtil;
+import com.example.tunevaultfx.view.FxmlResources;
 import javafx.animation.FadeTransition;
 import javafx.animation.ParallelTransition;
 import javafx.animation.TranslateTransition;
@@ -194,7 +195,7 @@ public class QueuePanelController {
         if (artist == null || artist.isBlank()) return;
         SessionManager.setSelectedArtist(artist.trim());
         try {
-            SceneUtil.switchScene(queueListView, "artist-profile-page.fxml");
+            SceneUtil.switchScene(queueListView, FxmlResources.ARTIST_PROFILE);
         } catch (IOException e) {
             e.printStackTrace();
         }
