@@ -11,6 +11,7 @@ import com.example.tunevaultfx.playlist.service.PlaylistPickerService;
 import com.example.tunevaultfx.playlist.service.PlaylistSelectionService;
 import com.example.tunevaultfx.playlist.service.PlaylistService;
 import com.example.tunevaultfx.playlist.service.SongSearchService;
+import com.example.tunevaultfx.recommendation.RecommendationConstants;
 import com.example.tunevaultfx.recommendation.RecommendationService;
 import com.example.tunevaultfx.session.SessionManager;
 import com.example.tunevaultfx.user.UserProfile;
@@ -167,9 +168,8 @@ public class PlaylistsPageController {
 
         // Run after scene is rendered so selection + suggestions both fire correctly
         Platform.runLater(() -> {
-            updateSelectedPlaylist();
             attachPlaylistSongsListener();
-            refreshSuggestions();
+            updateSelectedPlaylist();
 
             UiMotionUtil.playStaggeredEntrance(List.of(playlistSidebarCard, playlistSongsCard));
             UiMotionUtil.applyHoverLift(playlistSidebarCard);
@@ -305,9 +305,8 @@ public class PlaylistsPageController {
         playlistListView.getSelectionModel()
                 .selectedItemProperty()
                 .addListener((obs, o, n) -> {
-                    updateSelectedPlaylist();
-                    attachPlaylistSongsListener();  // re-attach to new playlist's list
-                    refreshSuggestions();
+                    attachPlaylistSongsListener(); // re-attach to new playlist's list first
+                    updateSelectedPlaylist(); // refreshes suggestions when a playlist is selected
                     refreshSearchResultsCellFactory();
                 });
 
@@ -368,8 +367,7 @@ public class PlaylistsPageController {
         activePlaylistListener = change -> {
             // Small delay ensures DB write from PlaylistService completes first
             Platform.runLater(() -> {
-                updateSelectedPlaylist();
-                refreshSuggestions();
+                updateSelectedPlaylist(); // includes suggestion refresh for current selection
                 refreshSearchResultsCellFactory();
             });
         };
@@ -422,7 +420,11 @@ public class PlaylistsPageController {
         String username = SessionManager.getCurrentUsername();
 
         ObservableList<Song> suggestions =
-                recommendationService.getSuggestedSongsForPlaylist(username, selected, songs, 12);
+                recommendationService.getSuggestedSongsForPlaylist(
+                        username,
+                        selected,
+                        songs,
+                        RecommendationConstants.PLAYLIST_PAGE_SUGGESTION_COUNT);
 
         if (suggestions == null || suggestions.isEmpty()) {
             hideSuggestionsSection();
@@ -442,7 +444,8 @@ public class PlaylistsPageController {
             suggestionSubtitleLabel.setText(
                     "From your library (not already in \u201c"
                             + playlistName
-                            + "\u201d) \u2014 ranked by fit to this playlist and your taste.");
+                            + "\u201d). Mostly matched to this playlist\u2019s artists & genres, "
+                            + "plus your listening and genre profile.");
         }
     }
 
@@ -875,6 +878,7 @@ public class PlaylistsPageController {
             selectedPlaylistLabel.setText("No playlist selected");
             songCountLabel.setText("Songs: 0");
             totalDurationLabel.setText("Duration: 0:00");
+            hideSuggestionsSection();
             return;
         }
         PlaylistSummary summary = selectionService.buildSummary(profile, selected);
@@ -883,6 +887,7 @@ public class PlaylistsPageController {
         playlistSongsListView.getSelectionModel().clearSelection();
         songCountLabel.setText("Songs: " + summary.getSongCount());
         totalDurationLabel.setText("Duration: " + summary.getFormattedDuration());
+        refreshSuggestions();
     }
 
     private void applyResponsiveDensity(double width) {
