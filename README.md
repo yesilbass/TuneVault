@@ -15,6 +15,15 @@ It currently includes:
 
 The project is organized by responsibility so it is easier to read, maintain, and extend.
 
+### Documentation in this repository
+
+- **[CODEMAP.md](CODEMAP.md)** — package layout, major classes, and where to start reading the code.
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** — license expectations, how to contribute if authorized, and bug-report etiquette.
+- **[SECURITY.md](SECURITY.md)** — how to report vulnerabilities privately and disclosure expectations.
+- **[CHANGELOG.md](CHANGELOG.md)** — notable changes and release history.
+- **[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)** — open-source components used by the app and license pointers.
+- **[LICENSE](LICENSE)** — proprietary terms; all rights reserved (this is not open source).
+
 ---
 
 ## What this project is
@@ -118,7 +127,7 @@ The main Java packages are:
 - `user` - user and profile domain models
 - `util` - shared helpers such as navigation, alerts, toasts, styling, and motion
 
-If you want a beginner-friendly package-by-package explanation, see `CODEMAP.md`.
+If you want a beginner-friendly package-by-package explanation, see **[CODEMAP.md](CODEMAP.md)**.
 
 ---
 
@@ -164,7 +173,7 @@ Current views include:
 - `auth/login-page.fxml`, `auth/create-account-page.fxml`, `auth/forgot-password-page.fxml`
 - `chrome/app-top-bar.fxml`, `chrome/app-sidebar.fxml`
 - `mainmenu/main-menu.fxml`
-- `search/search-page.fxml`, `search/artist-profile-page.fxml`
+- `search/search-page.fxml`, `profile/artist-profile-page.fxml`
 - `playlist/playlists-page.fxml`
 - `wrapped/wrapped-page.fxml`
 - `findyourgenre/findyourgenre-page.fxml`

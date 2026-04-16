@@ -711,7 +711,7 @@ FXML files live under package-style folders (e.g. `auth/`, `search/`). Scene roo
 - `auth/login-page.fxml`, `auth/create-account-page.fxml`, `auth/forgot-password-page.fxml`
 - `chrome/app-top-bar.fxml`, `chrome/app-sidebar.fxml`
 - `mainmenu/main-menu.fxml`
-- `search/search-page.fxml`, `search/artist-profile-page.fxml`
+- `search/search-page.fxml`, `profile/artist-profile-page.fxml`
 - `playlist/playlists-page.fxml`
 - `wrapped/wrapped-page.fxml`
 - `findyourgenre/findyourgenre-page.fxml`
