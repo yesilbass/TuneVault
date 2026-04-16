@@ -90,6 +90,6 @@ public class SettingsPageController {
 
     private static String resolveAppVersion() {
         String v = SettingsPageController.class.getPackage().getImplementationVersion();
-        return v != null && !v.isBlank() ? v : "1.0-SNAPSHOT";
+        return v != null && !v.isBlank() ? v : "0.1.0-SNAPSHOT";
     }
 }

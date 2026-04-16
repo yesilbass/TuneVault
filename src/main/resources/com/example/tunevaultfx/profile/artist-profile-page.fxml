@@ -14,7 +14,7 @@
     </top>
 
     <left>
-        <fx:include source="app-sidebar.fxml"/>
+        <fx:include source="../chrome/app-sidebar.fxml"/>
     </left>
     <!-- ── CENTER ────────────────────────────────── -->
     <center>

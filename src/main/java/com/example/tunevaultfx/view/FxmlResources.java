@@ -31,7 +31,7 @@ public final class FxmlResources {
     public static final String WRAPPED = "wrapped/wrapped-page.fxml";
 
     public static final String SEARCH = "search/search-page.fxml";
-    public static final String ARTIST_PROFILE = "search/artist-profile-page.fxml";
+    public static final String ARTIST_PROFILE = "profile/artist-profile-page.fxml";
 
     public static final String PLAYLISTS = "playlist/playlists-page.fxml";
 }

@@ -21,6 +21,7 @@ The project is organized by responsibility so it is easier to read, maintain, an
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** — license expectations, how to contribute if authorized, and bug-report etiquette.
 - **[SECURITY.md](SECURITY.md)** — how to report vulnerabilities privately and disclosure expectations.
 - **[CHANGELOG.md](CHANGELOG.md)** — notable changes and release history.
+- **[VERSIONING.md](VERSIONING.md)** — when to bump version numbers (milestones, not every commit).
 - **[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)** — open-source components used by the app and license pointers.
 - **[LICENSE](LICENSE)** — proprietary terms; all rights reserved (this is not open source).
 
