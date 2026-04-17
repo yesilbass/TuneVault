@@ -13,14 +13,13 @@
         <fx:include source="../chrome/app-top-bar.fxml"/>
     </top>
 
-    <!-- ── LEFT: app rail ─────────────────────────── -->
     <left>
         <fx:include source="../chrome/app-sidebar.fxml"/>
     </left>
-    <!-- ── CENTER: scrollable playlist body ──── -->
+
     <center>
         <StackPane alignment="TOP_LEFT"
-                   style="-fx-padding: 16 32 16 32;"
+                   styleClass="playlist-page-stack"
                    maxWidth="Infinity" maxHeight="Infinity">
 
             <ScrollPane fx:id="contentRow"
@@ -29,76 +28,127 @@
                         vbarPolicy="AS_NEEDED"
                         maxWidth="Infinity" maxHeight="Infinity"
                         minWidth="0" minHeight="0"
-                        style="-fx-padding: 0 0 24 0;">
-                    <content>
-                        <VBox spacing="0" minHeight="0">
+                        styleClass="playlist-page-scroll"
+                        style="-fx-padding: 0 0 32 0;">
+                <content>
+                    <VBox spacing="0" minHeight="0" styleClass="playlist-page-scroll-root">
 
-                            <VBox fx:id="playlistSongsCard" spacing="12" styleClass="card">
+                        <VBox fx:id="playlistSongsCard"
+                              spacing="0"
+                              styleClass="playlist-page-main-card, card-glow">
 
-                                <HBox alignment="CENTER_LEFT" spacing="16">
+                            <!-- Hero / identity -->
+                            <VBox styleClass="playlist-page-header-block" spacing="0">
+                                <HBox alignment="TOP_LEFT" spacing="24" styleClass="playlist-page-header-row">
                                     <StackPane fx:id="selectedPlaylistCover"
-                                               styleClass="playlist-page-cover-host"/>
-                                    <VBox spacing="4" HBox.hgrow="ALWAYS">
+                                               styleClass="playlist-page-cover-host"
+                                               minWidth="120" minHeight="120"
+                                               prefWidth="120" prefHeight="120"
+                                               maxWidth="120" maxHeight="120"/>
+                                    <VBox spacing="12" HBox.hgrow="ALWAYS" styleClass="playlist-page-title-stack">
+                                        <Label text="PLAYLIST"
+                                               styleClass="overline, playlist-page-eyebrow"
+                                               maxWidth="Infinity"/>
                                         <Label fx:id="selectedPlaylistLabel"
                                                text="No playlist selected"
-                                               styleClass="heading-lg"/>
-                                        <HBox spacing="16" alignment="CENTER_LEFT">
+                                               wrapText="true"
+                                               maxWidth="Infinity"
+                                               styleClass="playlist-page-title, heading-xl"/>
+                                        <HBox spacing="10" alignment="CENTER_LEFT" styleClass="playlist-page-stats-row">
                                             <Label fx:id="songCountLabel"
-                                                   text="Songs: 0"
-                                                   styleClass="body-sm, text-accent"/>
+                                                   text="0 tracks"
+                                                   styleClass="playlist-page-stat"/>
+                                            <Label text="·" styleClass="playlist-page-stat-sep"/>
                                             <Label fx:id="totalDurationLabel"
-                                                   text="Duration: 0:00"
-                                                   styleClass="body-sm, text-accent"/>
+                                                   text="0:00"
+                                                   styleClass="playlist-page-stat"/>
                                             <Label fx:id="playlistVisibilityLabel"
                                                    text="Private"
                                                    managed="false" visible="false"
                                                    styleClass="profile-playlist-vis, profile-playlist-vis-private"/>
                                         </HBox>
                                     </VBox>
-                                    <Button text="+ Add Song"
+                                    <Button text="+ Add songs"
                                             onAction="#handleShowSearchSongs"
-                                            styleClass="btn-accent-soft"/>
+                                            styleClass="btn-accent-soft, playlist-page-add-btn"
+                                            mnemonicParsing="false"/>
                                 </HBox>
-
-                                <Separator/>
-
-                                <HBox alignment="CENTER_RIGHT" spacing="12" styleClass="playlist-songs-toolbar">
-                                    <Region HBox.hgrow="ALWAYS"/>
-                                    <MenuButton fx:id="playlistOrderMenu"
-                                                text="Playlist order"
-                                                mnemonicParsing="false"
-                                                styleClass="btn-ghost, playlist-order-menu"/>
-                                </HBox>
-
-                                <ListView fx:id="playlistSongsListView" minHeight="160"/>
-
-                                <VBox fx:id="suggestionsSection"
-                                      spacing="12"
-                                      visible="false"
-                                      managed="false"
-                                      styleClass="playlist-suggestions-block">
-
-                                    <Separator/>
-
-                                    <HBox alignment="CENTER_LEFT" spacing="12">
-                                        <VBox spacing="4" HBox.hgrow="ALWAYS">
-                                            <Label text="Suggested for you" styleClass="heading-md"/>
-                                            <Label fx:id="suggestionSubtitleLabel"
-                                                   text="From your library — ranked by fit to this playlist and your taste."
-                                                   styleClass="caption"/>
-                                        </VBox>
-                                        <Label text="✦ Smart picks" styleClass="badge, badge-accent"/>
-                                    </HBox>
-
-                                    <ListView fx:id="suggestedSongsListView" minHeight="80"/>
-                                </VBox>
                             </VBox>
 
+                            <Separator styleClass="playlist-page-separator"/>
+
+                            <!-- Transport + sort -->
+                            <HBox alignment="CENTER_LEFT" spacing="14" styleClass="playlist-page-controls-strip">
+                                <Button fx:id="playlistToolbarPlayButton"
+                                        text="▶"
+                                        onAction="#handlePlaylistToolbarPlay"
+                                        styleClass="playlist-toolbar-play"
+                                        prefWidth="52" prefHeight="52"
+                                        minWidth="52" minHeight="52"
+                                        mnemonicParsing="false"/>
+                                <Button fx:id="playlistToolbarShuffleButton"
+                                        text="⇄"
+                                        onAction="#handlePlaylistToolbarShuffle"
+                                        styleClass="player-btn"
+                                        prefWidth="48" prefHeight="48"
+                                        minWidth="48" minHeight="48"
+                                        mnemonicParsing="false"/>
+                                <MenuButton fx:id="playlistToolbarMoreMenu"
+                                            text="⋯"
+                                            mnemonicParsing="false"
+                                            styleClass="btn-ghost, playlist-toolbar-more"
+                                            prefWidth="48" prefHeight="48"
+                                            minWidth="48" minHeight="48"/>
+                                <Region HBox.hgrow="ALWAYS"/>
+                                <MenuButton fx:id="playlistOrderMenu"
+                                            text="Playlist order"
+                                            mnemonicParsing="false"
+                                            styleClass="btn-ghost, playlist-order-menu"/>
+                            </HBox>
+
+                            <Separator styleClass="playlist-page-separator"/>
+
+                            <!-- Track list region -->
+                            <VBox spacing="10" styleClass="playlist-page-tracks-wrap">
+                                <HBox alignment="CENTER_LEFT" spacing="16" styleClass="playlist-tracks-section-head">
+                                    <Label text="Tracks" styleClass="heading-sm, playlist-tracks-head-title"/>
+                                    <Region HBox.hgrow="ALWAYS"/>
+                                    <Label text="Double-click to play · ⋯ for song options"
+                                           styleClass="caption, text-muted"/>
+                                </HBox>
+                                <ListView fx:id="playlistSongsListView"
+                                          minHeight="160"
+                                          styleClass="playlist-tracks-list"/>
+                            </VBox>
+
+                            <VBox fx:id="suggestionsSection"
+                                  spacing="14"
+                                  visible="false"
+                                  managed="false"
+                                  styleClass="playlist-suggestions-block">
+
+                                <Separator styleClass="playlist-page-separator"/>
+
+                                <HBox alignment="CENTER_LEFT" spacing="12" styleClass="playlist-suggestions-head">
+                                    <VBox spacing="6" HBox.hgrow="ALWAYS">
+                                        <Label text="Suggested for you" styleClass="heading-md"/>
+                                        <Label fx:id="suggestionSubtitleLabel"
+                                               text="From your library — ranked by fit to this playlist and your taste."
+                                               styleClass="caption"/>
+                                    </VBox>
+                                    <Label text="✦ Smart picks" styleClass="badge, badge-accent"/>
+                                </HBox>
+
+                                <ListView fx:id="suggestedSongsListView"
+                                          minHeight="80"
+                                          styleClass="playlist-suggestions-list"/>
+                            </VBox>
                         </VBox>
-                    </content>
+
+                    </VBox>
+                </content>
             </ScrollPane>
 
-            <!-- Floating search panel (top-right overlay) -->
             <VBox fx:id="searchSongsPanel"
                   visible="false"
                   managed="false"
@@ -106,37 +156,34 @@
                   spacing="14"
                   StackPane.alignment="TOP_RIGHT"
                   translateX="-8"
-                  styleClass="card-elevated">
-                <children>
+                  styleClass="card-elevated, playlist-search-flyout">
 
-                    <HBox alignment="CENTER_LEFT">
-                        <Label text="Add Songs" styleClass="heading-md"/>
-                        <Region HBox.hgrow="ALWAYS"/>
-                        <Button text="✕"
-                                onAction="#handleHideSearchSongs"
-                                prefWidth="36" prefHeight="36"
-                                styleClass="btn-danger"/>
-                    </HBox>
+                <HBox alignment="CENTER_LEFT">
+                    <Label text="Add songs" styleClass="heading-md"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Button text="✕"
+                            onAction="#handleHideSearchSongs"
+                            prefWidth="36" prefHeight="36"
+                            styleClass="btn-danger"/>
+                </HBox>
 
-                    <TextField fx:id="searchSongsField"
-                               promptText="Title, artist, album or genre…"
-                               prefHeight="42"/>
+                <TextField fx:id="searchSongsField"
+                           promptText="Title, artist, album or genre…"
+                           prefHeight="42"/>
 
-                    <Label text="Double-click a row to play. Use + or the checkmark to add or remove from the playlist."
-                           wrapText="true"
-                           styleClass="caption"/>
+                <Label text="Double-click a row to play. Use + or the checkmark to add or remove from the playlist."
+                       wrapText="true"
+                       styleClass="caption"/>
 
-                    <ListView fx:id="searchResultsListView"
-                              VBox.vgrow="ALWAYS"
-                              prefHeight="380"/>
+                <ListView fx:id="searchResultsListView"
+                          VBox.vgrow="ALWAYS"
+                          prefHeight="380"/>
 
-                </children>
             </VBox>
 
         </StackPane>
     </center>
 
-    <!-- ── BOTTOM ─────────────────────────────────── -->
     <bottom>
         <fx:include source="../musicplayer/controller/mini-player.fxml"/>
     </bottom>

@@ -40,6 +40,27 @@ public final class PlaylistLibraryContextMenu {
         if (profile == null || scene == null || playlistName == null) {
             return menu;
         }
+        populateMenuItems(menu.getItems(), anchor, profile, playlistService, playlistName, refreshLibraryUi);
+        ContextMenuPopupSupport.installThemedPopupHandlers(menu, anchor);
+        return menu;
+    }
+
+    /**
+     * Fills a menu (e.g. {@link javafx.scene.control.MenuButton#getItems()}) with the same actions as
+     * the library playlist context menu. Clears {@code target} first.
+     */
+    public static void populateMenuItems(
+            ObservableList<MenuItem> target,
+            Node anchor,
+            UserProfile profile,
+            PlaylistService playlistService,
+            String playlistName,
+            Runnable refreshLibraryUi) {
+        target.clear();
+        Scene scene = anchor != null ? anchor.getScene() : null;
+        if (profile == null || scene == null || playlistName == null) {
+            return;
+        }
 
         MenuItem addQueue = new MenuItem("Add to queue");
         addQueue.setOnAction(e -> handleAddPlaylistToQueue(profile, playlistName, scene));
@@ -103,16 +124,7 @@ public final class PlaylistLibraryContextMenu {
                     });
         }
 
-        menu.getItems()
-                .addAll(
-                        addQueue,
-                        editInfo,
-                        pinItem,
-                        publicItem,
-                        new SeparatorMenuItem(),
-                        deleteItem);
-        ContextMenuPopupSupport.installThemedPopupHandlers(menu, anchor);
-        return menu;
+        target.addAll(addQueue, editInfo, pinItem, publicItem, new SeparatorMenuItem(), deleteItem);
     }
 
     private static void handleAddPlaylistToQueue(

@@ -3,6 +3,7 @@ package com.example.tunevaultfx.playlist;
 import com.example.tunevaultfx.core.PlaylistNames;
 import com.example.tunevaultfx.core.Song;
 import com.example.tunevaultfx.db.SongDAO;
+import com.example.tunevaultfx.musicplayer.PlayerStyleConstants;
 import com.example.tunevaultfx.musicplayer.controller.MusicPlayerController;
 import com.example.tunevaultfx.playlist.PlaylistCoverGraphic;
 import com.example.tunevaultfx.playlist.cell.PlayableSongCell;
@@ -17,9 +18,11 @@ import com.example.tunevaultfx.recommendation.RecommendationService;
 import com.example.tunevaultfx.session.SessionManager;
 import com.example.tunevaultfx.user.UserProfile;
 import com.example.tunevaultfx.util.SceneUtil;
+import com.example.tunevaultfx.util.ToastUtil;
 import com.example.tunevaultfx.view.FxmlResources;
 import com.example.tunevaultfx.util.UiMotionUtil;
 import javafx.application.Platform;
+import javafx.geometry.Side;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.ListChangeListener;
@@ -118,6 +121,12 @@ public class PlaylistsPageController {
     private StackPane selectedPlaylistCover;
     @FXML
     private MenuButton playlistOrderMenu;
+    @FXML
+    private MenuButton playlistToolbarMoreMenu;
+    @FXML
+    private Button playlistToolbarPlayButton;
+    @FXML
+    private Button playlistToolbarShuffleButton;
 
     // ── Services ──────────────────────────────────────────────────
     /** Active playlist; selection comes from the app sidebar or deep links. */
@@ -170,12 +179,15 @@ public class PlaylistsPageController {
         selectedPlaylistName.addListener(
                 (obs, previous, name) -> SessionManager.setLastPlaylistsPageSelection(name));
         setupListeners();
+        setupPlaylistToolbarTransport();
+        setupPlaylistToolbarMoreMenu();
         setupInitialPlaylistSelection();
         setupSongCells();
         setupSuggestedSongCells();
         installPlaylistSongsListSizing();
         installSuggestedSongsListSizing();
         hideSearchPanel();
+        installPlaylistTracksPlaceholder();
 
         // Run after scene is rendered so motion reads final layout
         Platform.runLater(() -> {
@@ -324,19 +336,119 @@ public class PlaylistsPageController {
                     playlistSongsListView.refresh();
                     suggestedSongsListView.refresh();
                     searchResultsListView.refresh();
+                    refreshPlaylistToolbarTransport();
                 }));
         player.playingProperty()
                 .addListener((obs, o, n) -> Platform.runLater(() -> {
                     playlistSongsListView.refresh();
                     suggestedSongsListView.refresh();
                     searchResultsListView.refresh();
+                    refreshPlaylistToolbarTransport();
                 }));
         player.currentSourcePlaylistNameProperty()
                 .addListener((obs, o, n) -> Platform.runLater(() -> {
                     playlistSongsListView.refresh();
                     suggestedSongsListView.refresh();
                     searchResultsListView.refresh();
+                    refreshPlaylistToolbarTransport();
                 }));
+    }
+
+    private void setupPlaylistToolbarMoreMenu() {
+        if (playlistToolbarMoreMenu == null) {
+            return;
+        }
+        playlistToolbarMoreMenu.setPopupSide(Side.BOTTOM);
+        playlistToolbarMoreMenu.setOnShowing(
+                e ->
+                        PlaylistLibraryContextMenu.populateMenuItems(
+                                playlistToolbarMoreMenu.getItems(),
+                                playlistToolbarMoreMenu,
+                                profile,
+                                playlistService,
+                                selectedPlaylistName.get(),
+                                this::refreshAfterPlaylistLibraryMutation));
+    }
+
+    private void refreshAfterPlaylistLibraryMutation() {
+        Platform.runLater(this::onPlaylistsMapChanged);
+    }
+
+    private void setupPlaylistToolbarTransport() {
+        player.shuffleEnabledProperty()
+                .addListener((obs, o, n) -> Platform.runLater(this::refreshPlaylistToolbarShuffle));
+        refreshPlaylistToolbarTransport();
+    }
+
+    private void refreshPlaylistToolbarTransport() {
+        refreshPlaylistToolbarPlayState();
+        refreshPlaylistToolbarPlayGlyph();
+        refreshPlaylistToolbarShuffle();
+    }
+
+    private void refreshPlaylistToolbarPlayState() {
+        if (playlistToolbarPlayButton == null) {
+            return;
+        }
+        String sel = selectedPlaylistName.get();
+        ObservableList<Song> items = playlistSongsListView.getItems();
+        boolean empty = sel == null || items == null || items.isEmpty();
+        playlistToolbarPlayButton.setDisable(empty);
+    }
+
+    private void refreshPlaylistToolbarPlayGlyph() {
+        if (playlistToolbarPlayButton == null) {
+            return;
+        }
+        String sel = selectedPlaylistName.get();
+        String src = player.getCurrentSourcePlaylistName();
+        if (sel != null
+                && sel.equals(src)
+                && player.getCurrentSong() != null
+                && player.isPlaying()) {
+            playlistToolbarPlayButton.setText("\u23F8");
+        } else {
+            playlistToolbarPlayButton.setText("\u25B6");
+        }
+    }
+
+    private void refreshPlaylistToolbarShuffle() {
+        if (playlistToolbarShuffleButton == null) {
+            return;
+        }
+        playlistToolbarShuffleButton.setText("\u21C4");
+        playlistToolbarShuffleButton
+                .getStyleClass()
+                .setAll(
+                        "button",
+                        player.isShuffleEnabled()
+                                ? PlayerStyleConstants.modeActiveClass()
+                                : PlayerStyleConstants.modeInactiveClass());
+    }
+
+    @FXML
+    private void handlePlaylistToolbarPlay() {
+        if (contentRow == null || contentRow.getScene() == null) {
+            return;
+        }
+        String selected = selectedPlaylistName.get();
+        ObservableList<Song> items = playlistSongsListView.getItems();
+        if (selected == null || items == null || items.isEmpty()) {
+            ToastUtil.info(contentRow.getScene(), "This playlist has no songs to play.");
+            return;
+        }
+        String src = player.getCurrentSourcePlaylistName();
+        if (selected.equals(src)
+                && player.getCurrentSong() != null) {
+            player.togglePlayPause();
+            return;
+        }
+        player.playQueue(items, 0, selected);
+    }
+
+    @FXML
+    private void handlePlaylistToolbarShuffle() {
+        player.toggleShuffle();
     }
 
     /**
@@ -663,15 +775,28 @@ public class PlaylistsPageController {
                 playlistOrderMenu.setDisable(true);
             }
             selectedPlaylistLabel.setText("No playlist selected");
-            songCountLabel.setText("Songs: 0");
-            totalDurationLabel.setText("Duration: 0:00");
+            songCountLabel.setText("0 tracks");
+            totalDurationLabel.setText("0:00");
             hideSuggestionsSection();
             refreshPlaylistHeaderCover(null);
             applyPlaylistVisibilityBadge(null);
+            if (playlistToolbarShuffleButton != null) {
+                playlistToolbarShuffleButton.setDisable(true);
+            }
+            if (playlistToolbarMoreMenu != null) {
+                playlistToolbarMoreMenu.setDisable(true);
+            }
+            refreshPlaylistToolbarTransport();
             return;
         }
         if (playlistOrderMenu != null) {
             playlistOrderMenu.setDisable(false);
+        }
+        if (playlistToolbarShuffleButton != null) {
+            playlistToolbarShuffleButton.setDisable(false);
+        }
+        if (playlistToolbarMoreMenu != null) {
+            playlistToolbarMoreMenu.setDisable(false);
         }
         PlaylistSummary summary = selectionService.buildSummary(profile, selected);
         selectedPlaylistLabel.setText(summary.getPlaylistName());
@@ -679,11 +804,12 @@ public class PlaylistsPageController {
         playlistSongsSorted = new SortedList<>(source, comparatorFor(playlistSortOrder));
         playlistSongsListView.setItems(playlistSongsSorted);
         playlistSongsListView.getSelectionModel().clearSelection();
-        songCountLabel.setText("Songs: " + summary.getSongCount());
-        totalDurationLabel.setText("Duration: " + summary.getFormattedDuration());
+        songCountLabel.setText(trackCountPhrase(summary.getSongCount()));
+        totalDurationLabel.setText(summary.getFormattedDuration());
         refreshPlaylistHeaderCover(selected);
         applyPlaylistVisibilityBadge(selected);
         refreshSuggestions();
+        refreshPlaylistToolbarTransport();
     }
 
     private void setupPlaylistOrderMenu() {
@@ -751,10 +877,32 @@ public class PlaylistsPageController {
         }
         selectedPlaylistCover.getChildren().clear();
         if (playlistName == null || playlistName.isBlank()) {
-            selectedPlaylistCover.getChildren().add(PlaylistCoverGraphic.createPlaceholder(76));
+            selectedPlaylistCover.getChildren().add(PlaylistCoverGraphic.createPlaceholder(120));
         } else {
-            selectedPlaylistCover.getChildren().add(PlaylistCoverGraphic.create(76, playlistName));
+            selectedPlaylistCover.getChildren().add(PlaylistCoverGraphic.create(120, playlistName));
         }
+    }
+
+    private static String trackCountPhrase(int n) {
+        if (n <= 0) {
+            return "0 tracks";
+        }
+        if (n == 1) {
+            return "1 track";
+        }
+        return n + " tracks";
+    }
+
+    private void installPlaylistTracksPlaceholder() {
+        if (playlistSongsListView == null) {
+            return;
+        }
+        Label hint =
+                new Label(
+                        "No songs in this playlist yet.\nUse + Add songs to search your library and add tracks.");
+        hint.setWrapText(true);
+        hint.getStyleClass().add("playlist-tracks-empty-hint");
+        playlistSongsListView.setPlaceholder(hint);
     }
 
     private void installKeyboardShortcuts() {
