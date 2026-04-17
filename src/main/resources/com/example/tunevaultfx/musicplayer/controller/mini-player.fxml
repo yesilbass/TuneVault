@@ -37,12 +37,12 @@
                        style="-fx-cursor: hand;" />
                 <Hyperlink fx:id="miniArtistLink"
                            text=""
-                           styleClass="body-sm"
+                           styleClass="body-sm mini-player-text-link"
                            onAction="#handleOpenArtistProfile" />
                 <Hyperlink fx:id="miniPlaylistLink"
                            text=""
                            maxWidth="190"
-                           styleClass="caption"
+                           styleClass="caption mini-player-text-link"
                            onAction="#handleOpenCurrentPlaylist" />
             </VBox>
         </HBox>

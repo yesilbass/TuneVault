@@ -11,6 +11,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContextMenu;
+import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
 import javafx.scene.Node;
 import javafx.scene.control.ListCell;
@@ -31,7 +32,6 @@ public class PlayableSongCell extends ListCell<Song> {
 
     private final Button   playButton = new Button("▶");
     private final Button   moreButton = new Button("⋯");
-    private final Label    titleLabel  = new Label();
     private final VBox     textBox     = new VBox(3);
     private final Region   spacer      = new Region();
     private final HBox     row         = new HBox(12);
@@ -44,6 +44,7 @@ public class PlayableSongCell extends ListCell<Song> {
     private final Consumer<Song>    onRemoveFromPlaylist;
     private final Supplier<String>  playlistNameSupplier;
     private final Consumer<String>  onOpenArtist;
+    private final Consumer<Song>    onOpenSong;
 
     private final MusicPlayerController player = MusicPlayerController.getInstance();
     private ContextMenu activeMenu;
@@ -150,12 +151,14 @@ public class PlayableSongCell extends ListCell<Song> {
                             Consumer<Song> onAddToPlaylist,
                             Consumer<Song> onRemoveFromPlaylist,
                             Supplier<String> playlistNameSupplier,
-                            Consumer<String> onOpenArtist) {
+                            Consumer<String> onOpenArtist,
+                            Consumer<Song> onOpenSong) {
         this.onPlay               = onPlay;
         this.onAddToPlaylist      = onAddToPlaylist;
         this.onRemoveFromPlaylist = onRemoveFromPlaylist;
         this.playlistNameSupplier = playlistNameSupplier;
         this.onOpenArtist         = onOpenArtist;
+        this.onOpenSong           = onOpenSong;
 
         // Now-playing bar — hidden by default
         nowPlayingBar.setPrefWidth(3);
@@ -180,12 +183,6 @@ public class PlayableSongCell extends ListCell<Song> {
         moreButton.setMaxSize(36, 36);
         moreButton.setFocusTraversable(false);
 
-        // Labels
-        titleLabel.setStyle(
-                "-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: "
-                        + CellStyleKit.getTextPrimary() + ";");
-
-        textBox.getChildren().add(titleLabel);
         textBox.setMaxWidth(Double.MAX_VALUE);
         HBox.setHgrow(textBox, Priority.ALWAYS);
         HBox.setHgrow(spacer,  Priority.ALWAYS);
@@ -243,6 +240,7 @@ public class PlayableSongCell extends ListCell<Song> {
 
         row.setOnMouseClicked(ev -> {
             if (ev.getButton() != MouseButton.PRIMARY || ev.getClickCount() != 2) return;
+            if (CellStyleKit.isInteractiveRowChromeTarget(ev.getTarget())) return;
             Song s = getItem();
             if (s != null && onPlay != null) {
                 onPlay.accept(s);
@@ -284,11 +282,24 @@ public class PlayableSongCell extends ListCell<Song> {
         boolean isCurrent = isCurrentSongRow(song);
         boolean audioPlaying = isCurrent && player.isPlaying();
 
-        titleLabel.setText(song.title());
-        titleLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: "
-                + (isCurrent ? CellStyleKit.getAccentTitle() : CellStyleKit.getTextPrimary()) + ";");
-        while (textBox.getChildren().size() > 1) {
-            textBox.getChildren().remove(1);
+        textBox.getChildren().clear();
+        if (onOpenSong != null) {
+            Hyperlink titleLink =
+                    CellStyleKit.primaryTitleLink(song.title(), () -> onOpenSong.accept(song));
+            if (isCurrent) {
+                titleLink.setStyle(
+                        "-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: "
+                                + CellStyleKit.getAccentTitle()
+                                + "; -fx-border-width: 0; -fx-background-color: transparent;");
+            }
+            textBox.getChildren().add(titleLink);
+        } else {
+            Label titleLabel = new Label(song.title());
+            titleLabel.setStyle(
+                    "-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: "
+                            + (isCurrent ? CellStyleKit.getAccentTitle() : CellStyleKit.getTextPrimary())
+                            + ";");
+            textBox.getChildren().add(titleLabel);
         }
         // Genre omitted on playlist page UI; search still matches genre in SongSearchService.
         HBox meta = CellStyleKit.songMetaLine(song.artist(), null, onOpenArtist);

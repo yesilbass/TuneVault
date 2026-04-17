@@ -10,6 +10,7 @@ import javafx.animation.PauseTransition;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
+import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ContextMenu;
@@ -34,6 +35,7 @@ public class SuggestedSongCell extends ListCell<Song> {
     private final Consumer<Song> onAdd;
     private final Consumer<Song> onPlay;
     private final Consumer<String> onOpenArtist;
+    private final Consumer<Song> onOpenSong;
     private final Consumer<Song> onOpenAddToPlaylist;
 
     private final MusicPlayerController player = MusicPlayerController.getInstance();
@@ -41,7 +43,6 @@ public class SuggestedSongCell extends ListCell<Song> {
     private final HBox      root       = new HBox(10);
     private final StackPane addWrapper = new StackPane();
     private final Button    addButton  = new Button("+");
-    private final Label     titleLabel = new Label();
     private final VBox      textBox    = new VBox(3);
     private final Button    playButton = new Button("▶");
 
@@ -150,10 +151,12 @@ public class SuggestedSongCell extends ListCell<Song> {
             Consumer<Song> onAdd,
             Consumer<Song> onPlay,
             Consumer<String> onOpenArtist,
+            Consumer<Song> onOpenSong,
             Consumer<Song> onOpenAddToPlaylist) {
         this.onAdd = onAdd;
         this.onPlay = onPlay;
         this.onOpenArtist = onOpenArtist;
+        this.onOpenSong = onOpenSong;
         this.onOpenAddToPlaylist = onOpenAddToPlaylist;
 
         // Icon
@@ -166,11 +169,6 @@ public class SuggestedSongCell extends ListCell<Song> {
         playButton.setFocusTraversable(false);
         playButton.setStyle(playDefaultStyle());
 
-        // Labels
-        titleLabel.setStyle(
-                "-fx-font-size: 14px; -fx-font-weight: bold;" +
-                "-fx-text-fill: " + CellStyleKit.getTextPrimary() + ";");
-        textBox.getChildren().add(titleLabel);
         HBox.setHgrow(textBox, Priority.ALWAYS);
 
         // Fixed-size slot for the add button so layout never shifts
@@ -246,6 +244,7 @@ public class SuggestedSongCell extends ListCell<Song> {
 
         root.setOnMouseClicked(ev -> {
             if (ev.getButton() != MouseButton.PRIMARY || ev.getClickCount() != 2) return;
+            if (CellStyleKit.isInteractiveRowChromeTarget(ev.getTarget())) return;
             Song s = getItem();
             if (s != null && onPlay != null) {
                 onPlay.accept(s);
@@ -300,12 +299,26 @@ public class SuggestedSongCell extends ListCell<Song> {
             return;
         }
 
-        titleLabel.setText(song.title());
-        titleLabel.setStyle(
-                "-fx-font-size: 14px; -fx-font-weight: bold;"
-                        + "-fx-text-fill: " + CellStyleKit.getTextPrimary() + ";");
-        while (textBox.getChildren().size() > 1) {
-            textBox.getChildren().remove(1);
+        textBox.getChildren().clear();
+        boolean current = isCurrentSong(song);
+        if (onOpenSong != null) {
+            Hyperlink titleLink =
+                    CellStyleKit.primaryTitleLink(song.title(), () -> onOpenSong.accept(song));
+            if (current) {
+                titleLink.setStyle(
+                        "-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: "
+                                + CellStyleKit.getAccentTitle()
+                                + "; -fx-border-width: 0; -fx-background-color: transparent;");
+            }
+            textBox.getChildren().add(titleLink);
+        } else {
+            Label titleLabel = new Label(song.title());
+            titleLabel.setStyle(
+                    "-fx-font-size: 14px; -fx-font-weight: bold;"
+                            + "-fx-text-fill: "
+                            + (current ? CellStyleKit.getAccentTitle() : CellStyleKit.getTextPrimary())
+                            + ";");
+            textBox.getChildren().add(titleLabel);
         }
         HBox meta = CellStyleKit.songMetaLine(song.artist(), null, onOpenArtist);
         if (!meta.getChildren().isEmpty()) {
@@ -316,7 +329,6 @@ public class SuggestedSongCell extends ListCell<Song> {
         addButton.setStyle(ADD_HIDDEN);
         addButton.setOpacity(0);
 
-        boolean current = isCurrentSong(song);
         boolean audioPlaying = current && player.isPlaying();
         playButton.setText(audioPlaying ? "⏸" : "▶");
         root.setStyle(current ? CellStyleKit.getRowPlaying() : CellStyleKit.getRowDefault());

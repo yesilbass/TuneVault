@@ -9,6 +9,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContextMenu;
+import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.input.ContextMenuEvent;
@@ -28,6 +29,7 @@ public class SearchSongToggleCell extends ListCell<Song> {
     private final Consumer<Song>  onToggleSong;
     private final Consumer<Song>  onPlay;
     private final Consumer<String> onOpenArtist;
+    private final Consumer<Song> onOpenSong;
     private final Consumer<Song>  onOpenAddToPlaylist;
 
     private final MusicPlayerController player = MusicPlayerController.getInstance();
@@ -35,7 +37,6 @@ public class SearchSongToggleCell extends ListCell<Song> {
 
     private final HBox   root        = new HBox(12);
     private final VBox   textBox     = new VBox(3);
-    private final Label  titleLabel  = new Label();
     private final Region spacer      = new Region();
     private final Button actionButton = new Button();
 
@@ -63,11 +64,13 @@ public class SearchSongToggleCell extends ListCell<Song> {
                                 Consumer<Song> onToggleSong,
                                 Consumer<Song> onPlay,
                                 Consumer<String> onOpenArtist,
+                                Consumer<Song> onOpenSong,
                                 Consumer<Song> onOpenAddToPlaylist) {
         this.isSongInPlaylist = isSongInPlaylist;
         this.onToggleSong = onToggleSong;
         this.onPlay = onPlay;
         this.onOpenArtist = onOpenArtist;
+        this.onOpenSong = onOpenSong;
         this.onOpenAddToPlaylist = onOpenAddToPlaylist;
 
         root.setSpacing(12);
@@ -77,11 +80,6 @@ public class SearchSongToggleCell extends ListCell<Song> {
 
         HBox.setHgrow(spacer,  Priority.ALWAYS);
         HBox.setHgrow(textBox, Priority.ALWAYS);
-
-        titleLabel.setStyle(
-                "-fx-font-size: 14px; -fx-font-weight: bold;" +
-                        "-fx-text-fill: " + CellStyleKit.getTextPrimary() + ";");
-        textBox.getChildren().add(titleLabel);
 
         actionButton.setPrefWidth(44);
         actionButton.setPrefHeight(34);
@@ -94,7 +92,10 @@ public class SearchSongToggleCell extends ListCell<Song> {
 
         root.setOnMouseClicked(ev -> {
             if (getItem() == null || isEmpty()) return;
-            if (ev.getButton() == MouseButton.PRIMARY && ev.getClickCount() == 2 && onPlay != null) {
+            if (ev.getButton() == MouseButton.PRIMARY
+                    && ev.getClickCount() == 2
+                    && onPlay != null
+                    && !CellStyleKit.isInteractiveRowChromeTarget(ev.getTarget())) {
                 onPlay.accept(getItem());
                 ev.consume();
             }
@@ -151,14 +152,25 @@ public class SearchSongToggleCell extends ListCell<Song> {
         nowPlayingBar.setVisible(current);
         nowPlayingBar.setManaged(current);
 
-        titleLabel.setText(song.title());
-        titleLabel.setStyle(
-                "-fx-font-size: 14px; -fx-font-weight: bold;"
-                        + "-fx-text-fill: "
-                        + (current ? CellStyleKit.getAccentTitle() : CellStyleKit.getTextPrimary())
-                        + ";");
-        while (textBox.getChildren().size() > 1) {
-            textBox.getChildren().remove(1);
+        textBox.getChildren().clear();
+        if (onOpenSong != null) {
+            Hyperlink titleLink =
+                    CellStyleKit.primaryTitleLink(song.title(), () -> onOpenSong.accept(song));
+            if (current) {
+                titleLink.setStyle(
+                        "-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: "
+                                + CellStyleKit.getAccentTitle()
+                                + "; -fx-border-width: 0; -fx-background-color: transparent;");
+            }
+            textBox.getChildren().add(titleLink);
+        } else {
+            Label titleLabel = new Label(song.title());
+            titleLabel.setStyle(
+                    "-fx-font-size: 14px; -fx-font-weight: bold;"
+                            + "-fx-text-fill: "
+                            + (current ? CellStyleKit.getAccentTitle() : CellStyleKit.getTextPrimary())
+                            + ";");
+            textBox.getChildren().add(titleLabel);
         }
         // Genre omitted in list UI; search field still filters by genre.
         HBox meta = CellStyleKit.songMetaLine(song.artist(), null, onOpenArtist);

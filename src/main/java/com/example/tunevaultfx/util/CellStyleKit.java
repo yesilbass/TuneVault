@@ -2,6 +2,8 @@ package com.example.tunevaultfx.util;
 
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
+import javafx.scene.control.Button;
 import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
 import javafx.scene.layout.*;
@@ -29,6 +31,9 @@ import java.util.function.Consumer;
  * PURPLE / ROSE / GREEN / AMBER — icon and tag colour families
  */
 public final class CellStyleKit {
+
+    /** Style class for hyperlinks styled as body text; works around global {@code .hyperlink:hover { -fx-underline: false }}. */
+    public static final String STYLE_CLASS_INLINE_TEXT_LINK = "tunevault-inline-text-link";
 
     private CellStyleKit() {}
 
@@ -217,13 +222,76 @@ public final class CellStyleKit {
      * Song title plus meta row where the artist is a hyperlink when {@code onOpenArtist} is non-null.
      */
     public static VBox songTextBox(String title, String artist, String genre, Consumer<String> onOpenArtist) {
-        VBox box = new VBox(3, primary(title));
+        return songTextBox(title, artist, genre, onOpenArtist, null);
+    }
+
+    /**
+     * Like {@link #songTextBox(String, String, String, Consumer)} but the title opens the song profile (or
+     * similar) when {@code onOpenSong} is non-null — styled like {@link #primary(String)}, not a blue link.
+     */
+    public static VBox songTextBox(
+            String title,
+            String artist,
+            String genre,
+            Consumer<String> onOpenArtist,
+            Runnable onOpenSong) {
+        Node titleLine = onOpenSong != null ? primaryTitleLink(title, onOpenSong) : primary(title);
+        VBox box = new VBox(3, titleLine);
         HBox meta = songMetaLine(artist, genre, onOpenArtist);
         if (!meta.getChildren().isEmpty()) {
             box.getChildren().add(meta);
         }
         HBox.setHgrow(box, Priority.ALWAYS);
         return box;
+    }
+
+    /**
+     * True when a mouse event target is inside a hyperlink or button — skip row-level double-click play when
+     * the user is interacting with inline actions (song title, artist, ⋯, etc.).
+     */
+    public static boolean isInteractiveRowChromeTarget(Object target) {
+        if (!(target instanceof Node n)) {
+            return false;
+        }
+        for (Node p = n; p != null; p = p.getParent()) {
+            if (p instanceof Hyperlink || p instanceof Button) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Underline on hover so hyperlink targets read as clickable (used for song title → profile, artist → profile).
+     */
+    public static void applyHoverUnderline(Hyperlink link) {
+        link.setOnMouseEntered(e -> link.setUnderline(true));
+        link.setOnMouseExited(e -> link.setUnderline(false));
+    }
+
+    /**
+     * Title control that looks like {@link #primary(String)} but acts as a single-click action (song profile).
+     */
+    public static Hyperlink primaryTitleLink(String text, Runnable onOpen) {
+        Hyperlink link = new Hyperlink(text);
+        link.setVisited(false);
+        link.setFocusTraversable(false);
+        link.setPadding(Insets.EMPTY);
+        link.setUnderline(false);
+        link.setWrapText(true);
+        link.setMaxWidth(Double.MAX_VALUE);
+        link.setStyle(
+                "-fx-font-size: 14px; -fx-font-weight: bold;"
+                        + "-fx-text-fill: " + getTextPrimary() + ";"
+                        + "-fx-border-width: 0;"
+                        + "-fx-background-color: transparent;");
+        link.setOnAction(e -> {
+            onOpen.run();
+            e.consume();
+        });
+        link.getStyleClass().add(STYLE_CLASS_INLINE_TEXT_LINK);
+        applyHoverUnderline(link);
+        return link;
     }
 
     /**
@@ -269,12 +337,14 @@ public final class CellStyleKit {
                 link.setUnderline(false);
                 link.setStyle(
                         "-fx-font-size: 12px; -fx-text-fill: " + getTextSecondary() + ";"
-                                + "-fx-border-width: 0; -fx-underline: false;"
+                                + "-fx-border-width: 0;"
                                 + "-fx-background-color: transparent;");
                 link.setOnAction(e -> {
                     onOpenArtist.accept(a);
                     e.consume();
                 });
+                link.getStyleClass().add(STYLE_CLASS_INLINE_TEXT_LINK);
+                applyHoverUnderline(link);
                 row.getChildren().add(link);
             } else {
                 row.getChildren().add(secondary(a));
