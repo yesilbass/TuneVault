@@ -12,7 +12,6 @@ import com.example.tunevaultfx.playlist.service.PlaylistService;
 import com.example.tunevaultfx.recommendation.RecommendationService;
 import com.example.tunevaultfx.session.SessionManager;
 import com.example.tunevaultfx.user.UserProfile;
-import com.example.tunevaultfx.util.AppTheme;
 import com.example.tunevaultfx.util.CellStyleKit;
 import com.example.tunevaultfx.util.SceneUtil;
 import com.example.tunevaultfx.util.SongContextMenuBuilder;
@@ -30,12 +29,9 @@ import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContextMenu;
-import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
-import javafx.scene.control.ProgressBar;
-import javafx.scene.control.Separator;
 import javafx.scene.input.ContextMenuEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.FlowPane;
@@ -90,13 +86,33 @@ public class MainMenuController {
     private final MapChangeListener<String, ObservableList<Song>> homePlaylistKeysChanged =
             c -> Platform.runLater(this::refreshHomeLibraryStrip);
 
-    /** Inline ▶ / ⏸ on home chart rows; cleared before rebuilding today + all-time charts. */
-    private record ChartPlayBinding(Button button, Song song) {}
-
-    private final List<ChartPlayBinding> chartPlayBindings = new ArrayList<>();
+    private final List<HomeChartsSection.ChartPlayBinding> chartPlayBindings = new ArrayList<>();
 
     /** Re-applies now-playing chrome on static chart rows when {@link #player} changes. */
     private final List<Runnable> chartRowPlaybackSyncers = new ArrayList<>();
+
+    private final HomeChartsSection.ChartUiHost chartUiHost =
+            new HomeChartsSection.ChartUiHost() {
+                @Override
+                public MusicPlayerController player() {
+                    return MainMenuController.this.player;
+                }
+
+                @Override
+                public void registerChartPlayBinding(Button play, Song song) {
+                    chartPlayBindings.add(new HomeChartsSection.ChartPlayBinding(play, song));
+                }
+
+                @Override
+                public void registerChartRowSync(Runnable syncer) {
+                    chartRowPlaybackSyncers.add(syncer);
+                }
+
+                @Override
+                public void openArtistProfile(String artist) {
+                    MainMenuController.this.openArtistProfile(artist);
+                }
+            };
 
     @FXML
     public void initialize() {
@@ -130,8 +146,10 @@ public class MainMenuController {
         bindHomeTodayFlowWrap();
         chartPlayBindings.clear();
         chartRowPlaybackSyncers.clear();
-        loadTodayCharts(user);
-        loadHomeCharts(user);
+        HomeChartsSection.loadTodayCharts(
+                user, homeTodayTracksHost, homeTodayArtistsHost, homeChartsService, chartUiHost);
+        HomeChartsSection.loadHomeCharts(
+                user, homeTopSongsHost, homeTopArtistsHost, homeChartsService, chartUiHost);
 
         player.currentSongProperty()
                 .addListener((o, a, b) -> Platform.runLater(this::refreshHomePlaybackAffordances));
@@ -189,7 +207,7 @@ public class MainMenuController {
     }
 
     private void refreshHomePlaybackAffordances() {
-        for (ChartPlayBinding b : chartPlayBindings) {
+        for (HomeChartsSection.ChartPlayBinding b : chartPlayBindings) {
             if (b.button().getScene() == null) {
                 continue;
             }
@@ -225,380 +243,6 @@ public class MainMenuController {
                         Bindings.createDoubleBinding(
                                 () -> Math.max(340, menuContent.getWidth() - 56),
                                 menuContent.widthProperty()));
-    }
-
-    private void loadTodayCharts(String username) {
-        if (homeTodayTracksHost == null || homeTodayArtistsHost == null) {
-            return;
-        }
-        homeTodayTracksHost.getChildren().clear();
-        homeTodayArtistsHost.getChildren().clear();
-
-        if (username == null || username.isBlank()) {
-            Label signInTracks = new Label("Sign in to see what you\u2019ve played today.");
-            signInTracks.getStyleClass().add("home-charts-column-empty");
-            signInTracks.setWrapText(true);
-            homeTodayTracksHost
-                    .getChildren()
-                    .addAll(
-                            buildChartCardHeader("Today\u2019s top tracks", "Listening time from today only"),
-                            new Separator(),
-                            signInTracks);
-            Label signInArtists = new Label("Sign in to see which artists you\u2019ve played today.");
-            signInArtists.getStyleClass().add("home-charts-column-empty");
-            signInArtists.setWrapText(true);
-            homeTodayArtistsHost
-                    .getChildren()
-                    .addAll(
-                            buildChartCardHeader("Today\u2019s top artists", "Listening time from today only"),
-                            new Separator(),
-                            signInArtists);
-            return;
-        }
-
-        try {
-            List<HomeListeningChartsService.ChartSongEntry> songs =
-                    homeChartsService.loadTopSongsToday(username, 5);
-            List<HomeListeningChartsService.ChartArtistEntry> artists =
-                    homeChartsService.loadTopArtistsToday(username, 5);
-
-            if (songs.isEmpty()) {
-                Label empty = new Label("Nothing logged today yet \u2014 press play and check back later.");
-                empty.getStyleClass().add("home-charts-column-empty");
-                empty.setWrapText(true);
-                homeTodayTracksHost
-                        .getChildren()
-                        .addAll(
-                                buildChartCardHeader("Today\u2019s top tracks", "Listening time from today only"),
-                                new Separator(),
-                                empty);
-            } else {
-                populateSongsChartCard(
-                        homeTodayTracksHost,
-                        songs,
-                        "Today\u2019s top tracks",
-                        "Listening time from today only");
-            }
-
-            if (artists.isEmpty()) {
-                Label empty = new Label("No artist time today yet \u2014 start a playlist.");
-                empty.getStyleClass().add("home-charts-column-empty");
-                empty.setWrapText(true);
-                homeTodayArtistsHost
-                        .getChildren()
-                        .addAll(
-                                buildChartCardHeader("Today\u2019s top artists", "Listening time from today only"),
-                                new Separator(),
-                                empty);
-            } else {
-                populateArtistsChartCard(
-                        homeTodayArtistsHost,
-                        artists,
-                        "Today\u2019s top artists",
-                        "Listening time from today only");
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-            Label err = new Label("Couldn\u2019t load today\u2019s charts.");
-            err.getStyleClass().add("home-charts-column-empty");
-            err.setWrapText(true);
-            homeTodayTracksHost
-                    .getChildren()
-                    .addAll(buildChartCardHeader("Today\u2019s top tracks", ""), new Separator(), err);
-            Label errArtists = new Label(err.getText());
-            errArtists.getStyleClass().add("home-charts-column-empty");
-            errArtists.setWrapText(true);
-            homeTodayArtistsHost
-                    .getChildren()
-                    .addAll(buildChartCardHeader("Today\u2019s top artists", ""), new Separator(), errArtists);
-        }
-    }
-
-    private void loadHomeCharts(String username) {
-        if (homeTopSongsHost == null || homeTopArtistsHost == null) {
-            return;
-        }
-        homeTopSongsHost.getChildren().clear();
-        homeTopArtistsHost.getChildren().clear();
-        homeTopArtistsHost.setVisible(true);
-        homeTopArtistsHost.setManaged(true);
-
-        if (username == null || username.isBlank()) {
-            showHomeChartsPlaceholder(
-                    "Sign in to see charts built from your listening time.");
-            return;
-        }
-
-        try {
-            List<HomeListeningChartsService.ChartSongEntry> songs =
-                    homeChartsService.loadTopSongs(username, 5);
-            List<HomeListeningChartsService.ChartArtistEntry> artists =
-                    homeChartsService.loadTopArtists(username, 5);
-
-            if (songs.isEmpty() && artists.isEmpty()) {
-                showHomeChartsPlaceholder(
-                        "Your charts will appear here after you listen — we rank tracks and artists by the time you spend with them.");
-                return;
-            }
-
-            if (!songs.isEmpty()) {
-                populateSongsChartCard(
-                        homeTopSongsHost,
-                        songs,
-                        "Top tracks",
-                        "By total listening time");
-            } else {
-                Label empty = new Label("No track data yet — press play on something you love.");
-                empty.getStyleClass().add("home-charts-column-empty");
-                empty.setWrapText(true);
-                homeTopSongsHost.getChildren()
-                        .addAll(buildChartCardHeader("Top tracks", "By total listening time"), new Separator(), empty);
-            }
-
-            if (!artists.isEmpty()) {
-                populateArtistsChartCard(
-                        homeTopArtistsHost,
-                        artists,
-                        "Top artists",
-                        "By total listening time");
-            } else {
-                Label empty = new Label("Artist rankings will show up once you have listening history.");
-                empty.getStyleClass().add("home-charts-column-empty");
-                empty.setWrapText(true);
-                homeTopArtistsHost.getChildren()
-                        .addAll(buildChartCardHeader("Top artists", "By total listening time"), new Separator(), empty);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-            showHomeChartsPlaceholder("Couldn\u2019t load charts right now. Everything else still works.");
-        }
-    }
-
-    private void showHomeChartsPlaceholder(String message) {
-        homeTopArtistsHost.setVisible(false);
-        homeTopArtistsHost.setManaged(false);
-        VBox box = new VBox(12);
-        box.setAlignment(Pos.CENTER_LEFT);
-        Label glyph = new Label("\u266B");
-        glyph.getStyleClass().add("home-charts-empty-glyph");
-        Label headline = new Label("Charts unlock with listening");
-        headline.getStyleClass().add("home-charts-empty-title");
-        Label body = new Label(message);
-        body.getStyleClass().add("home-charts-empty-body");
-        body.setWrapText(true);
-        box.getChildren().addAll(glyph, headline, body);
-        homeTopSongsHost.getChildren().add(box);
-    }
-
-    private VBox buildChartCardHeader(String title, String subtitle) {
-        VBox v = new VBox(4);
-        Label t = new Label(title);
-        t.getStyleClass().add("home-charts-card-title");
-        Label s = new Label(subtitle);
-        s.getStyleClass().add("home-charts-card-subtitle");
-        s.setWrapText(true);
-        v.getChildren().addAll(t, s);
-        return v;
-    }
-
-    private void populateSongsChartCard(
-            VBox host,
-            List<HomeListeningChartsService.ChartSongEntry> entries,
-            String title,
-            String subtitle) {
-        int maxSec = entries.stream().mapToInt(HomeListeningChartsService.ChartSongEntry::listenedSeconds).max().orElse(1);
-        host.getChildren().add(buildChartCardHeader(title, subtitle));
-        host.getChildren().add(new Separator());
-        VBox rows = new VBox(12);
-        int rank = 1;
-        for (HomeListeningChartsService.ChartSongEntry e : entries) {
-            rows.getChildren().add(createSongChartRow(rank++, e, maxSec));
-        }
-        host.getChildren().add(rows);
-    }
-
-    private void populateArtistsChartCard(
-            VBox host,
-            List<HomeListeningChartsService.ChartArtistEntry> entries,
-            String title,
-            String subtitle) {
-        int maxSec = entries.stream().mapToInt(HomeListeningChartsService.ChartArtistEntry::listenedSeconds).max().orElse(1);
-        host.getChildren().add(buildChartCardHeader(title, subtitle));
-        host.getChildren().add(new Separator());
-        VBox rows = new VBox(12);
-        int rank = 1;
-        for (HomeListeningChartsService.ChartArtistEntry e : entries) {
-            rows.getChildren().add(createArtistChartRow(rank++, e, maxSec));
-        }
-        host.getChildren().add(rows);
-    }
-
-    private HBox createSongChartRow(
-            int rank, HomeListeningChartsService.ChartSongEntry entry, int maxSeconds) {
-        Song song = entry.song();
-        int sec = entry.listenedSeconds();
-
-        StackPane rankBadge = new StackPane();
-        rankBadge.setMinSize(40, 40);
-        rankBadge.setPrefSize(40, 40);
-        rankBadge.setMaxSize(40, 40);
-        rankBadge.getStyleClass().addAll("home-charts-rank", "home-charts-rank--" + rank);
-        Label rankLbl = new Label(Integer.toString(rank));
-        rankLbl.getStyleClass().add("home-charts-rank-label");
-        rankBadge.getChildren().add(rankLbl);
-
-        Label title = new Label(song.title());
-        title.getStyleClass().add("home-charts-row-title");
-        title.setWrapText(true);
-
-        Region edgeBar = CellStyleKit.nowPlayingEdgeBar();
-
-        Hyperlink artistLink = new Hyperlink(song.artist());
-        artistLink.getStyleClass().add("home-charts-row-meta-link");
-        artistLink.setOnAction(ev -> openArtistProfile(song.artist()));
-
-        VBox textCol = new VBox(2, title, artistLink);
-        textCol.setMaxWidth(Double.MAX_VALUE);
-        HBox.setHgrow(textCol, Priority.ALWAYS);
-
-        Label timeLbl = new Label(formatListenTime(sec));
-        timeLbl.getStyleClass().add("home-charts-row-time");
-
-        HBox topLine = new HBox(12, textCol, timeLbl);
-        topLine.setAlignment(Pos.CENTER_LEFT);
-
-        ProgressBar bar = new ProgressBar((double) sec / Math.max(1, maxSeconds));
-        bar.setMaxWidth(Double.MAX_VALUE);
-        bar.setPrefHeight(5);
-        bar.getStyleClass().add("home-charts-progress");
-
-        VBox rightCol = new VBox(8, topLine, bar);
-        rightCol.setMaxWidth(Double.MAX_VALUE);
-        HBox.setHgrow(rightCol, Priority.ALWAYS);
-
-        Button play = new Button("\u25B6");
-        play.setStyle(homeFeedPlayButtonStyle());
-        play.setPrefSize(36, 36);
-        play.setMinSize(36, 36);
-        play.setFocusTraversable(false);
-        play.setOnAction(ev -> player.playSingleSong(song));
-        chartPlayBindings.add(new ChartPlayBinding(play, song));
-
-        HBox row = new HBox(14, edgeBar, rankBadge, rightCol, play);
-        row.setAlignment(Pos.CENTER_LEFT);
-        row.setPadding(new Insets(10, 12, 10, 10));
-        row.getStyleClass().add("home-charts-row");
-
-        Runnable syncChartRowPlayingChrome =
-                () -> {
-                    if (row.getScene() == null) {
-                        return;
-                    }
-                    Song cur = player.getCurrentSong();
-                    boolean isCur = cur != null && cur.songId() == song.songId();
-                    edgeBar.setVisible(isCur);
-                    edgeBar.setManaged(isCur);
-                    CellStyleKit.markPlaying(row, isCur);
-                    if (isCur) {
-                        title.setStyle("-fx-text-fill: " + CellStyleKit.getAccentTitle() + ";");
-                    } else {
-                        title.setStyle(null);
-                    }
-                };
-        chartRowPlaybackSyncers.add(syncChartRowPlayingChrome);
-        syncChartRowPlayingChrome.run();
-
-        row.setOnMouseClicked(
-                ev -> {
-                    if (ev.getButton() == MouseButton.PRIMARY && ev.getClickCount() == 2) {
-                        player.playSingleSong(song);
-                        ev.consume();
-                    }
-                });
-        row.addEventFilter(
-                ContextMenuEvent.CONTEXT_MENU_REQUESTED,
-                ev -> {
-                    ContextMenu cm =
-                            SongContextMenuBuilder.build(
-                                    song, row, SongContextMenuBuilder.Spec.general());
-                    cm.show(row, ev.getScreenX(), ev.getScreenY());
-                    ev.consume();
-                });
-
-        return row;
-    }
-
-    private HBox createArtistChartRow(
-            int rank, HomeListeningChartsService.ChartArtistEntry entry, int maxSeconds) {
-        String name = entry.artistName();
-        int sec = entry.listenedSeconds();
-
-        StackPane rankBadge = new StackPane();
-        rankBadge.setMinSize(40, 40);
-        rankBadge.setPrefSize(40, 40);
-        rankBadge.setMaxSize(40, 40);
-        rankBadge.getStyleClass().addAll("home-charts-rank", "home-charts-rank-artist--" + rank);
-        Label rankLbl = new Label(Integer.toString(rank));
-        rankLbl.getStyleClass().add("home-charts-rank-label");
-        rankBadge.getChildren().add(rankLbl);
-
-        Label title = new Label(name);
-        title.getStyleClass().add("home-charts-row-title");
-        title.setWrapText(true);
-
-        Label meta = new Label("Artist");
-        meta.getStyleClass().add("home-charts-row-meta");
-
-        VBox textCol = new VBox(2, title, meta);
-        textCol.setMaxWidth(Double.MAX_VALUE);
-        HBox.setHgrow(textCol, Priority.ALWAYS);
-
-        Label timeLbl = new Label(formatListenTime(sec));
-        timeLbl.getStyleClass().add("home-charts-row-time");
-
-        HBox topLine = new HBox(12, textCol, timeLbl);
-        topLine.setAlignment(Pos.CENTER_LEFT);
-
-        ProgressBar bar = new ProgressBar((double) sec / Math.max(1, maxSeconds));
-        bar.setMaxWidth(Double.MAX_VALUE);
-        bar.setPrefHeight(5);
-        bar.getStyleClass().add("home-charts-progress home-charts-progress-artist");
-
-        VBox rightCol = new VBox(8, topLine, bar);
-        rightCol.setMaxWidth(Double.MAX_VALUE);
-        HBox.setHgrow(rightCol, Priority.ALWAYS);
-
-        HBox row = new HBox(14, rankBadge, rightCol);
-        row.setAlignment(Pos.CENTER_LEFT);
-        row.setPadding(new Insets(10, 12, 10, 10));
-        row.getStyleClass().add("home-charts-row");
-        CellStyleKit.addHover(row);
-
-        row.setOnMouseClicked(
-                ev -> {
-                    if (ev.getButton() == MouseButton.PRIMARY) {
-                        openArtistProfile(name);
-                        ev.consume();
-                    }
-                });
-
-        return row;
-    }
-
-    private static String formatListenTime(int totalSeconds) {
-        if (totalSeconds <= 0) {
-            return "0 min";
-        }
-        if (totalSeconds < 60) {
-            return totalSeconds + " sec";
-        }
-        int minutes = totalSeconds / 60;
-        if (minutes < 60) {
-            return minutes + (minutes == 1 ? " min" : " min");
-        }
-        int hours = minutes / 60;
-        int m = minutes % 60;
-        return hours + "h " + m + "m";
     }
 
     private void refreshHomeLibraryStrip() {
@@ -873,12 +517,12 @@ public class MainMenuController {
                                 }
 
                                 Label glyph = new Label("\u266A");
-                                glyph.setStyle(homeFeedNoteGlyphStyle());
+                                glyph.setStyle(HomeFeedStyles.noteGlyphStyle());
                                 StackPane icon = new StackPane(glyph);
                                 icon.setPrefSize(36, 36);
                                 icon.setMinSize(36, 36);
                                 icon.setMaxSize(36, 36);
-                                icon.setStyle(homeFeedNoteIconBoxStyle());
+                                icon.setStyle(HomeFeedStyles.noteIconBoxStyle());
 
                                 Song curSong = player.getCurrentSong();
                                 boolean current = curSong != null && curSong.songId() == song.songId();
@@ -907,7 +551,7 @@ public class MainMenuController {
                                 HBox.setHgrow(sp, Priority.ALWAYS);
 
                                 Button play = new Button("\u25B6");
-                                play.setStyle(homeFeedPlayButtonStyle());
+                                play.setStyle(HomeFeedStyles.playButtonStyle());
                                 play.setPrefSize(34, 34);
                                 play.setFocusTraversable(false);
                                 play.setText(current && player.isPlaying() ? "⏸" : "▶");
@@ -1015,31 +659,6 @@ public class MainMenuController {
         if (homeFeedRow != null) {
             homeFeedRow.setSpacing(width < 1100 ? 16 : 20);
         }
-    }
-
-    private static String homeFeedNoteGlyphStyle() {
-        String fill = AppTheme.isLightMode() ? "#5b21b6" : "#a78bfa";
-        return "-fx-font-size: 15px; -fx-text-fill: " + fill + "; -fx-font-weight: bold;";
-    }
-
-    private static String homeFeedNoteIconBoxStyle() {
-        if (AppTheme.isLightMode()) {
-            return "-fx-background-color: rgba(124,58,237,0.14);"
-                    + "-fx-background-radius: 10;"
-                    + "-fx-border-color: rgba(124,58,237,0.32);"
-                    + "-fx-border-radius: 10; -fx-border-width: 1;";
-        }
-        return "-fx-background-color: rgba(139,92,246,0.14);"
-                + "-fx-background-radius: 10;"
-                + "-fx-border-color: rgba(139,92,246,0.22);"
-                + "-fx-border-radius: 10; -fx-border-width: 1;";
-    }
-
-    private static String homeFeedPlayButtonStyle() {
-        String fill = AppTheme.isLightMode() ? "#5b21b6" : "#7c3aed";
-        return "-fx-background-color: transparent; -fx-text-fill: "
-                + fill
-                + "; -fx-font-size: 12px; -fx-font-weight: bold;";
     }
 
 }

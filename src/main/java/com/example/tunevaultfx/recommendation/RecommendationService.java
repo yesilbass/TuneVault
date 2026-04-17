@@ -287,6 +287,12 @@ public class RecommendationService {
         return searchRankingService.getRankedSearchArtists(username, query, allSongs, limit);
     }
 
+    /** Blended song + artist rows in recommendation-aware order. */
+    public List<RankedSearchRow> getRankedCatalogSearchRows(
+            String username, String query, ObservableList<Song> allSongs, int limit) {
+        return searchRankingService.getRankedCatalogSearchRows(username, query, allSongs, limit);
+    }
+
     // ── Helpers ───────────────────────────────────────────────────
 
     private Map<String, Double> loadGenreBoost(String username) {

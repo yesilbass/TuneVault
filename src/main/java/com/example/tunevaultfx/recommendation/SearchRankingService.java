@@ -10,103 +10,130 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * Ranks songs and artists for a search query, personalised by the user's
- * listening behaviour.
+ * Ranks songs and artists for a search query, personalised by the user's listening behaviour.
  *
- * Extracted from RecommendationService because search ranking is a completely
- * separate concern from playlist suggestions. Changes to one should never
- * require touching the other.
+ * <p>Catalog search blends songs and artists in one ordering. Text matching is <strong>prefix
+ * only</strong> (normalized title / artist / album / genre must start with the query). Ranking then
+ * blends that with personal taste on a common score scale.
  */
 public class SearchRankingService {
 
     private final RecommendationEngine   engine            = new RecommendationEngine();
     private final UserGenreDiscoveryDAO genreDiscoveryDAO = new UserGenreDiscoveryDAO();
 
+    private record ScoredCandidate(RankedSearchRow row, double raw) {}
+
     /**
-     * Returns songs matching {@code query}, ranked so the best fit for
-     * THIS user appears first.
-     *
-     * Ranking factors (descending priority):
-     *  1. Text match quality (title start > artist start > contains)
-     *  2. User affinity (liked artists / genres float to the top)
-     *  3. Strongly disliked songs are excluded
+     * Songs and artists in one list, best match first for this user (mixed types).
      */
-    public ObservableList<Song> getRankedSearchSongs(String username,
-                                                     String query,
-                                                     ObservableList<Song> allSongs,
-                                                     int limit) {
-        String normalizedQuery = engine.normalize(query);
-        if (normalizedQuery.isBlank() || allSongs == null)
-            return FXCollections.observableArrayList();
-
-        RecommendationProfile profile =
-                engine.buildProfileForUser(username, loadGenreBoost(username));
-
-        record ScoredSong(Song song, double score) {}
-        List<ScoredSong> ranked = new ArrayList<>();
-
-        for (Song song : allSongs) {
-            if (song == null) continue;
-            if (profile.strongNegativeSongIds().contains(song.songId())) continue;
-
-            double textScore = songTextMatchScore(song, normalizedQuery);
-            if (textScore <= 0.0) continue;
-
-            // Blend text relevance with personal affinity (incl. this track if you've played it)
-            double userAffinity =
-                    profile.artistAffinity().getOrDefault(engine.normalize(song.artist()), 0.0) * 0.3
-                            + profile.genreAffinity()
-                                    .getOrDefault(engine.normalize(song.genre()), 0.0)
-                                    * 0.2
-                            + profile.songAffinity().getOrDefault(song.songId(), 0.0) * 0.25;
-
-            ranked.add(new ScoredSong(song, textScore + userAffinity));
+    public List<RankedSearchRow> getRankedCatalogSearchRows(
+            String username, String query, ObservableList<Song> allSongs, int limit) {
+        List<ScoredCandidate> candidates = collectScoredCandidates(username, query, allSongs);
+        if (candidates.isEmpty()) {
+            return List.of();
         }
+        double max = candidates.stream().mapToDouble(ScoredCandidate::raw).max().orElse(1.0);
+        if (max <= 0.0) {
+            max = 1.0;
+        }
+        final double m = max;
+        candidates.sort(
+                Comparator.comparingDouble((ScoredCandidate c) -> c.raw / m)
+                        .reversed()
+                        .thenComparingDouble(ScoredCandidate::raw)
+                        .reversed());
+        return candidates.stream().limit(limit).map(ScoredCandidate::row).toList();
+    }
 
-        ranked.sort(Comparator.comparingDouble(ScoredSong::score).reversed());
-
-        return ranked.stream()
-                .limit(limit)
-                .map(ScoredSong::song)
+    /**
+     * Songs only, same scoring as {@link #getRankedCatalogSearchRows} (for callers that need a song list).
+     */
+    public ObservableList<Song> getRankedSearchSongs(
+            String username, String query, ObservableList<Song> allSongs, int limit) {
+        List<ScoredCandidate> songs =
+                collectScoredCandidates(username, query, allSongs).stream()
+                        .filter(c -> c.row instanceof RankedSearchRow.SongHit)
+                        .sorted(Comparator.comparingDouble(ScoredCandidate::raw).reversed())
+                        .limit(limit)
+                        .toList();
+        return songs.stream()
+                .map(c -> ((RankedSearchRow.SongHit) c.row).song())
                 .collect(Collectors.toCollection(FXCollections::observableArrayList));
     }
 
     /**
-     * Returns artist names matching {@code query}, ranked by text quality
-     * and the user's artist/genre affinity.
+     * Artists only, same scoring as {@link #getRankedCatalogSearchRows}.
      */
-    public ObservableList<String> getRankedSearchArtists(String username,
-                                                         String query,
-                                                         ObservableList<Song> allSongs,
-                                                         int limit) {
+    public ObservableList<String> getRankedSearchArtists(
+            String username, String query, ObservableList<Song> allSongs, int limit) {
+        List<ScoredCandidate> artists =
+                collectScoredCandidates(username, query, allSongs).stream()
+                        .filter(c -> c.row instanceof RankedSearchRow.ArtistHit)
+                        .sorted(Comparator.comparingDouble(ScoredCandidate::raw).reversed())
+                        .limit(limit)
+                        .toList();
+        return artists.stream()
+                .map(c -> ((RankedSearchRow.ArtistHit) c.row).artistName())
+                .collect(Collectors.toCollection(FXCollections::observableArrayList));
+    }
+
+    private List<ScoredCandidate> collectScoredCandidates(
+            String username, String query, ObservableList<Song> allSongs) {
         String normalizedQuery = engine.normalize(query);
-        if (normalizedQuery.isBlank() || allSongs == null)
-            return FXCollections.observableArrayList();
+        if (normalizedQuery.isBlank() || allSongs == null) {
+            return List.of();
+        }
 
         RecommendationProfile profile =
                 engine.buildProfileForUser(username, loadGenreBoost(username));
-        Map<String, Double> ranked = new HashMap<>();
+
+        List<ScoredCandidate> songRows = new ArrayList<>();
+        Map<String, Double> artistBestRaw = new HashMap<>();
 
         for (Song song : allSongs) {
-            if (song == null || song.artist() == null || song.artist().isBlank()) continue;
+            if (song == null) {
+                continue;
+            }
 
+            double textScore = songTextMatchScore(song, normalizedQuery);
+            if (textScore > 0.0) {
+                double personalize = songPersonalizationBlend(profile, song);
+                double strongDislikePenalty =
+                        profile.strongNegativeSongIds().contains(song.songId()) ? 6.0 : 0.0;
+                double raw = textScore + personalize - strongDislikePenalty;
+                songRows.add(new ScoredCandidate(new RankedSearchRow.SongHit(song), raw));
+            }
+
+            if (song.artist() == null || song.artist().isBlank()) {
+                continue;
+            }
             String artist = song.artist();
-            double textScore = artistTextMatchScore(artist, normalizedQuery);
-            if (textScore <= 0.0) continue;
-
-            double affinity =
-                    profile.artistAffinity().getOrDefault(engine.normalize(artist), 0.0) * 1.5 +
-                            profile.genreAffinity().getOrDefault(engine.normalize(song.genre()), 0.0);
-
-            double finalScore = (textScore * 0.65) + (affinity * 0.35);
-            ranked.merge(artist, finalScore, Math::max);
+            double artistText = artistTextMatchScore(artist, normalizedQuery);
+            if (artistText <= 0.0) {
+                continue;
+            }
+            double artistPersonal = artistPersonalizationFromSong(profile, artist, song);
+            double artistRaw = artistText + artistPersonal;
+            artistBestRaw.merge(artist, artistRaw, Math::max);
         }
 
-        return ranked.entrySet().stream()
-                .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
-                .limit(limit)
-                .map(Map.Entry::getKey)
-                .collect(Collectors.toCollection(FXCollections::observableArrayList));
+        List<ScoredCandidate> out = new ArrayList<>(songRows);
+        for (var e : artistBestRaw.entrySet()) {
+            out.add(new ScoredCandidate(new RankedSearchRow.ArtistHit(e.getKey()), e.getValue()));
+        }
+        return out;
+    }
+
+    /** Stronger taste weighting so search feels closer to “for you” recommendations. */
+    private double songPersonalizationBlend(RecommendationProfile profile, Song song) {
+        return profile.artistAffinity().getOrDefault(engine.normalize(song.artist()), 0.0) * 0.55
+                + profile.genreAffinity().getOrDefault(engine.normalize(song.genre()), 0.0) * 0.40
+                + profile.songAffinity().getOrDefault(song.songId(), 0.0) * 0.50;
+    }
+
+    private double artistPersonalizationFromSong(RecommendationProfile profile, String artist, Song song) {
+        return profile.artistAffinity().getOrDefault(engine.normalize(artist), 0.0) * 0.55
+                + profile.genreAffinity().getOrDefault(engine.normalize(song.genre()), 0.0) * 0.40;
     }
 
     private Map<String, Double> loadGenreBoost(String username) {
@@ -120,26 +147,48 @@ public class SearchRankingService {
 
     // ── Text match scoring ─────────────────────────────────────────
 
+    /**
+     * Prefix-only: a song matches only if title, artist, album, or genre (normalized) starts with
+     * the full query — no infix “contains” matches.
+     */
     private double songTextMatchScore(Song song, String query) {
+        return songTextPrefixScore(song, query);
+    }
+
+    private double songTextPrefixScore(Song song, String query) {
+        if (query.isEmpty()) {
+            return 0.0;
+        }
         String title  = engine.normalize(song.title());
         String artist = engine.normalize(song.artist());
         String album  = engine.normalize(song.album());
         String genre  = engine.normalize(song.genre());
 
         double score = 0.0;
-        if (title.startsWith(query))               score = Math.max(score, 10.0);
-        if (artist.startsWith(query))              score = Math.max(score, 9.0);
-        if (title.contains(query))                 score = Math.max(score, 7.0);
-        if (artist.contains(query))                score = Math.max(score, 6.5);
-        if (!genre.isBlank()  && genre.contains(query))  score = Math.max(score, 5.0);
-        if (!album.isBlank()  && album.contains(query))  score = Math.max(score, 4.0);
+        if (title.startsWith(query)) {
+            score = Math.max(score, 10.0);
+        }
+        if (artist.startsWith(query)) {
+            score = Math.max(score, 9.0);
+        }
+        if (!album.isBlank() && album.startsWith(query)) {
+            score = Math.max(score, 7.0);
+        }
+        if (!genre.isBlank() && genre.startsWith(query)) {
+            score = Math.max(score, 5.0);
+        }
         return score;
     }
 
     private double artistTextMatchScore(String artistName, String query) {
+        return artistTextPrefixScore(artistName, query);
+    }
+
+    private double artistTextPrefixScore(String artistName, String query) {
+        if (query.isEmpty()) {
+            return 0.0;
+        }
         String artist = engine.normalize(artistName);
-        if (artist.startsWith(query)) return 10.0;
-        if (artist.contains(query))   return 7.0;
-        return 0.0;
+        return artist.startsWith(query) ? 10.0 : 0.0;
     }
 }
