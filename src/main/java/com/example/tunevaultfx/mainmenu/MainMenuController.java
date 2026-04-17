@@ -18,6 +18,7 @@ import com.example.tunevaultfx.util.SongContextMenuBuilder;
 import com.example.tunevaultfx.util.UiMotionUtil;
 import com.example.tunevaultfx.view.FxmlResources;
 import javafx.application.Platform;
+import javafx.scene.control.Hyperlink;
 import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
 import javafx.collections.MapChangeListener;
@@ -111,6 +112,11 @@ public class MainMenuController {
                 @Override
                 public void openArtistProfile(String artist) {
                     MainMenuController.this.openArtistProfile(artist);
+                }
+
+                @Override
+                public void openSongProfile(Song song) {
+                    MainMenuController.this.openSongProfile(song);
                 }
             };
 
@@ -536,14 +542,19 @@ public class MainMenuController {
                                                 song.title(),
                                                 song.artist(),
                                                 null,
-                                                MainMenuController.this::openArtistProfile);
+                                                MainMenuController.this::openArtistProfile,
+                                                () -> MainMenuController.this.openSongProfile(song));
                                 if (current && !text.getChildren().isEmpty()) {
                                     Node head = text.getChildren().get(0);
+                                    String playingTitleStyle =
+                                            "-fx-font-size: 14px; -fx-font-weight: bold;-fx-text-fill: "
+                                                    + CellStyleKit.getAccentTitle()
+                                                    + ";-fx-border-width: 0;"
+                                                    + "-fx-background-color: transparent;";
                                     if (head instanceof Label lab) {
-                                        lab.setStyle(
-                                                "-fx-font-size: 14px; -fx-font-weight: bold;-fx-text-fill: "
-                                                        + CellStyleKit.getAccentTitle()
-                                                        + ";");
+                                        lab.setStyle(playingTitleStyle);
+                                    } else if (head instanceof Hyperlink h) {
+                                        h.setStyle(playingTitleStyle);
                                     }
                                 }
 
@@ -565,7 +576,9 @@ public class MainMenuController {
                                 row.setOnMouseClicked(
                                         ev -> {
                                             if (ev.getButton() == MouseButton.PRIMARY
-                                                    && ev.getClickCount() == 2) {
+                                                    && ev.getClickCount() == 2
+                                                    && !CellStyleKit.isInteractiveRowChromeTarget(
+                                                            ev.getTarget())) {
                                                 player.playSingleSong(song);
                                                 ev.consume();
                                             }
@@ -616,7 +629,15 @@ public class MainMenuController {
                                 StackPane icon =
                                         CellStyleKit.iconBox(
                                                 initial, CellStyleKit.Palette.ROSE, true);
-                                VBox text = CellStyleKit.textBox(artist, "Artist");
+                                VBox text = new VBox(3);
+                                Hyperlink nameLink =
+                                        CellStyleKit.primaryTitleLink(
+                                                artist,
+                                                () ->
+                                                        MainMenuController.this.openArtistProfile(
+                                                                artist));
+                                text.getChildren().addAll(nameLink, CellStyleKit.secondary("Artist"));
+                                HBox.setHgrow(text, Priority.ALWAYS);
                                 Region sp = new Region();
                                 HBox.setHgrow(sp, Priority.ALWAYS);
 
@@ -648,6 +669,19 @@ public class MainMenuController {
         try {
             Node n = forYouListView != null ? forYouListView : menuContent;
             SceneUtil.switchScene(n, FxmlResources.ARTIST_PROFILE);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void openSongProfile(Song song) {
+        if (song == null) {
+            return;
+        }
+        SessionManager.setSelectedSong(song);
+        try {
+            Node n = forYouListView != null ? forYouListView : menuContent;
+            SceneUtil.switchScene(n, FxmlResources.SONG_PROFILE);
         } catch (IOException e) {
             e.printStackTrace();
         }

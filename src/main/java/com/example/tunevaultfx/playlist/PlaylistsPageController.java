@@ -304,7 +304,8 @@ public class PlaylistsPageController {
                         this::showAddToPlaylistPicker,
                         this::removeSongFromSelectedPlaylist,
                         this::getSelectedPlaylistName,
-                        this::openArtistProfile));
+                        this::openArtistProfile,
+                        this::openSongProfile));
         refreshSearchResultsCellFactory();
     }
 
@@ -314,6 +315,7 @@ public class PlaylistsPageController {
                         this::addSuggestedSongToPlaylist,
                         this::playSuggestedSong,
                         this::openArtistProfile,
+                        this::openSongProfile,
                         this::showAddToPlaylistPicker));
     }
 
@@ -324,6 +326,7 @@ public class PlaylistsPageController {
                         this::toggleSongInSelectedPlaylist,
                         this::playSongFromSearchPanel,
                         this::openArtistProfile,
+                        this::openSongProfile,
                         this::showAddToPlaylistPicker));
     }
 
@@ -465,6 +468,16 @@ public class PlaylistsPageController {
         SessionManager.setSelectedArtist(artist.trim());
         try {
             SceneUtil.switchScene(contentRow, FxmlResources.ARTIST_PROFILE);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void openSongProfile(Song song) {
+        if (song == null) return;
+        SessionManager.setSelectedSong(song);
+        try {
+            SceneUtil.switchScene(contentRow, FxmlResources.SONG_PROFILE);
         } catch (IOException e) {
             e.printStackTrace();
         }

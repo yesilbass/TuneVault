@@ -36,6 +36,8 @@ public final class HomeChartsSection {
         void registerChartRowSync(Runnable syncer);
 
         void openArtistProfile(String artist);
+
+        void openSongProfile(Song song);
     }
 
     private HomeChartsSection() {}
@@ -280,15 +282,17 @@ public final class HomeChartsSection {
         rankLbl.getStyleClass().add("home-charts-rank-label");
         rankBadge.getChildren().add(rankLbl);
 
-        Label title = new Label(song.title());
+        Hyperlink title = CellStyleKit.primaryTitleLink(song.title(), () -> ui.openSongProfile(song));
         title.getStyleClass().add("home-charts-row-title");
-        title.setWrapText(true);
 
         Region edgeBar = CellStyleKit.nowPlayingEdgeBar();
 
         Hyperlink artistLink = new Hyperlink(song.artist());
-        artistLink.getStyleClass().add("home-charts-row-meta-link");
+        artistLink.getStyleClass().addAll("home-charts-row-meta-link", CellStyleKit.STYLE_CLASS_INLINE_TEXT_LINK);
+        artistLink.setVisited(false);
+        artistLink.setFocusTraversable(false);
         artistLink.setOnAction(ev -> ui.openArtistProfile(song.artist()));
+        CellStyleKit.applyHoverUnderline(artistLink);
 
         VBox textCol = new VBox(2, title, artistLink);
         textCol.setMaxWidth(Double.MAX_VALUE);
@@ -333,9 +337,17 @@ public final class HomeChartsSection {
                     edgeBar.setManaged(isCur);
                     CellStyleKit.markPlaying(row, isCur);
                     if (isCur) {
-                        title.setStyle("-fx-text-fill: " + CellStyleKit.getAccentTitle() + ";");
+                        title.setStyle(
+                                "-fx-font-size: 14px; -fx-font-weight: bold;"
+                                        + "-fx-text-fill: " + CellStyleKit.getAccentTitle() + ";"
+                                        + "-fx-border-width: 0;"
+                                        + "-fx-background-color: transparent;");
                     } else {
-                        title.setStyle(null);
+                        title.setStyle(
+                                "-fx-font-size: 14px; -fx-font-weight: bold;"
+                                        + "-fx-text-fill: " + CellStyleKit.getTextPrimary() + ";"
+                                        + "-fx-border-width: 0;"
+                                        + "-fx-background-color: transparent;");
                     }
                 };
         ui.registerChartRowSync(syncChartRowPlayingChrome);
@@ -343,7 +355,9 @@ public final class HomeChartsSection {
 
         row.setOnMouseClicked(
                 ev -> {
-                    if (ev.getButton() == MouseButton.PRIMARY && ev.getClickCount() == 2) {
+                    if (ev.getButton() == MouseButton.PRIMARY
+                            && ev.getClickCount() == 2
+                            && !CellStyleKit.isInteractiveRowChromeTarget(ev.getTarget())) {
                         player.playSingleSong(song);
                         ev.consume();
                     }

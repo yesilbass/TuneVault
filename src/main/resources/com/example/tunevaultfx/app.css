@@ -236,6 +236,9 @@
     -fx-font-weight: bold;
     -fx-text-fill: #eeeef6;
 }
+.home-charts-row-title:hover {
+    -fx-underline: true;
+}
 .home-charts-row-meta {
     -fx-font-size: 12px;
     -fx-text-fill: #9d9db8;
@@ -249,6 +252,7 @@
 }
 .home-charts-row-meta-link:hover {
     -fx-text-fill: #e9d5ff;
+    -fx-underline: true;
 }
 .home-charts-row-time {
     -fx-font-size: 12px;
@@ -1044,6 +1048,7 @@
 }
 .root.theme-light .hyperlink.song-profile-artist-link:hover {
     -fx-text-fill: #5b21b6;
+    -fx-underline: true;
 }
 .root.theme-light .hyperlink.song-profile-artist-link:visited {
     -fx-text-fill: #475569;
@@ -1699,9 +1704,9 @@
     -fx-underline: false;
     -fx-padding: 0;
 }
+/* Do not set -fx-underline here — it overrides .tunevault-inline-text-link and inline-styled row links (playlist, home). */
 .hyperlink:hover {
     -fx-text-fill: #c4b5fd;
-    -fx-underline: false;
 }
 .hyperlink:visited,
 .hyperlink:visited:hover {
@@ -1712,6 +1717,26 @@
     -fx-border-radius: 8;
     -fx-background-color: rgba(139,92,246,0.06);
     -fx-background-radius: 8;
+}
+
+/* Body-text row links (playlist, home picks, search dropdown): underline on hover. */
+.hyperlink.tunevault-inline-text-link:hover,
+.hyperlink.tunevault-inline-text-link:visited:hover {
+    -fx-underline: true;
+}
+.root.theme-light .hyperlink.tunevault-inline-text-link:hover,
+.root.theme-light .hyperlink.tunevault-inline-text-link:visited:hover {
+    -fx-underline: true;
+}
+
+/* Purple “chrome” hyperlinks: keep flat (no hover underline) unless they add their own hover rule. */
+.hyperlink:not(.tunevault-inline-text-link):not(.song-profile-artist-link):not(.home-charts-row-meta-link):not(.home-charts-row-title):not(.mini-player-text-link):not(.expanded-song-details-link):not(.expanded-artist-link):hover,
+.hyperlink:not(.tunevault-inline-text-link):not(.song-profile-artist-link):not(.home-charts-row-meta-link):not(.home-charts-row-title):not(.mini-player-text-link):not(.expanded-song-details-link):not(.expanded-artist-link):visited:hover {
+    -fx-underline: false;
+}
+.root.theme-light .hyperlink:not(.tunevault-inline-text-link):not(.song-profile-artist-link):not(.home-charts-row-meta-link):not(.home-charts-row-title):not(.mini-player-text-link):not(.expanded-song-details-link):not(.expanded-artist-link):hover,
+.root.theme-light .hyperlink:not(.tunevault-inline-text-link):not(.song-profile-artist-link):not(.home-charts-row-meta-link):not(.home-charts-row-title):not(.mini-player-text-link):not(.expanded-song-details-link):not(.expanded-artist-link):visited:hover {
+    -fx-underline: false;
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -2033,6 +2058,13 @@
     -fx-border-color: rgba(139,92,246,0.12) transparent transparent transparent;
     -fx-border-width: 1 0 0 0;
 }
+.hyperlink.mini-player-text-link {
+    -fx-border-width: 0;
+    -fx-underline: false;
+}
+.hyperlink.mini-player-text-link:hover {
+    -fx-underline: true;
+}
 
 .player-btn {
     -fx-background-color: transparent;
@@ -2151,6 +2183,16 @@
     -fx-text-fill: #9d9db8;
     -fx-border-width: 0;
     -fx-underline: false;
+}
+.heading-md.expanded-artist-link:hover {
+    -fx-underline: true;
+}
+.hyperlink.expanded-song-details-link {
+    -fx-border-width: 0;
+    -fx-underline: false;
+}
+.hyperlink.expanded-song-details-link:hover {
+    -fx-underline: true;
 }
 
 .expanded-time-label {
@@ -2896,6 +2938,9 @@
 .root.theme-light .home-charts-row-title {
     -fx-text-fill: #0f172a;
 }
+.root.theme-light .home-charts-row-title:hover {
+    -fx-underline: true;
+}
 .root.theme-light .home-charts-row-meta {
     -fx-text-fill: #64748b;
 }
@@ -2904,6 +2949,7 @@
 }
 .root.theme-light .home-charts-row-meta-link:hover {
     -fx-text-fill: #312e81;
+    -fx-underline: true;
 }
 .root.theme-light .home-charts-row-time {
     -fx-text-fill: #5b21b6;
@@ -3276,6 +3322,12 @@
 .root.theme-light .heading-md.expanded-artist-link {
     -fx-text-fill: #475569;
 }
+.root.theme-light .heading-md.expanded-artist-link:hover {
+    -fx-underline: true;
+}
+.root.theme-light .hyperlink.expanded-song-details-link:hover {
+    -fx-underline: true;
+}
 
 .root.theme-light .body-sm,
 .root.theme-light .caption {
@@ -3508,6 +3560,9 @@
 .root.theme-light .player-bar {
     -fx-background-color: linear-gradient(to bottom, #faf8ff, #f1effa);
     -fx-border-color: rgba(124, 58, 237, 0.15) transparent transparent transparent;
+}
+.root.theme-light .hyperlink.mini-player-text-link:hover {
+    -fx-underline: true;
 }
 
 .root.theme-light .player-btn {

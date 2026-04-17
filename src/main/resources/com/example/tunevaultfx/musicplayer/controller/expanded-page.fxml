@@ -95,7 +95,7 @@
 
                                 <Hyperlink text="Song details"
                                            onAction="#handleOpenSongProfile"
-                                           styleClass="body-sm"
+                                           styleClass="body-sm expanded-song-details-link"
                                            style="-fx-padding: 4 0 0 0;" />
                             </VBox>
 
