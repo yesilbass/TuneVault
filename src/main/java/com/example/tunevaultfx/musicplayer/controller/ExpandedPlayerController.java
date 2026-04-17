@@ -43,7 +43,8 @@ public class ExpandedPlayerController {
     @FXML private Label     titleLabel;
     @FXML private Hyperlink artistLink;
     @FXML private Label     albumLabel;
-    @FXML private Label     timeLabel;
+    @FXML private Label     expandedElapsedLabel;
+    @FXML private Label     expandedTotalLabel;
 
     @FXML private Button playPauseButton;
     @FXML private Button likeButton;
@@ -164,7 +165,8 @@ public class ExpandedPlayerController {
         if (!progressSlider.isValueChanging()) {
             progressSlider.setValue(current);
         }
-        timeLabel.setText(formatTime(current) + " / " + formatTime(total));
+        expandedElapsedLabel.setText(formatTime(Math.max(0, current)));
+        expandedTotalLabel.setText(formatTime(Math.max(0, total)));
         paintSliderTrack(progressSlider, current, total);
     }
 

@@ -428,7 +428,7 @@ public class MainMenuController {
                     }
                     ContextMenu menu =
                             PlaylistLibraryContextMenu.create(
-                                    row.getScene(),
+                                    row,
                                     p,
                                     playlistService,
                                     playlistName,

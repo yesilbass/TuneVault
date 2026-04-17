@@ -28,6 +28,7 @@ import javafx.geometry.Pos;
 import javafx.scene.control.OverrunStyle;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
@@ -88,7 +89,7 @@ public class AppSidebarController {
                                             }
                                             ContextMenu menu =
                                                     PlaylistLibraryContextMenu.create(
-                                                            getScene(),
+                                                            this,
                                                             SessionManager.getCurrentUserProfile(),
                                                             playlistService,
                                                             pl,
@@ -137,14 +138,34 @@ public class AppSidebarController {
                                 nameLabel.getStyleClass().add("sidebar-playlist-name");
                                 nameLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
                                 nameLabel.setWrapText(false);
-                                nameLabel.maxWidthProperty()
-                                        .bind(libraryListView.widthProperty().subtract(92));
+                                HBox.setHgrow(nameLabel, Priority.ALWAYS);
+                                nameLabel.setMaxWidth(Double.MAX_VALUE);
                                 if (liked) {
                                     nameLabel.getStyleClass().add("sidebar-playlist-name-liked");
                                 } else if (pinned) {
                                     nameLabel.getStyleClass().add("sidebar-playlist-name-pinned");
                                 }
-                                HBox row = new HBox(8, art, pinHost, nameLabel);
+                                Label visBadge = new Label();
+                                if (liked) {
+                                    visBadge.setVisible(false);
+                                    visBadge.setManaged(false);
+                                } else {
+                                    boolean pub =
+                                            p != null && playlistService.isPlaylistPublic(p, name);
+                                    visBadge.setText(pub ? "Public" : "Private");
+                                    visBadge.getStyleClass()
+                                            .addAll(
+                                                    "profile-playlist-vis",
+                                                    pub
+                                                            ? "profile-playlist-vis-public"
+                                                            : "profile-playlist-vis-private");
+                                    visBadge.setMouseTransparent(true);
+                                }
+                                HBox textRow = new HBox(8, nameLabel, visBadge);
+                                textRow.setAlignment(Pos.CENTER_LEFT);
+                                HBox.setHgrow(textRow, Priority.ALWAYS);
+                                textRow.setMaxWidth(Double.MAX_VALUE);
+                                HBox row = new HBox(8, art, pinHost, textRow);
                                 row.setAlignment(Pos.CENTER_LEFT);
                                 row.setPadding(new Insets(0, 6, 0, 2));
                                 setText(null);

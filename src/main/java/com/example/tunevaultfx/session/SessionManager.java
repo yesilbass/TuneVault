@@ -10,6 +10,7 @@ import com.example.tunevaultfx.musicplayer.controller.MusicPlayerController;
 import com.example.tunevaultfx.search.SearchRecentItem;
 import com.example.tunevaultfx.user.UserProfile;
 import com.example.tunevaultfx.util.UiPrefs;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
@@ -24,7 +25,7 @@ import java.sql.SQLException;
  *  - Hold the loaded UserProfile (playlists, liked songs).
  *  - Cache the full song library so controllers don't hit the DB on every
  *    page load — library is loaded once in a background thread at login.
- *  - Track navigation helpers (selected song, artist, requested playlist).
+ *  - Track navigation helpers (selected song, artist, requested playlist, last playlists-page selection).
  *  - Maintain the recent-search list with DB persistence.
  */
 public final class SessionManager {
@@ -33,12 +34,22 @@ public final class SessionManager {
     private static String      currentUsername;
     private static UserProfile currentUserProfile;
     private static String      requestedPlaylistToOpen;
+    /**
+     * Last playlist the user had open on the playlists page — restored when the page is reloaded (e.g. Back)
+     * and no {@link #requestPlaylistToOpen} is pending.
+     */
+    private static String      lastPlaylistsPageSelection;
     /** After rename, playlists page should select this name (see {@link #peekPendingPlaylistRenameSelection()}). */
     private static String      pendingPlaylistRenameSelectName;
     private static Song        selectedSong;
     private static String      selectedArtist;
     /** When non-null, Profile opens this user's public view (search / social navigation). */
     private static String      profileViewUsername;
+    /**
+     * Optional: playlists page (or similar) registers this so UI can refresh when playlist public/private
+     * changes from the sidebar context menu.
+     */
+    private static Runnable    playlistPublicUiRefresh;
 
     // ── Shared lists ──────────────────────────────────────────────
     private static final ObservableList<SearchRecentItem> recentSearches =
@@ -76,8 +87,10 @@ public final class SessionManager {
         selectedSong            = null;
         selectedArtist          = null;
         requestedPlaylistToOpen = null;
+        lastPlaylistsPageSelection = null;
         pendingPlaylistRenameSelectName = null;
         profileViewUsername     = null;
+        playlistPublicUiRefresh = null;
         songLibrary             = null;
 
         DbSchemaPatches.ensureAppUserProfileMediaColumns();
@@ -130,10 +143,12 @@ public final class SessionManager {
         currentUsername         = null;
         currentUserProfile      = null;
         requestedPlaylistToOpen = null;
+        lastPlaylistsPageSelection = null;
         pendingPlaylistRenameSelectName = null;
         selectedSong            = null;
         selectedArtist          = null;
         profileViewUsername     = null;
+        playlistPublicUiRefresh = null;
         songLibrary             = null;
         recentSearches.clear();
     }
@@ -180,6 +195,16 @@ public final class SessionManager {
         return value;
     }
 
+    /** Updates when the playlists page selection changes so Back / reload can restore it. */
+    public static void setLastPlaylistsPageSelection(String playlistName) {
+        lastPlaylistsPageSelection =
+                playlistName == null || playlistName.isBlank() ? null : playlistName.trim();
+    }
+
+    public static String getLastPlaylistsPageSelection() {
+        return lastPlaylistsPageSelection;
+    }
+
     public static void setPendingPlaylistRenameSelection(String newPlaylistName) {
         pendingPlaylistRenameSelectName = newPlaylistName;
     }
@@ -192,6 +217,18 @@ public final class SessionManager {
         String s = pendingPlaylistRenameSelectName;
         pendingPlaylistRenameSelectName = null;
         return s;
+    }
+
+    public static void setPlaylistPublicUiRefresh(Runnable refresh) {
+        playlistPublicUiRefresh = refresh;
+    }
+
+    /** Notifies listeners (e.g. playlists page header) after toggling public/private on a playlist. */
+    public static void notifyPlaylistPublicChanged() {
+        Runnable r = playlistPublicUiRefresh;
+        if (r != null) {
+            Platform.runLater(r);
+        }
     }
 
     public static void setSelectedSong(Song song)     { selectedSong   = song;   }

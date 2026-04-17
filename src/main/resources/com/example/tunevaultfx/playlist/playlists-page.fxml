@@ -49,6 +49,10 @@
                                             <Label fx:id="totalDurationLabel"
                                                    text="Duration: 0:00"
                                                    styleClass="body-sm, text-accent"/>
+                                            <Label fx:id="playlistVisibilityLabel"
+                                                   text="Private"
+                                                   managed="false" visible="false"
+                                                   styleClass="profile-playlist-vis, profile-playlist-vis-private"/>
                                         </HBox>
                                     </VBox>
                                     <Button text="+ Add Song"
@@ -57,6 +61,14 @@
                                 </HBox>
 
                                 <Separator/>
+
+                                <HBox alignment="CENTER_RIGHT" spacing="12" styleClass="playlist-songs-toolbar">
+                                    <Region HBox.hgrow="ALWAYS"/>
+                                    <MenuButton fx:id="playlistOrderMenu"
+                                                text="Playlist order"
+                                                mnemonicParsing="false"
+                                                styleClass="btn-ghost, playlist-order-menu"/>
+                                </HBox>
 
                                 <ListView fx:id="playlistSongsListView" minHeight="160"/>
 

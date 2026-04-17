@@ -4,9 +4,12 @@ import com.example.tunevaultfx.core.PlaylistNames;
 import com.example.tunevaultfx.core.Song;
 import com.example.tunevaultfx.musicplayer.controller.MusicPlayerController;
 import com.example.tunevaultfx.playlist.service.PlaylistService;
+import com.example.tunevaultfx.session.SessionManager;
 import com.example.tunevaultfx.user.UserProfile;
+import com.example.tunevaultfx.util.ContextMenuPopupSupport;
 import com.example.tunevaultfx.util.ToastUtil;
 import javafx.collections.ObservableList;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.ContextMenu;
@@ -21,16 +24,19 @@ public final class PlaylistLibraryContextMenu {
     private PlaylistLibraryContextMenu() {}
 
     /**
+     * @param anchor node that owns the menu (for themed popup scene + clip); also supplies {@link Scene}
+     *               for overlays
      * @param refreshLibraryUi run after mutations that should reload playlist lists / tiles (pins,
      *                           rename, delete)
      */
     public static ContextMenu create(
-            Scene scene,
+            Node anchor,
             UserProfile profile,
             PlaylistService playlistService,
             String playlistName,
             Runnable refreshLibraryUi) {
         ContextMenu menu = new ContextMenu();
+        Scene scene = anchor != null ? anchor.getScene() : null;
         if (profile == null || scene == null || playlistName == null) {
             return menu;
         }
@@ -83,10 +89,12 @@ public final class PlaylistLibraryContextMenu {
                     e -> {
                         boolean on = publicItem.isSelected();
                         if (playlistService.setPlaylistPublic(profile, playlistName, on)) {
+                            refreshLibraryUi.run();
+                            SessionManager.notifyPlaylistPublicChanged();
                             ToastUtil.info(
                                     scene,
                                     on
-                                            ? "Playlist appears in search and on your profile."
+                                            ? "Playlist is public — discoverable in search."
                                             : "Playlist is private again.");
                         } else {
                             publicItem.setSelected(!on);
@@ -103,6 +111,7 @@ public final class PlaylistLibraryContextMenu {
                         publicItem,
                         new SeparatorMenuItem(),
                         deleteItem);
+        ContextMenuPopupSupport.installThemedPopupHandlers(menu, anchor);
         return menu;
     }
 

@@ -71,10 +71,9 @@
 
                 <!-- Today: same metric as charts, calendar day only (DB server date) -->
                 <VBox fx:id="homeTodaySection" spacing="16" styleClass="home-charts-section" VBox.vgrow="NEVER">
-                    <VBox spacing="6">
+                    <VBox spacing="4">
                         <Label text="TODAY" styleClass="home-charts-eyebrow"/>
-                        <Label text="Today's top tracks &amp; artists" styleClass="heading-md"/>
-                        <Label text="Ranked by listening time since midnight on the database server (usually your machine if MySQL runs locally)."
+                        <Label text="Listening time since midnight (server date). Left: tracks · right: artists."
                                wrapText="true" styleClass="caption" maxWidth="920"/>
                     </VBox>
                     <FlowPane fx:id="homeTodayFlow" hgap="18" vgap="18" styleClass="home-charts-flow">
@@ -86,11 +85,10 @@
                 </VBox>
 
                 <!-- Charts -->
-                <VBox fx:id="homeChartsSection" spacing="16" styleClass="home-charts-section" VBox.vgrow="NEVER">
-                    <VBox spacing="6">
+                <VBox fx:id="homeChartsSection" spacing="16" styleClass="home-charts-section home-charts-section-follows" VBox.vgrow="NEVER">
+                    <VBox spacing="4">
                         <Label text="YOUR CHARTS" styleClass="home-charts-eyebrow"/>
-                        <Label text="The music you actually live in" styleClass="heading-md"/>
-                        <Label text="Top 5 tracks and artists by total time listened — all sessions, all time."
+                        <Label text="All sessions combined, all time. Left: tracks · right: artists."
                                wrapText="true" styleClass="caption" maxWidth="920"/>
                     </VBox>
                     <FlowPane fx:id="homeChartsFlow" hgap="18" vgap="18" styleClass="home-charts-flow">

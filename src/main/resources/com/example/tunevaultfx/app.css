@@ -116,6 +116,12 @@
 .home-charts-section {
     -fx-padding: 4 0 8 0;
 }
+/* Second charts block (all-time): spacing + divider from “Today” */
+.home-charts-section-follows {
+    -fx-padding: 28 0 12 0;
+    -fx-border-color: rgba(139, 92, 246, 0.22) transparent transparent transparent;
+    -fx-border-width: 1 0 0 0;
+}
 .home-charts-eyebrow {
     -fx-font-size: 11px;
     -fx-font-weight: bold;
@@ -431,6 +437,10 @@
 .sidebar-library-list .list-cell:selected .sidebar-playlist-name-liked,
 .sidebar-library-list .list-cell:selected .sidebar-playlist-name-pinned {
     -fx-text-fill: #ffffff;
+}
+.sidebar-library-list .list-cell .profile-playlist-vis {
+    -fx-font-size: 10px;
+    -fx-padding: 3px 8px 3px 8px;
 }
 
 /* Left column: inset library shell (Spotify-style) */
@@ -968,6 +978,25 @@
     -fx-font-weight: bold;
     -fx-text-fill: #eeeef6;
 }
+.profile-playlist-row-name {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #eeeef6;
+}
+.profile-playlist-vis {
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-padding: 4 12 4 12;
+    -fx-background-radius: 999;
+}
+.profile-playlist-vis-public {
+    -fx-text-fill: #86efac;
+    -fx-background-color: rgba(34, 197, 94, 0.2);
+}
+.profile-playlist-vis-private {
+    -fx-text-fill: #9d9db8;
+    -fx-background-color: rgba(255, 255, 255, 0.08);
+}
 .profile-card-caption {
     -fx-font-size: 14px;
     -fx-text-fill: #8c8cb0;
@@ -1202,6 +1231,18 @@
 .root.theme-light .profile-card-heading {
     -fx-text-fill: #0f172a;
 }
+.root.theme-light .profile-playlist-row-name {
+    -fx-text-fill: #0f172a;
+}
+.root.theme-light .profile-playlist-vis-public {
+    -fx-text-fill: #15803d;
+    -fx-background-color: rgba(34, 197, 94, 0.18);
+}
+.root.theme-light .profile-playlist-vis-private {
+    -fx-text-fill: #64748b;
+    -fx-background-color: rgba(15, 23, 42, 0.08);
+}
+
 .root.theme-light .profile-card-caption {
     -fx-text-fill: #64748b;
 }
@@ -1558,6 +1599,13 @@
 }
 
 /* In-playlist suggestions: sub-section inside .card (scroll with page, not a second floating card) */
+.playlist-songs-toolbar {
+    -fx-padding: 6 2 4 2;
+}
+.playlist-order-menu {
+    -fx-font-size: 13px;
+}
+
 .playlist-suggestions-block {
     -fx-padding: 4 0 0 0;
 }
@@ -2066,6 +2114,15 @@
     -fx-underline: true;
 }
 
+.mini-player-time-elapsed {
+    -fx-text-fill: #9d9db8;
+    -fx-font-weight: bold;
+}
+.mini-player-time-total {
+    -fx-text-fill: #c8c8e0;
+    -fx-font-weight: bold;
+}
+
 .player-btn {
     -fx-background-color: transparent;
     -fx-text-fill: #5c5c78;
@@ -2202,6 +2259,18 @@
 
 .root.theme-light .expanded-time-label {
     -fx-text-fill: #475569;
+}
+.expanded-time-elapsed {
+    -fx-text-fill: #8c8cb0;
+}
+.expanded-time-total {
+    -fx-text-fill: #b4b4d4;
+}
+.root.theme-light .expanded-time-elapsed {
+    -fx-text-fill: #64748b;
+}
+.root.theme-light .expanded-time-total {
+    -fx-text-fill: #334155;
 }
 
 .root.theme-light .overlay-card .page-header {
@@ -2917,6 +2986,9 @@
 .root.theme-light .home-charts-eyebrow {
     -fx-text-fill: #5b21b6;
 }
+.root.theme-light .home-charts-section-follows {
+    -fx-border-color: rgba(15, 23, 42, 0.12) transparent transparent transparent;
+}
 .root.theme-light .home-charts-card {
     -fx-background-color: linear-gradient(to bottom right, rgba(255,255,255,0.98), rgba(237,233,254,0.45));
     -fx-border-color: rgba(124, 58, 237, 0.22);
@@ -3137,6 +3209,10 @@
 .root.theme-light .sidebar-library-list .list-cell:selected .sidebar-playlist-name-liked,
 .root.theme-light .sidebar-library-list .list-cell:selected .sidebar-playlist-name-pinned {
     -fx-text-fill: #4c1d95;
+}
+.root.theme-light .sidebar-library-list .list-cell .profile-playlist-vis {
+    -fx-font-size: 10px;
+    -fx-padding: 3px 8px 3px 8px;
 }
 .root.theme-light .sidebar-create-playlist {
     -fx-background-color: linear-gradient(to bottom, #7c3aed, #6d28d9);
@@ -3563,6 +3639,12 @@
 }
 .root.theme-light .hyperlink.mini-player-text-link:hover {
     -fx-underline: true;
+}
+.root.theme-light .mini-player-time-elapsed {
+    -fx-text-fill: #64748b;
+}
+.root.theme-light .mini-player-time-total {
+    -fx-text-fill: #334155;
 }
 
 .root.theme-light .player-btn {

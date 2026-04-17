@@ -27,8 +27,8 @@ import javafx.collections.MapChangeListener;
 import javafx.collections.WeakMapChangeListener;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.transformation.SortedList;
 import javafx.fxml.FXML;
-import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -37,7 +37,9 @@ import javafx.scene.input.KeyEvent;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Playlists page controller.
@@ -52,6 +54,26 @@ import java.util.List;
  *    mini player which adds/removes from Liked Songs
  */
 public class PlaylistsPageController {
+
+    /** How songs are ordered in the list view (does not change stored playlist order). */
+    private enum PlaylistSortOrder {
+        CUSTOM("Playlist order"),
+        TITLE("Title"),
+        ARTIST("Artist"),
+        ALBUM("Album"),
+        GENRE("Genre"),
+        DURATION("Duration");
+
+        private final String menuLabel;
+
+        PlaylistSortOrder(String menuLabel) {
+            this.menuLabel = menuLabel;
+        }
+
+        String menuLabel() {
+            return menuLabel;
+        }
+    }
 
     /** Row height aligned with PlayableSongCell so the page ScrollPane owns vertical scroll. */
     private static final double PLAYLIST_SONG_ROW_HEIGHT = 58;
@@ -80,6 +102,9 @@ public class PlaylistsPageController {
     private Label suggestionSubtitleLabel;
 
     @FXML
+    private Label playlistVisibilityLabel;
+
+    @FXML
     private TextField searchSongsField;
     @FXML
     private VBox searchSongsPanel;
@@ -91,6 +116,8 @@ public class PlaylistsPageController {
     private ScrollPane contentRow;
     @FXML
     private StackPane selectedPlaylistCover;
+    @FXML
+    private MenuButton playlistOrderMenu;
 
     // ── Services ──────────────────────────────────────────────────
     /** Active playlist; selection comes from the app sidebar or deep links. */
@@ -117,10 +144,15 @@ public class PlaylistsPageController {
     private final MapChangeListener<String, ObservableList<Song>> playlistKeysChanged =
             c -> Platform.runLater(this::onPlaylistsMapChanged);
 
+    private PlaylistSortOrder playlistSortOrder = PlaylistSortOrder.CUSTOM;
+    /** Sorted view of the active playlist; null when no playlist selected. */
+    private SortedList<Song> playlistSongsSorted;
+
     // ─────────────────────────────────────────────────────────────
 
     @FXML
     public void initialize() {
+        setupPlaylistOrderMenu();
         profile = SessionManager.getCurrentUserProfile();
         if (profile == null) return;
 
@@ -135,6 +167,8 @@ public class PlaylistsPageController {
         suggestedSongsListView.setFocusTraversable(false);
 
         profile.getPlaylists().addListener(new WeakMapChangeListener<>(playlistKeysChanged));
+        selectedPlaylistName.addListener(
+                (obs, previous, name) -> SessionManager.setLastPlaylistsPageSelection(name));
         setupListeners();
         setupInitialPlaylistSelection();
         setupSongCells();
@@ -154,6 +188,43 @@ public class PlaylistsPageController {
             if (newScene == null) return;
             installKeyboardShortcuts();
         });
+
+        SessionManager.setPlaylistPublicUiRefresh(this::applyPlaylistVisibilityBadgeForCurrentSelection);
+    }
+
+    private void applyPlaylistVisibilityBadgeForCurrentSelection() {
+        applyPlaylistVisibilityBadge(selectedPlaylistName.get());
+    }
+
+    private void applyPlaylistVisibilityBadge(String selected) {
+        if (playlistVisibilityLabel == null) {
+            return;
+        }
+        if (selected == null || selected.isBlank()) {
+            playlistVisibilityLabel.setVisible(false);
+            playlistVisibilityLabel.setManaged(false);
+            return;
+        }
+        if (PlaylistNames.isLikedSongs(selected)) {
+            playlistVisibilityLabel.setVisible(false);
+            playlistVisibilityLabel.setManaged(false);
+            return;
+        }
+        boolean pub = playlistService.isPlaylistPublic(profile, selected);
+        playlistVisibilityLabel.setManaged(true);
+        playlistVisibilityLabel.setVisible(true);
+        playlistVisibilityLabel.setText(pub ? "Public" : "Private");
+        playlistVisibilityLabel
+                .getStyleClass()
+                .removeAll(
+                        "profile-playlist-vis",
+                        "profile-playlist-vis-public",
+                        "profile-playlist-vis-private");
+        playlistVisibilityLabel
+                .getStyleClass()
+                .addAll(
+                        "profile-playlist-vis",
+                        pub ? "profile-playlist-vis-public" : "profile-playlist-vis-private");
     }
 
     private void loadLibrarySongs() {
@@ -214,7 +285,12 @@ public class PlaylistsPageController {
         if (requested != null && names.contains(requested)) {
             selectedPlaylistName.set(requested);
         } else {
-            selectedPlaylistName.set(names.get(0));
+            String last = SessionManager.getLastPlaylistsPageSelection();
+            if (last != null && names.contains(last)) {
+                selectedPlaylistName.set(last);
+            } else {
+                selectedPlaylistName.set(names.get(0));
+            }
         }
         attachPlaylistSongsListener();
         updateSelectedPlaylist();
@@ -488,9 +564,9 @@ public class PlaylistsPageController {
     private void playSongFromSelectedPlaylist(Song song) {
         String selected = selectedPlaylistName.get();
         if (selected == null) return;
-        ObservableList<Song> songs = profile.getPlaylists().get(selected);
-        if (songs == null) return;
-        int index = songs.indexOf(song);
+        ObservableList<Song> queue = playlistSongsListView.getItems();
+        if (queue == null) return;
+        int index = queue.indexOf(song);
         if (index < 0) return;
 
         Song current = player.getCurrentSong();
@@ -504,7 +580,7 @@ public class PlaylistsPageController {
                 return;
             }
         }
-        player.playQueue(songs, index, selected);
+        player.playQueue(queue, index, selected);
     }
 
     private void showAddToPlaylistPicker(Song song) {
@@ -581,22 +657,92 @@ public class PlaylistsPageController {
             // Never call getItems().clear() here: items may still reference the profile's
             // ObservableList from the last selection, and clear() would wipe the real playlist
             // in memory (DB unchanged until the user logs in again and reloads).
+            playlistSongsSorted = null;
             playlistSongsListView.setItems(FXCollections.observableArrayList());
+            if (playlistOrderMenu != null) {
+                playlistOrderMenu.setDisable(true);
+            }
             selectedPlaylistLabel.setText("No playlist selected");
             songCountLabel.setText("Songs: 0");
             totalDurationLabel.setText("Duration: 0:00");
             hideSuggestionsSection();
             refreshPlaylistHeaderCover(null);
+            applyPlaylistVisibilityBadge(null);
             return;
+        }
+        if (playlistOrderMenu != null) {
+            playlistOrderMenu.setDisable(false);
         }
         PlaylistSummary summary = selectionService.buildSummary(profile, selected);
         selectedPlaylistLabel.setText(summary.getPlaylistName());
-        playlistSongsListView.setItems(summary.getSongs());
+        ObservableList<Song> source = summary.getSongs();
+        playlistSongsSorted = new SortedList<>(source, comparatorFor(playlistSortOrder));
+        playlistSongsListView.setItems(playlistSongsSorted);
         playlistSongsListView.getSelectionModel().clearSelection();
         songCountLabel.setText("Songs: " + summary.getSongCount());
         totalDurationLabel.setText("Duration: " + summary.getFormattedDuration());
         refreshPlaylistHeaderCover(selected);
+        applyPlaylistVisibilityBadge(selected);
         refreshSuggestions();
+    }
+
+    private void setupPlaylistOrderMenu() {
+        if (playlistOrderMenu == null) {
+            return;
+        }
+        playlistOrderMenu.getItems().clear();
+        MenuItem header = new MenuItem("Sort by");
+        header.setDisable(true);
+        playlistOrderMenu.getItems().add(header);
+        ToggleGroup sortGroup = new ToggleGroup();
+        for (PlaylistSortOrder order : PlaylistSortOrder.values()) {
+            RadioMenuItem item = new RadioMenuItem(order.menuLabel());
+            item.setToggleGroup(sortGroup);
+            item.setSelected(order == playlistSortOrder);
+            item.setOnAction(
+                    e -> {
+                        if (item.isSelected()) {
+                            applyPlaylistSortOrder(order);
+                        }
+                    });
+            playlistOrderMenu.getItems().add(item);
+        }
+        playlistOrderMenu.setText(playlistSortOrder.menuLabel());
+    }
+
+    private void applyPlaylistSortOrder(PlaylistSortOrder order) {
+        playlistSortOrder = order;
+        if (playlistOrderMenu != null) {
+            playlistOrderMenu.setText(order.menuLabel());
+        }
+        if (playlistSongsSorted != null) {
+            playlistSongsSorted.setComparator(comparatorFor(order));
+            syncPlaylistListHeight();
+        }
+    }
+
+    private Comparator<Song> comparatorFor(PlaylistSortOrder order) {
+        return switch (order) {
+            case CUSTOM -> null;
+            case TITLE ->
+                    Comparator.comparing((Song s) -> normKey(s.title()))
+                            .thenComparingInt(Song::songId);
+            case ARTIST ->
+                    Comparator.comparing((Song s) -> normKey(s.artist()))
+                            .thenComparingInt(Song::songId);
+            case ALBUM ->
+                    Comparator.comparing((Song s) -> normKey(s.album()))
+                            .thenComparingInt(Song::songId);
+            case GENRE ->
+                    Comparator.comparing((Song s) -> normKey(s.genre()))
+                            .thenComparingInt(Song::songId);
+            case DURATION ->
+                    Comparator.comparingInt(Song::durationSeconds).thenComparingInt(Song::songId);
+        };
+    }
+
+    private static String normKey(String s) {
+        return s == null ? "" : s.toLowerCase(Locale.ROOT);
     }
 
     private void refreshPlaylistHeaderCover(String playlistName) {

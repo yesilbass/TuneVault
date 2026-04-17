@@ -1,19 +1,16 @@
 package com.example.tunevaultfx.profile;
 
-import com.example.tunevaultfx.core.Song;
 import com.example.tunevaultfx.db.ListeningEventDAO;
 import com.example.tunevaultfx.db.PlaylistDAO;
 import com.example.tunevaultfx.db.UserDAO;
 import com.example.tunevaultfx.db.UserFollowDAO;
 import com.example.tunevaultfx.db.UserGenreDiscoveryDAO;
 import com.example.tunevaultfx.db.UserGenreDiscoverySummary;
-import com.example.tunevaultfx.musicplayer.controller.MusicPlayerController;
 import com.example.tunevaultfx.profile.media.ProfileAvatarCropDialog;
 import com.example.tunevaultfx.profile.media.ProfileMediaStorage;
 import com.example.tunevaultfx.session.SessionManager;
 import com.example.tunevaultfx.user.User;
 import com.example.tunevaultfx.util.AppTheme;
-import com.example.tunevaultfx.util.CellStyleKit;
 import com.example.tunevaultfx.user.UserProfile;
 import com.example.tunevaultfx.util.SceneUtil;
 import com.example.tunevaultfx.util.ToastUtil;
@@ -25,14 +22,11 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.FlowPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.shape.Circle;
 import javafx.stage.FileChooser;
@@ -76,9 +70,6 @@ public class ProfilePageController {
     @FXML private VBox socialSection;
     @FXML private ListView<String> followingListView;
     @FXML private ListView<String> followersListView;
-    @FXML private VBox publicPlaylistsSection;
-    @FXML private ListView<String> publicPlaylistsListView;
-    @FXML private ListView<Song> publicPlaylistSongsListView;
 
     private final UserDAO userDAO = new UserDAO();
     private final UserGenreDiscoveryDAO genreDiscoveryDAO = new UserGenreDiscoveryDAO();
@@ -86,10 +77,6 @@ public class ProfilePageController {
     private final UserFollowDAO userFollowDAO = new UserFollowDAO();
     private final PlaylistDAO playlistDAO = new PlaylistDAO();
     private final ProfileMediaPersistence mediaPersistence = new ProfileMediaPersistence(userDAO);
-    private final MusicPlayerController player = MusicPlayerController.getInstance();
-
-    private final ObservableList<String> publicPlaylistNames = FXCollections.observableArrayList();
-    private final ObservableList<Song> publicPlaylistSongs = FXCollections.observableArrayList();
 
     private String sessionUsername;
     /** Profile being rendered (self or another user). */
@@ -100,19 +87,6 @@ public class ProfilePageController {
     @FXML
     public void initialize() {
         setupAvatarClip();
-
-        if (publicPlaylistsListView != null) {
-            publicPlaylistsListView.setItems(publicPlaylistNames);
-        }
-        if (publicPlaylistSongsListView != null) {
-            publicPlaylistSongsListView.setItems(publicPlaylistSongs);
-            setupPublicSongCells();
-        }
-
-        player.currentSongProperty()
-                .addListener((o, a, b) -> Platform.runLater(this::refreshPublicPlaylistSongChrome));
-        player.playingProperty()
-                .addListener((o, a, b) -> Platform.runLater(this::refreshPublicPlaylistSongChrome));
 
         sessionUsername = SessionManager.getCurrentUsername();
         String view = SessionManager.getProfileViewUsername();
@@ -139,7 +113,6 @@ public class ProfilePageController {
         loadStatsRow(subjectUsername, viewingSelf);
         loadSocial(subjectUsername);
         wireSocialNavigation();
-        loadPublicPlaylistsBrowser(subjectUsername);
         // Listening copy only; third stat tile for others is already "Following" from loadStatsRow.
         loadListeningBlock(subjectUsername, viewingSelf);
         loadTasteSection(subjectUsername, viewingSelf);
@@ -161,7 +134,6 @@ public class ProfilePageController {
 
     private void hideCommunitySections() {
         setSectionVisible(socialSection, false);
-        setSectionVisible(publicPlaylistsSection, false);
         if (followUserButton != null) {
             followUserButton.setVisible(false);
             followUserButton.setManaged(false);
@@ -302,107 +274,6 @@ public class ProfilePageController {
             ex.printStackTrace();
             ToastUtil.error(scene(), "Could not open profile.");
         }
-    }
-
-    private void loadPublicPlaylistsBrowser(String ownerUsername) {
-        publicPlaylistSongs.clear();
-        try {
-            publicPlaylistNames.setAll(playlistDAO.listPublicPlaylistNamesForUser(ownerUsername));
-        } catch (SQLException e) {
-            e.printStackTrace();
-            publicPlaylistNames.clear();
-        }
-
-        if (publicPlaylistsListView == null) {
-            return;
-        }
-        publicPlaylistsListView
-                .getSelectionModel()
-                .selectedItemProperty()
-                .addListener(
-                        (obs, o, name) -> {
-                            publicPlaylistSongs.clear();
-                            if (name == null || name.isBlank()) {
-                                return;
-                            }
-                            try {
-                                publicPlaylistSongs.setAll(
-                                        playlistDAO.loadPublicPlaylistSongs(ownerUsername, name));
-                            } catch (SQLException ex) {
-                                ex.printStackTrace();
-                            }
-                        });
-    }
-
-    private void refreshPublicPlaylistSongChrome() {
-        if (publicPlaylistSongsListView != null) {
-            publicPlaylistSongsListView.refresh();
-        }
-    }
-
-    private void setupPublicSongCells() {
-        publicPlaylistSongsListView.setCellFactory(
-                lv ->
-                        new ListCell<>() {
-                            @Override
-                            protected void updateItem(Song song, boolean empty) {
-                                super.updateItem(song, empty);
-                                if (empty || song == null) {
-                                    setText(null);
-                                    setGraphic(null);
-                                    return;
-                                }
-                                boolean current =
-                                        player.getCurrentSong() != null
-                                                && player.getCurrentSong().songId() == song.songId();
-                                Region edgeBar = CellStyleKit.nowPlayingEdgeBar();
-                                edgeBar.setVisible(current);
-                                edgeBar.setManaged(current);
-                                VBox textBox =
-                                        CellStyleKit.songTextBoxWithKind(
-                                                song.title(), song.artist(), null, null);
-                                if (current && !textBox.getChildren().isEmpty()) {
-                                    var head = textBox.getChildren().get(0);
-                                    if (head instanceof Label lab) {
-                                        lab.setStyle(
-                                                "-fx-font-size: 14px; -fx-font-weight: bold;-fx-text-fill: "
-                                                        + CellStyleKit.getAccentTitle()
-                                                        + ";");
-                                    }
-                                }
-                                HBox row =
-                                        CellStyleKit.row(
-                                                edgeBar,
-                                                CellStyleKit.iconBox(
-                                                        "\u266A",
-                                                        CellStyleKit.Palette.PURPLE,
-                                                        false),
-                                                textBox);
-                                CellStyleKit.markPlaying(row, current);
-                                setText(null);
-                                setGraphic(row);
-                                setOnMouseClicked(
-                                        ev -> {
-                                            if (ev.getButton() == MouseButton.PRIMARY
-                                                    && ev.getClickCount() == 2) {
-                                                int i = publicPlaylistSongs.indexOf(song);
-                                                player.playQueue(
-                                                        publicPlaylistSongs,
-                                                        Math.max(0, i),
-                                                        selectedPublicPlaylistTitle());
-                                                ev.consume();
-                                            }
-                                        });
-                            }
-                        });
-    }
-
-    private String selectedPublicPlaylistTitle() {
-        if (publicPlaylistsListView == null) {
-            return "Public playlist";
-        }
-        String n = publicPlaylistsListView.getSelectionModel().getSelectedItem();
-        return n != null ? n : "Public playlist";
     }
 
     private void configureFollowButton() {

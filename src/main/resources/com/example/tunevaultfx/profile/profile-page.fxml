@@ -32,7 +32,7 @@
 
                     <VBox spacing="10" styleClass="profile-page-hero">
                         <Label text="Profile" styleClass="profile-page-title"/>
-                        <Label text="Avatar, listening stats, genre taste, follows, and playlists shared from this account."
+                        <Label text="Avatar, listening stats, genre taste, and follows from this account."
                                wrapText="true" maxWidth="Infinity" styleClass="profile-page-lede"/>
                     </VBox>
 
@@ -122,25 +122,6 @@
                                                       VBox.vgrow="SOMETIMES"/>
                                         </VBox>
                                     </HBox>
-                                </VBox>
-                            </VBox>
-
-                            <VBox spacing="0">
-                                <Label text="Public playlists" styleClass="profile-section-title"/>
-                                <VBox fx:id="publicPlaylistsSection" spacing="0"
-                                      styleClass="card-elevated profile-detail-card">
-                                    <padding>
-                                        <Insets top="26" right="28" bottom="28" left="28"/>
-                                    </padding>
-                                    <Label text="Playlists this member shows on their profile and in search."
-                                           wrapText="true" maxWidth="Infinity" styleClass="profile-card-caption"
-                                           style="-fx-padding: 0 0 16 0;"/>
-                                    <Label text="Playlists" styleClass="profile-card-heading"/>
-                                    <ListView fx:id="publicPlaylistsListView" prefHeight="176" minHeight="140"/>
-                                    <Label text="Tracks" styleClass="profile-card-heading"
-                                           style="-fx-padding: 18 0 10 0;"/>
-                                    <ListView fx:id="publicPlaylistSongsListView" prefHeight="280" minHeight="200"
-                                              VBox.vgrow="SOMETIMES"/>
                                 </VBox>
                             </VBox>
                         </VBox>

@@ -10,6 +10,7 @@ import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.Separator;
+import javafx.scene.control.OverrunStyle;
 import javafx.scene.input.ContextMenuEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.HBox;
@@ -61,7 +62,7 @@ public final class HomeChartsSection {
             homeTodayTracksHost
                     .getChildren()
                     .addAll(
-                            buildChartCardHeader("Today\u2019s top tracks", "Listening time from today only"),
+                            buildChartCardHeader("Tracks", "Time listened today"),
                             new Separator(),
                             signInTracks);
             Label signInArtists = new Label("Sign in to see which artists you\u2019ve played today.");
@@ -70,7 +71,7 @@ public final class HomeChartsSection {
             homeTodayArtistsHost
                     .getChildren()
                     .addAll(
-                            buildChartCardHeader("Today\u2019s top artists", "Listening time from today only"),
+                            buildChartCardHeader("Artists", "Time listened today"),
                             new Separator(),
                             signInArtists);
             return;
@@ -89,15 +90,15 @@ public final class HomeChartsSection {
                 homeTodayTracksHost
                         .getChildren()
                         .addAll(
-                                buildChartCardHeader("Today\u2019s top tracks", "Listening time from today only"),
+                                buildChartCardHeader("Tracks", "Time listened today"),
                                 new Separator(),
                                 empty);
             } else {
                 populateSongsChartCard(
                         homeTodayTracksHost,
                         songs,
-                        "Today\u2019s top tracks",
-                        "Listening time from today only",
+                        "Tracks",
+                        "Time listened today",
                         ui);
             }
 
@@ -108,15 +109,15 @@ public final class HomeChartsSection {
                 homeTodayArtistsHost
                         .getChildren()
                         .addAll(
-                                buildChartCardHeader("Today\u2019s top artists", "Listening time from today only"),
+                                buildChartCardHeader("Artists", "Time listened today"),
                                 new Separator(),
                                 empty);
             } else {
                 populateArtistsChartCard(
                         homeTodayArtistsHost,
                         artists,
-                        "Today\u2019s top artists",
-                        "Listening time from today only",
+                        "Artists",
+                        "Time listened today",
                         ui);
             }
         } catch (SQLException e) {
@@ -126,13 +127,13 @@ public final class HomeChartsSection {
             err.setWrapText(true);
             homeTodayTracksHost
                     .getChildren()
-                    .addAll(buildChartCardHeader("Today\u2019s top tracks", ""), new Separator(), err);
+                    .addAll(buildChartCardHeader("Tracks", ""), new Separator(), err);
             Label errArtists = new Label(err.getText());
             errArtists.getStyleClass().add("home-charts-column-empty");
             errArtists.setWrapText(true);
             homeTodayArtistsHost
                     .getChildren()
-                    .addAll(buildChartCardHeader("Today\u2019s top artists", ""), new Separator(), errArtists);
+                    .addAll(buildChartCardHeader("Artists", ""), new Separator(), errArtists);
         }
     }
 
@@ -172,19 +173,19 @@ public final class HomeChartsSection {
 
             if (!songs.isEmpty()) {
                 populateSongsChartCard(
-                        homeTopSongsHost, songs, "Top tracks", "By total listening time", ui);
+                        homeTopSongsHost, songs, "Tracks", "Total time listened", ui);
             } else {
                 Label empty = new Label("No track data yet — press play on something you love.");
                 empty.getStyleClass().add("home-charts-column-empty");
                 empty.setWrapText(true);
                 homeTopSongsHost
                         .getChildren()
-                        .addAll(buildChartCardHeader("Top tracks", "By total listening time"), new Separator(), empty);
+                        .addAll(buildChartCardHeader("Tracks", "Total time listened"), new Separator(), empty);
             }
 
             if (!artists.isEmpty()) {
                 populateArtistsChartCard(
-                        homeTopArtistsHost, artists, "Top artists", "By total listening time", ui);
+                        homeTopArtistsHost, artists, "Artists", "Total time listened", ui);
             } else {
                 Label empty = new Label("Artist rankings will show up once you have listening history.");
                 empty.getStyleClass().add("home-charts-column-empty");
@@ -192,7 +193,7 @@ public final class HomeChartsSection {
                 homeTopArtistsHost
                         .getChildren()
                         .addAll(
-                                buildChartCardHeader("Top artists", "By total listening time"),
+                                buildChartCardHeader("Artists", "Total time listened"),
                                 new Separator(),
                                 empty);
             }
@@ -284,6 +285,16 @@ public final class HomeChartsSection {
 
         Hyperlink title = CellStyleKit.primaryTitleLink(song.title(), () -> ui.openSongProfile(song));
         title.getStyleClass().add("home-charts-row-title");
+        /* primaryTitleLink sets maxWidth=Infinity + wrapText; cap width to this column and tighten picking to text. */
+        title.setWrapText(false);
+        title.setPickOnBounds(false);
+        title.setTextOverrun(OverrunStyle.ELLIPSIS);
+        title.setEllipsisString("\u2026");
+        Region titleTrail = new Region();
+        HBox.setHgrow(titleTrail, Priority.ALWAYS);
+        HBox titleBand = new HBox(0, title, titleTrail);
+        titleBand.setAlignment(Pos.CENTER_LEFT);
+        titleBand.setFillHeight(false);
 
         Region edgeBar = CellStyleKit.nowPlayingEdgeBar();
 
@@ -291,12 +302,23 @@ public final class HomeChartsSection {
         artistLink.getStyleClass().addAll("home-charts-row-meta-link", CellStyleKit.STYLE_CLASS_INLINE_TEXT_LINK);
         artistLink.setVisited(false);
         artistLink.setFocusTraversable(false);
+        artistLink.setWrapText(false);
+        artistLink.setPickOnBounds(false);
+        artistLink.setTextOverrun(OverrunStyle.ELLIPSIS);
+        artistLink.setEllipsisString("\u2026");
         artistLink.setOnAction(ev -> ui.openArtistProfile(song.artist()));
         CellStyleKit.applyHoverUnderline(artistLink);
+        Region artistTrail = new Region();
+        HBox.setHgrow(artistTrail, Priority.ALWAYS);
+        HBox artistBand = new HBox(0, artistLink, artistTrail);
+        artistBand.setAlignment(Pos.CENTER_LEFT);
+        artistBand.setFillHeight(false);
 
-        VBox textCol = new VBox(2, title, artistLink);
+        VBox textCol = new VBox(2, titleBand, artistBand);
         textCol.setMaxWidth(Double.MAX_VALUE);
         HBox.setHgrow(textCol, Priority.ALWAYS);
+        title.maxWidthProperty().bind(textCol.widthProperty());
+        artistLink.maxWidthProperty().bind(textCol.widthProperty());
 
         Label timeLbl = new Label(formatListenTime(sec));
         timeLbl.getStyleClass().add("home-charts-row-time");

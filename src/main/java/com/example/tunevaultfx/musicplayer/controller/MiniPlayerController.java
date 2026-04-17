@@ -37,7 +37,9 @@ public class MiniPlayerController {
     @FXML
     private Hyperlink miniArtistLink;
     @FXML
-    private Label miniTimeLabel;
+    private Label miniElapsedLabel;
+    @FXML
+    private Label miniTotalLabel;
     @FXML
     private Hyperlink miniPlaylistLink;
 
@@ -237,7 +239,8 @@ public class MiniPlayerController {
         if (!miniProgressSlider.isValueChanging()) {
             miniProgressSlider.setValue(current);
         }
-        miniTimeLabel.setText(formatTime(current) + " / " + formatTime(total));
+        miniElapsedLabel.setText(formatTime(Math.max(0, current)));
+        miniTotalLabel.setText(formatTime(Math.max(0, total)));
         paintSliderTrack(miniProgressSlider, current, total);
     }
 

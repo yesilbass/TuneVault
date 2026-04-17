@@ -110,14 +110,17 @@
                                     <Label text="Progress"
                                            styleClass="caption, text-muted" />
                                     <Region HBox.hgrow="ALWAYS" />
-                                    <Label fx:id="timeLabel"
-                                           text="0:00 / 0:00"
-                                           styleClass="body expanded-time-label" />
                                 </HBox>
                             </VBox>
 
                             <!-- Playback Controls -->
-                            <HBox alignment="CENTER_LEFT" spacing="10">
+                            <HBox alignment="CENTER_LEFT" spacing="10" maxWidth="504">
+
+                                <Label fx:id="expandedElapsedLabel"
+                                       text="0:00"
+                                       minWidth="56" prefWidth="56"
+                                       alignment="CENTER_RIGHT"
+                                       styleClass="body, expanded-time-label, expanded-time-elapsed" />
 
                                 <Button fx:id="shuffleButton"
                                         text="⇄"
@@ -166,6 +169,12 @@
                                         styleClass="btn-accent-soft"
                                         prefWidth="52" prefHeight="44"
                                         style="-fx-font-size: 22px;" />
+
+                                <Label fx:id="expandedTotalLabel"
+                                       text="0:00"
+                                       minWidth="52" prefWidth="52"
+                                       alignment="CENTER_LEFT"
+                                       styleClass="body, expanded-time-label, expanded-time-total" />
 
                             </HBox>
 
