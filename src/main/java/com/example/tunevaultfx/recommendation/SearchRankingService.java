@@ -13,15 +13,20 @@ import java.util.stream.Collectors;
  * Ranks songs and artists for a search query, personalised by the user's listening behaviour.
  *
  * <p>Catalog search blends songs and artists in one ordering. Text matching is <strong>prefix
- * only</strong> (normalized title / artist / album / genre must start with the query). Ranking then
- * blends that with personal taste on a common score scale.
+ * only</strong> on title, artist, and album (genre is not used for matching). Results are ordered
+ * first by match kind (title before artist before album, with standalone artist hits alongside
+ * artist-on-song matches), then by a score that blends text strength with light personalization.
  */
 public class SearchRankingService {
+
+    private static final int PRIORITY_TITLE = 400;
+    private static final int PRIORITY_ARTIST = 300;
+    private static final int PRIORITY_ALBUM = 100;
 
     private final RecommendationEngine   engine            = new RecommendationEngine();
     private final UserGenreDiscoveryDAO genreDiscoveryDAO = new UserGenreDiscoveryDAO();
 
-    private record ScoredCandidate(RankedSearchRow row, double raw) {}
+    private record ScoredCandidate(RankedSearchRow row, double raw, int textPriority) {}
 
     /**
      * Songs and artists in one list, best match first for this user (mixed types).
@@ -32,16 +37,11 @@ public class SearchRankingService {
         if (candidates.isEmpty()) {
             return List.of();
         }
-        double max = candidates.stream().mapToDouble(ScoredCandidate::raw).max().orElse(1.0);
-        if (max <= 0.0) {
-            max = 1.0;
-        }
-        final double m = max;
         candidates.sort(
-                Comparator.comparingDouble((ScoredCandidate c) -> c.raw / m)
+                Comparator.comparingInt(ScoredCandidate::textPriority)
                         .reversed()
-                        .thenComparingDouble(ScoredCandidate::raw)
-                        .reversed());
+                        .thenComparing(
+                                Comparator.comparingDouble(ScoredCandidate::raw).reversed()));
         return candidates.stream().limit(limit).map(ScoredCandidate::row).toList();
     }
 
@@ -53,7 +53,12 @@ public class SearchRankingService {
         List<ScoredCandidate> songs =
                 collectScoredCandidates(username, query, allSongs).stream()
                         .filter(c -> c.row instanceof RankedSearchRow.SongHit)
-                        .sorted(Comparator.comparingDouble(ScoredCandidate::raw).reversed())
+                        .sorted(
+                                Comparator.comparingInt(ScoredCandidate::textPriority)
+                                        .reversed()
+                                        .thenComparing(
+                                                Comparator.comparingDouble(ScoredCandidate::raw)
+                                                        .reversed()))
                         .limit(limit)
                         .toList();
         return songs.stream()
@@ -69,7 +74,12 @@ public class SearchRankingService {
         List<ScoredCandidate> artists =
                 collectScoredCandidates(username, query, allSongs).stream()
                         .filter(c -> c.row instanceof RankedSearchRow.ArtistHit)
-                        .sorted(Comparator.comparingDouble(ScoredCandidate::raw).reversed())
+                        .sorted(
+                                Comparator.comparingInt(ScoredCandidate::textPriority)
+                                        .reversed()
+                                        .thenComparing(
+                                                Comparator.comparingDouble(ScoredCandidate::raw)
+                                                        .reversed()))
                         .limit(limit)
                         .toList();
         return artists.stream()
@@ -95,13 +105,14 @@ public class SearchRankingService {
                 continue;
             }
 
+            int textPriority = songTextMatchPriority(song, normalizedQuery);
             double textScore = songTextMatchScore(song, normalizedQuery);
-            if (textScore > 0.0) {
+            if (textScore > 0.0 && textPriority > 0) {
                 double personalize = songPersonalizationBlend(profile, song);
                 double strongDislikePenalty =
                         profile.strongNegativeSongIds().contains(song.songId()) ? 6.0 : 0.0;
                 double raw = textScore + personalize - strongDislikePenalty;
-                songRows.add(new ScoredCandidate(new RankedSearchRow.SongHit(song), raw));
+                songRows.add(new ScoredCandidate(new RankedSearchRow.SongHit(song), raw, textPriority));
             }
 
             if (song.artist() == null || song.artist().isBlank()) {
@@ -119,21 +130,46 @@ public class SearchRankingService {
 
         List<ScoredCandidate> out = new ArrayList<>(songRows);
         for (var e : artistBestRaw.entrySet()) {
-            out.add(new ScoredCandidate(new RankedSearchRow.ArtistHit(e.getKey()), e.getValue()));
+            out.add(
+                    new ScoredCandidate(
+                            new RankedSearchRow.ArtistHit(e.getKey()), e.getValue(), PRIORITY_ARTIST));
         }
         return out;
     }
 
-    /** Stronger taste weighting so search feels closer to “for you” recommendations. */
+    /**
+     * Title prefix ranks above artist prefix, then album. Same band as {@link #PRIORITY_ARTIST} for
+     * standalone artist rows so “ar…” surfaces song titles first, then artists.
+     */
+    private int songTextMatchPriority(Song song, String query) {
+        if (query.isEmpty()) {
+            return 0;
+        }
+        String title = engine.normalize(song.title());
+        String artist = engine.normalize(song.artist());
+        String album = engine.normalize(song.album());
+        if (title.startsWith(query)) {
+            return PRIORITY_TITLE;
+        }
+        if (artist.startsWith(query)) {
+            return PRIORITY_ARTIST;
+        }
+        if (!album.isBlank() && album.startsWith(query)) {
+            return PRIORITY_ALBUM;
+        }
+        return 0;
+    }
+
+    /** Taste nudge within the same prefix tier; genre is minor so it cannot reorder title/artist matches. */
     private double songPersonalizationBlend(RecommendationProfile profile, Song song) {
         return profile.artistAffinity().getOrDefault(engine.normalize(song.artist()), 0.0) * 0.55
-                + profile.genreAffinity().getOrDefault(engine.normalize(song.genre()), 0.0) * 0.40
+                + profile.genreAffinity().getOrDefault(engine.normalize(song.genre()), 0.0) * 0.08
                 + profile.songAffinity().getOrDefault(song.songId(), 0.0) * 0.50;
     }
 
     private double artistPersonalizationFromSong(RecommendationProfile profile, String artist, Song song) {
         return profile.artistAffinity().getOrDefault(engine.normalize(artist), 0.0) * 0.55
-                + profile.genreAffinity().getOrDefault(engine.normalize(song.genre()), 0.0) * 0.40;
+                + profile.genreAffinity().getOrDefault(engine.normalize(song.genre()), 0.0) * 0.08;
     }
 
     private Map<String, Double> loadGenreBoost(String username) {
@@ -148,8 +184,7 @@ public class SearchRankingService {
     // ── Text match scoring ─────────────────────────────────────────
 
     /**
-     * Prefix-only: a song matches only if title, artist, album, or genre (normalized) starts with
-     * the full query — no infix “contains” matches.
+     * Prefix-only on title, artist, album — genre excluded so catalogue search stays name-forward.
      */
     private double songTextMatchScore(Song song, String query) {
         return songTextPrefixScore(song, query);
@@ -159,10 +194,9 @@ public class SearchRankingService {
         if (query.isEmpty()) {
             return 0.0;
         }
-        String title  = engine.normalize(song.title());
+        String title = engine.normalize(song.title());
         String artist = engine.normalize(song.artist());
-        String album  = engine.normalize(song.album());
-        String genre  = engine.normalize(song.genre());
+        String album = engine.normalize(song.album());
 
         double score = 0.0;
         if (title.startsWith(query)) {
@@ -173,9 +207,6 @@ public class SearchRankingService {
         }
         if (!album.isBlank() && album.startsWith(query)) {
             score = Math.max(score, 7.0);
-        }
-        if (!genre.isBlank() && genre.startsWith(query)) {
-            score = Math.max(score, 5.0);
         }
         return score;
     }

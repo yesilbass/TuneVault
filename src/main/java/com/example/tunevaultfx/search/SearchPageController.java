@@ -90,7 +90,7 @@ public class SearchPageController {
 
         // Defer wiring: center initialize can run before the included top bar finishes
         // bindTopBarSearchField. One pulse: subscribe + sync; next pulse: sync again so text/QUERY
-        // match after bidirectional bind (avoids empty or stale results after “See all results”).
+        // match after bidirectional bind (avoids empty or stale results after navigating to Search).
         Platform.runLater(
                 () -> {
                     SearchBarState.setSearchSubscriber(this::runSearch);
@@ -630,7 +630,7 @@ public class SearchPageController {
     }
 
     /**
-     * After opening the full search page from the dropdown or top-bar Enter, reset scroll chrome and
+     * After opening the full search page from the top bar (Enter), reset scroll chrome and
      * return keyboard focus to the search field so the flow feels deliberate.
      */
     private void applyFullSearchPresentation() {

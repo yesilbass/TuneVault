@@ -24,13 +24,13 @@ public final class SearchBarState {
 
     /**
      * When true, the next {@link #setSearchSubscriber} run (or subscriber notification) on the
-     * search page should scroll results to the top and polish focus — used by “See all results”
-     * and Enter on the top bar so the full page feels intentional, not a stale scroll position.
+     * search page should scroll results to the top and polish focus — used when opening the full
+     * search page from the top bar (Enter) so the page feels intentional, not a stale scroll position.
      */
     private static boolean fullSearchPresentationAfterNextRun;
 
     /**
-     * After “See all results” / Enter opens the full search page, the new header must not
+     * After Enter opens the full search page, the new header must not
      * immediately reopen the typeahead popup (focus + non-empty query would otherwise feel stuck on
      * the compact list). Cleared when the user clicks or types in the search field.
      */

@@ -10,7 +10,7 @@ import java.io.IOException;
 
 /**
  * Opens the full Search page for the current top-bar query, with a one-shot hint so the results
- * chrome scrolls to the top and the search field stays the focus target (dropdown / inline flow).
+ * chrome scrolls to the top and the search field stays the focus target (e.g. top-bar Enter).
  */
 public final class FullSearchPageOpener {
 

@@ -5,7 +5,6 @@ import com.example.tunevaultfx.db.SongDAO;
 import com.example.tunevaultfx.musicplayer.controller.MusicPlayerController;
 import com.example.tunevaultfx.recommendation.RankedSearchRow;
 import com.example.tunevaultfx.recommendation.RecommendationService;
-import com.example.tunevaultfx.search.FullSearchPageOpener;
 import com.example.tunevaultfx.search.RecentSearchActions;
 import com.example.tunevaultfx.search.SearchRecentItem;
 import com.example.tunevaultfx.session.SessionManager;
@@ -17,7 +16,6 @@ import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.geometry.Bounds;
-import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
@@ -28,7 +26,6 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Popup;
 import javafx.stage.Window;
@@ -39,11 +36,10 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Spotify-style popup under the top search field: recent items when empty, live ranked songs and
- * artists while typing, plus “See all results”.
+ * artists while typing.
  */
 public final class TopBarSearchDropdown {
 
@@ -62,11 +58,6 @@ public final class TopBarSearchDropdown {
     private final RecommendationService recommendationService = new RecommendationService();
     private final SongDAO songDAO = new SongDAO();
     private final ListChangeListener<SearchRecentItem> recentsListener;
-    private final AtomicBoolean fullSearchNavigationPending = new AtomicBoolean(false);
-    /** Main window last used to show the popup; fallback when resolving {@link Scene} for navigation. */
-    private Window lastHostWindow;
-    /** Use a mouse-driven row instead of {@link javafx.scene.control.Button}: ActionEvent is unreliable inside {@link Popup}. */
-    private final HBox seeAllResultsRow;
 
     public TopBarSearchDropdown(TextField anchor) {
         this.anchor = anchor;
@@ -114,27 +105,6 @@ public final class TopBarSearchDropdown {
         listView.setPlaceholder(new Label("No recent searches yet"));
         listView.prefWidthProperty().bind(anchor.widthProperty());
 
-        Label seeAllLabel = new Label("See all results");
-        seeAllLabel.getStyleClass().add("search-dropdown-see-all-label");
-        seeAllResultsRow = new HBox(seeAllLabel);
-        seeAllResultsRow.setAlignment(Pos.CENTER);
-        seeAllResultsRow.getStyleClass().add("search-dropdown-see-all-row");
-        seeAllResultsRow.setMaxWidth(Double.MAX_VALUE);
-        seeAllResultsRow.setPickOnBounds(true);
-        seeAllResultsRow.setVisible(false);
-        seeAllResultsRow.managedProperty().bind(seeAllResultsRow.visibleProperty());
-        seeAllResultsRow.prefWidthProperty().bind(anchor.widthProperty());
-        // MOUSE_PRESSED + consume: Popup auto-hide often runs before CLICKED; match top-bar Enter (hide then navigate).
-        seeAllResultsRow.addEventFilter(
-                MouseEvent.MOUSE_PRESSED,
-                e -> {
-                    if (e.getButton() != MouseButton.PRIMARY) {
-                        return;
-                    }
-                    e.consume();
-                    requestOpenFullSearchPage();
-                });
-
         listView.setCellFactory(lv -> new SearchDropdownListCell());
 
         listView.setOnMouseClicked(
@@ -163,7 +133,7 @@ public final class TopBarSearchDropdown {
                     handleActivatedRow(raw);
                 });
 
-        VBox panel = new VBox(6, listView, seeAllResultsRow);
+        VBox panel = new VBox(6, listView);
         panel.getStyleClass().add("search-dropdown-panel");
         popup.getContent().setAll(panel);
 
@@ -237,37 +207,6 @@ public final class TopBarSearchDropdown {
         return listView.getSelectionModel().getSelectedItem();
     }
 
-    /**
-     * Same flow as top-bar Enter ({@link AppTopBarController}): hide the typeahead first, then
-     * navigate synchronously. Deferring with {@link Platform#runLater} raced subscriber wiring on the
-     * Search page and left results empty or stuck until the next keystroke.
-     */
-    private void requestOpenFullSearchPage() {
-        if (!fullSearchNavigationPending.compareAndSet(false, true)) {
-            return;
-        }
-        debounce.stop();
-        try {
-            hide();
-            Node nav = anchor;
-            if (nav.getScene() == null) {
-                nav = SearchBarState.getBoundField();
-            }
-            if (nav != null && nav.getScene() != null) {
-                FullSearchPageOpener.open(nav);
-            } else {
-                Scene host = lastHostWindow != null ? lastHostWindow.getScene() : null;
-                if (host != null) {
-                    FullSearchPageOpener.open(host);
-                }
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        } finally {
-            fullSearchNavigationPending.set(false);
-        }
-    }
-
     private void handleActivatedRow(Object raw) {
         if (raw == SearchDropdownRows.CLEAR_SENTINEL) {
             SessionManager.clearRecentSearches();
@@ -333,7 +272,6 @@ public final class TopBarSearchDropdown {
         if (anchor.getScene() == null || anchor.getScene().getWindow() == null) {
             return;
         }
-        lastHostWindow = anchor.getScene().getWindow();
         // Suppress only blocks automatic refreshes (see {@link #refreshDropdownIfShouldUpdate}), not
         // an explicit open from the user — otherwise the dropdown list can stay stale forever.
         if (SearchBarState.isSearchDropdownAutoOpenSuppressed()) {
@@ -387,7 +325,6 @@ public final class TopBarSearchDropdown {
         }
         String q = raw.trim();
         if (q.isEmpty()) {
-            seeAllResultsRow.setVisible(false);
             rows.addAll(SessionManager.getRecentSearches());
             if (!SessionManager.getRecentSearches().isEmpty()) {
                 rows.add(SearchDropdownRows.CLEAR_SENTINEL);
@@ -396,7 +333,6 @@ public final class TopBarSearchDropdown {
             return;
         }
 
-        seeAllResultsRow.setVisible(true);
         String username = SessionManager.getCurrentUsername();
         List<Song> lib = snapshotAllSongs();
         ObservableList<Song> libObs = FXCollections.observableArrayList(lib);
@@ -418,9 +354,6 @@ public final class TopBarSearchDropdown {
 
     private void positionAndShow() {
         Window window = anchor.getScene().getWindow();
-        if (window != null) {
-            lastHostWindow = window;
-        }
         Bounds b = anchor.localToScreen(anchor.getBoundsInLocal());
         if (b == null || window == null) {
             Platform.runLater(this::positionAndShow);
