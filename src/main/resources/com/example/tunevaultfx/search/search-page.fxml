@@ -95,8 +95,8 @@
                             <ListView fx:id="publicPlaylistResultsListView" prefHeight="200"/>
                         </VBox>
 
-                        <!-- Songs -->
-                        <VBox fx:id="songResultsSection"
+                        <!-- Songs & artists (single feed, ranked for this user) -->
+                        <VBox fx:id="musicResultsSection"
                               spacing="0"
                               visible="false"
                               managed="false"
@@ -106,27 +106,16 @@
                                 <StackPane styleClass="icon-box-sm, icon-box-violet">
                                     <Label text="♫" styleClass="text-accent"/>
                                 </StackPane>
-                                <Label text="Songs" styleClass="heading-md"/>
+                                <VBox spacing="2">
+                                    <Label text="Music" styleClass="heading-md"/>
+                                    <Label text="Songs and artists mixed by match and your listening"
+                                           styleClass="caption"
+                                           wrapText="true"
+                                           maxWidth="520"/>
+                                </VBox>
                             </HBox>
 
-                            <ListView fx:id="songResultsListView" prefHeight="340"/>
-                        </VBox>
-
-                        <!-- Artists -->
-                        <VBox fx:id="artistResultsSection"
-                              spacing="0"
-                              visible="false"
-                              managed="false"
-                              styleClass="card">
-
-                            <HBox alignment="CENTER_LEFT" spacing="10" style="-fx-padding: 0 0 14 0;">
-                                <StackPane styleClass="icon-box-sm, icon-box-rose">
-                                    <Label text="◎" style="-fx-text-fill: #fb7185;"/>
-                                </StackPane>
-                                <Label text="Artists" styleClass="heading-md"/>
-                            </HBox>
-
-                            <ListView fx:id="artistResultsListView" prefHeight="220"/>
+                            <ListView fx:id="musicResultsListView" prefHeight="420"/>
                         </VBox>
 
                     </VBox>

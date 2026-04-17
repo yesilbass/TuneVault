@@ -6,7 +6,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.stage.Stage;
+import javafx.stage.Window;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -51,6 +51,21 @@ public final class SceneUtil {
     }
 
     public static void switchScene(Node sourceNode, String fxmlFile) throws IOException {
+        if (sourceNode == null || sourceNode.getScene() == null) {
+            throw new IOException("Navigation source has no Scene (already detached?)");
+        }
+        switchScene(sourceNode.getScene(), fxmlFile);
+    }
+
+    /**
+     * Same as {@link #switchScene(Node, String)} but uses the stage {@link Scene} directly. Prefer
+     * this when the triggering node may be torn down (e.g. popup actions) or when you already hold
+     * a stable scene reference from the current pulse.
+     */
+    public static void switchScene(Scene scene, String fxmlFile) throws IOException {
+        if (scene == null) {
+            throw new IOException("Scene is null");
+        }
         if (currentIndex < 0 || entries.isEmpty()) {
             entries.clear();
             entries.add(fxmlFile);
@@ -60,13 +75,13 @@ public final class SceneUtil {
                 entries.remove(entries.size() - 1);
             }
             if (fxmlFile.equals(entries.get(currentIndex))) {
-                loadScene(sourceNode, fxmlFile);
+                loadScene(scene, fxmlFile);
                 return;
             }
             entries.add(fxmlFile);
             currentIndex++;
         }
-        loadScene(sourceNode, fxmlFile);
+        loadScene(scene, fxmlFile);
     }
 
     /**
@@ -76,7 +91,10 @@ public final class SceneUtil {
         entries.clear();
         entries.add(fxmlFile);
         currentIndex = 0;
-        loadScene(sourceNode, fxmlFile);
+        if (sourceNode == null || sourceNode.getScene() == null) {
+            throw new IOException("Navigation source has no Scene (already detached?)");
+        }
+        loadScene(sourceNode.getScene(), fxmlFile);
     }
 
     public static void goBack(Node sourceNode) throws IOException {
@@ -84,7 +102,10 @@ public final class SceneUtil {
             return;
         }
         currentIndex--;
-        loadScene(sourceNode, entries.get(currentIndex));
+        if (sourceNode == null || sourceNode.getScene() == null) {
+            throw new IOException("Navigation source has no Scene (already detached?)");
+        }
+        loadScene(sourceNode.getScene(), entries.get(currentIndex));
     }
 
     public static void goForward(Node sourceNode) throws IOException {
@@ -92,7 +113,10 @@ public final class SceneUtil {
             return;
         }
         currentIndex++;
-        loadScene(sourceNode, entries.get(currentIndex));
+        if (sourceNode == null || sourceNode.getScene() == null) {
+            throw new IOException("Navigation source has no Scene (already detached?)");
+        }
+        loadScene(sourceNode.getScene(), entries.get(currentIndex));
     }
 
     public static boolean canGoBack() {
@@ -112,14 +136,6 @@ public final class SceneUtil {
         currentPage = null;
         historyRefreshHandler = null;
         notifyHistoryChanged();
-    }
-
-    /**
-     * @deprecated use {@link #canGoBack()}
-     */
-    @Deprecated
-    public static boolean hasHistory() {
-        return canGoBack();
     }
 
     /**
@@ -160,16 +176,24 @@ public final class SceneUtil {
         }
     }
 
-    private static void loadScene(Node sourceNode, String fxmlFile) throws IOException {
+    private static void loadScene(Scene scene, String fxmlFile) throws IOException {
         // Drop the search subscriber before tearing down the old root so debounced query updates
         // cannot run against a detached SearchPageController (symptom: "typing shows nothing").
         SearchBarState.clearSearchSubscriber();
 
-        Stage stage = (Stage) sourceNode.getScene().getWindow();
-        Scene scene = stage.getScene();
+        if (scene == null) {
+            throw new IOException("Scene is null");
+        }
+        Window window = scene.getWindow();
+        if (window == null) {
+            throw new IOException("Scene has no Window");
+        }
 
-        FXMLLoader loader =
-                new FXMLLoader(SceneUtil.class.getResource(FXML_BASE + fxmlFile));
+        var fxmlUrl = SceneUtil.class.getResource(FXML_BASE + fxmlFile);
+        if (fxmlUrl == null) {
+            throw new IOException("Missing FXML resource: " + FXML_BASE + fxmlFile);
+        }
+        FXMLLoader loader = new FXMLLoader(fxmlUrl);
         Parent root = loader.load();
 
         String cssUrl = SceneUtil.class.getResource(CSS_PATH).toExternalForm();

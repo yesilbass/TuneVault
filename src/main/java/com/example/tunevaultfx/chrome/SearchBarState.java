@@ -1,6 +1,7 @@
 package com.example.tunevaultfx.chrome;
 
-import javafx.animation.PauseTransition;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.scene.control.TextField;
@@ -21,33 +22,53 @@ public final class SearchBarState {
     private static TextField boundField;
     private static Consumer<String> searchSubscriber;
 
-    private static final PauseTransition DEBOUNCE = new PauseTransition(Duration.millis(280));
+    /**
+     * When true, the next {@link #setSearchSubscriber} run (or subscriber notification) on the
+     * search page should scroll results to the top and polish focus — used by “See all results”
+     * and Enter on the top bar so the full page feels intentional, not a stale scroll position.
+     */
+    private static boolean fullSearchPresentationAfterNextRun;
+
+    /**
+     * After “See all results” / Enter opens the full search page, the new header must not
+     * immediately reopen the typeahead popup (focus + non-empty query would otherwise feel stuck on
+     * the compact list). Cleared when the user clicks or types in the search field.
+     */
+    private static boolean suppressSearchDropdownAutoOpen;
+
+    /** Coalesces fast typing on the search page without blocking the first navigation + subscribe. */
+    private static final Timeline DEBOUNCE =
+            new Timeline(new KeyFrame(Duration.millis(120), e -> notifySubscriberLatestQuery()));
 
     static {
-        DEBOUNCE.setOnFinished(
-                e -> {
-                    Consumer<String> sub = searchSubscriber;
-                    if (sub != null) {
-                        String v = QUERY.get();
-                        sub.accept(v != null ? v : "");
-                    }
-                });
+        DEBOUNCE.setCycleCount(1);
         QUERY.addListener(
                 (obs, o, n) -> {
                     Consumer<String> sub = searchSubscriber;
                     String raw = n != null ? n : "";
-                    // Clearing the bar should snap the search UI back to recents immediately — waiting
-                    // on debounce felt like "nothing happens" until the user clicked elsewhere.
                     if (sub != null && raw.isBlank()) {
                         DEBOUNCE.stop();
                         sub.accept(raw);
                         return;
                     }
+                    if (sub == null) {
+                        DEBOUNCE.stop();
+                        return;
+                    }
+                    DEBOUNCE.stop();
                     DEBOUNCE.playFromStart();
                 });
     }
 
     private SearchBarState() {}
+
+    private static void notifySubscriberLatestQuery() {
+        Consumer<String> sub = searchSubscriber;
+        if (sub != null) {
+            String v = QUERY.get();
+            sub.accept(v != null ? v : "");
+        }
+    }
 
     public static StringProperty queryProperty() {
         return QUERY;
@@ -77,6 +98,29 @@ public final class SearchBarState {
 
     public static void clearQuery() {
         QUERY.set("");
+    }
+
+    public static void requestFullSearchPresentationAfterNextRun() {
+        fullSearchPresentationAfterNextRun = true;
+    }
+
+    /** @return whether the search page should reset chrome scroll / focus after this run */
+    public static boolean consumeFullSearchPresentationRequest() {
+        boolean v = fullSearchPresentationAfterNextRun;
+        fullSearchPresentationAfterNextRun = false;
+        return v;
+    }
+
+    public static void suppressSearchDropdownAutoOpen() {
+        suppressSearchDropdownAutoOpen = true;
+    }
+
+    public static void clearSearchDropdownAutoOpenSuppress() {
+        suppressSearchDropdownAutoOpen = false;
+    }
+
+    public static boolean isSearchDropdownAutoOpenSuppressed() {
+        return suppressSearchDropdownAutoOpen;
     }
 
     /**

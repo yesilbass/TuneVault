@@ -1,5 +1,6 @@
 package com.example.tunevaultfx.chrome;
 
+import com.example.tunevaultfx.search.FullSearchPageOpener;
 import com.example.tunevaultfx.session.SessionManager;
 import com.example.tunevaultfx.util.AppTheme;
 import com.example.tunevaultfx.util.ContextMenuPopupSupport;
@@ -7,7 +8,7 @@ import com.example.tunevaultfx.util.SceneUtil;
 import com.example.tunevaultfx.util.UiPrefs;
 import com.example.tunevaultfx.view.FxmlResources;
 import javafx.application.Platform;
-import javafx.beans.value.ChangeListener;
+import javafx.beans.binding.Bindings;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Side;
@@ -18,6 +19,7 @@ import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
@@ -26,7 +28,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 
 /** Header: home, centered search, theme, account menu, log out. */
-public class AppTopBarController {
+public final class AppTopBarController {
 
     @FXML private HBox topBarRoot;
     @FXML private HBox topBarBrand;
@@ -34,14 +36,14 @@ public class AppTopBarController {
     @FXML private Button topBarBackButton;
     @FXML private Button topBarForwardButton;
     @FXML private TextField globalSearchField;
+    @FXML private Button searchInlineClearButton;
     @FXML private Button wrappedQuickBtn;
     @FXML private Button genreQuizQuickBtn;
     @FXML private Button themeToggleBtn;
     @FXML private Button accountMenuBtn;
 
     private ContextMenu accountMenu;
-    private SearchRecentDropdown searchRecentDropdown;
-    private ChangeListener<String> autoOpenSearchPageListener;
+    private TopBarSearchDropdown topBarSearchDropdown;
 
     @FXML
     public void initialize() {
@@ -53,86 +55,63 @@ public class AppTopBarController {
             topBarHomeButton.setTooltip(new Tooltip("Home"));
         }
 
-        searchRecentDropdown = new SearchRecentDropdown(globalSearchField);
+        topBarSearchDropdown = new TopBarSearchDropdown(globalSearchField);
 
-        // Avoid stealing focus on scene load (focused ring + recents felt like the bar "popped open").
+        // Keep the bar out of the default tab order so the window doesn’t focus it on show (which
+        // used to pop the history dropdown immediately after login). The field still accepts focus
+        // on mouse click.
         globalSearchField.setFocusTraversable(false);
 
-        globalSearchField
-                .focusedProperty()
-                .addListener(
-                        (obs, wasFocused, focused) -> {
-                            if (!focused || searchRecentDropdown == null || globalSearchField == null) {
-                                return;
-                            }
-                            String t = globalSearchField.getText();
-                            if (t == null || t.isBlank()) {
-                                Platform.runLater(() -> searchRecentDropdown.show());
-                            }
-                        });
+        if (searchInlineClearButton != null) {
+            searchInlineClearButton
+                    .visibleProperty()
+                    .bind(
+                            Bindings.createBooleanBinding(
+                                    () -> {
+                                        String t = SearchBarState.queryProperty().get();
+                                        return t != null && !t.isBlank();
+                                    },
+                                    SearchBarState.queryProperty()));
+            searchInlineClearButton.managedProperty().bind(searchInlineClearButton.visibleProperty());
+            searchInlineClearButton.setTooltip(new Tooltip("Clear"));
+        }
 
-        // Recents only when the field is empty — clicking to edit an existing query should not pop the dropdown.
+        globalSearchField.setOnAction(
+                e -> {
+                    if (topBarSearchDropdown != null) {
+                        topBarSearchDropdown.hide();
+                    }
+                    try {
+                        FullSearchPageOpener.open(globalSearchField);
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
+                    }
+                });
+
+        globalSearchField.addEventFilter(
+                KeyEvent.KEY_PRESSED,
+                e -> SearchBarState.clearSearchDropdownAutoOpenSuppress());
+
         globalSearchField.addEventHandler(
                 MouseEvent.MOUSE_CLICKED,
                 e -> {
                     if (e.getButton() != MouseButton.PRIMARY) {
                         return;
                     }
-                    String t = globalSearchField.getText();
-                    if (t == null || t.isBlank()) {
-                        searchRecentDropdown.show();
+                    SearchBarState.clearSearchDropdownAutoOpenSuppress();
+                    if (topBarSearchDropdown != null) {
+                        topBarSearchDropdown.onFieldActivated();
                     }
                 });
 
-        globalSearchField.setOnAction(
-                e -> {
-                    searchRecentDropdown.hide();
-                    try {
-                        SceneUtil.switchScene(globalSearchField, FxmlResources.SEARCH);
-                    } catch (IOException ex) {
-                        ex.printStackTrace();
-                    }
-                });
-
-        autoOpenSearchPageListener =
-                (obs, oldQ, newQ) -> {
-                    String raw = newQ != null ? newQ : "";
-                    if (raw.isBlank()) {
-                        if (searchRecentDropdown != null
-                                && globalSearchField != null
-                                && globalSearchField.isFocused()) {
-                            Platform.runLater(
-                                    () -> {
-                                        String q = SearchBarState.queryProperty().get();
-                                        if (q == null || q.isBlank()) {
-                                            if (globalSearchField != null
-                                                    && globalSearchField.isFocused()) {
-                                                searchRecentDropdown.show();
-                                            }
-                                        }
-                                    });
-                        }
-                        return;
-                    }
-                    if (searchRecentDropdown != null) {
-                        searchRecentDropdown.hide();
-                    }
-                    if (FxmlResources.SEARCH.equals(SceneUtil.getCurrentPage())) {
-                        return;
-                    }
-                    Platform.runLater(this::navigateToSearchIfStillNeeded);
-                };
-        topBarRoot.sceneProperty().addListener((obs, oldScene, newScene) -> {
-            if (oldScene != null) {
-                SearchBarState.queryProperty().removeListener(autoOpenSearchPageListener);
-            }
-            if (newScene != null) {
-                SearchBarState.queryProperty().addListener(autoOpenSearchPageListener);
-                Platform.runLater(this::syncThemeToggleLabel);
-            }
-        });
+        topBarRoot.sceneProperty()
+                .addListener(
+                        (obs, oldScene, newScene) -> {
+                            if (newScene != null) {
+                                Platform.runLater(this::syncThemeToggleLabel);
+                            }
+                        });
         if (topBarRoot.getScene() != null) {
-            SearchBarState.queryProperty().addListener(autoOpenSearchPageListener);
             Platform.runLater(this::syncThemeToggleLabel);
         }
 
@@ -220,8 +199,8 @@ public class AppTopBarController {
 
     @FXML
     private void handleBrandClick(MouseEvent e) throws IOException {
-        if (searchRecentDropdown != null) {
-            searchRecentDropdown.hide();
+        if (topBarSearchDropdown != null) {
+            topBarSearchDropdown.hide();
         }
         SceneUtil.switchScene(topBarBrand, FxmlResources.MAIN_MENU);
         e.consume();
@@ -229,60 +208,43 @@ public class AppTopBarController {
 
     @FXML
     private void handleHomeClick(ActionEvent e) throws IOException {
-        if (searchRecentDropdown != null) {
-            searchRecentDropdown.hide();
+        if (topBarSearchDropdown != null) {
+            topBarSearchDropdown.hide();
         }
         SceneUtil.switchScene((Node) e.getSource(), FxmlResources.MAIN_MENU);
     }
 
     @FXML
     private void handleGoWrapped(ActionEvent e) throws IOException {
-        if (searchRecentDropdown != null) {
-            searchRecentDropdown.hide();
+        if (topBarSearchDropdown != null) {
+            topBarSearchDropdown.hide();
         }
         SceneUtil.switchScene(wrappedQuickBtn, FxmlResources.WRAPPED);
     }
 
     @FXML
     private void handleGoGenreQuiz(ActionEvent e) throws IOException {
-        if (searchRecentDropdown != null) {
-            searchRecentDropdown.hide();
+        if (topBarSearchDropdown != null) {
+            topBarSearchDropdown.hide();
         }
         SceneUtil.switchScene(genreQuizQuickBtn, FxmlResources.FIND_YOUR_GENRE);
     }
 
     @FXML
-    private void handleClearSearchBar(ActionEvent e) {
+    private void handleInlineSearchClear(ActionEvent e) {
+        e.consume();
         SearchBarState.clearQuery();
         if (globalSearchField != null) {
             globalSearchField.requestFocus();
         }
-        if (searchRecentDropdown != null && globalSearchField != null) {
+        if (topBarSearchDropdown != null) {
             Platform.runLater(
                     () -> {
-                        String q = SearchBarState.queryProperty().get();
-                        if (q == null || q.isBlank()) {
-                            searchRecentDropdown.show();
+                        if (globalSearchField != null) {
+                            globalSearchField.requestFocus();
                         }
+                        topBarSearchDropdown.refreshAndShow();
                     });
-        }
-    }
-
-    private void navigateToSearchIfStillNeeded() {
-        if (globalSearchField == null || globalSearchField.getScene() == null) {
-            return;
-        }
-        String q = SearchBarState.queryProperty().get();
-        if (q == null || q.isBlank()) {
-            return;
-        }
-        if (FxmlResources.SEARCH.equals(SceneUtil.getCurrentPage())) {
-            return;
-        }
-        try {
-            SceneUtil.switchScene(globalSearchField, FxmlResources.SEARCH);
-        } catch (IOException ex) {
-            ex.printStackTrace();
         }
     }
 
@@ -312,8 +274,8 @@ public class AppTopBarController {
 
     @FXML
     private void handleLogout(ActionEvent e) throws IOException {
-        if (searchRecentDropdown != null) {
-            searchRecentDropdown.hide();
+        if (topBarSearchDropdown != null) {
+            topBarSearchDropdown.hide();
         }
         SearchBarState.clearSearchSubscriber();
         SearchBarState.clearQuery();

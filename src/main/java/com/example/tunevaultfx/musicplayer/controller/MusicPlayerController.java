@@ -4,6 +4,7 @@ import com.example.tunevaultfx.core.Song;
 import com.example.tunevaultfx.db.ListeningEventDAO;
 import com.example.tunevaultfx.musicplayer.ListeningSessionTracker;
 import com.example.tunevaultfx.musicplayer.ShuffleManager;
+import com.example.tunevaultfx.musicplayer.playback.AutoplayCoordinator;
 import com.example.tunevaultfx.musicplayer.playback.PlaybackLifecycleService;
 import com.example.tunevaultfx.musicplayer.playback.PlaybackNavigator;
 import com.example.tunevaultfx.musicplayer.playback.PlaybackQueue;
@@ -23,16 +24,10 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.util.Duration;
 
-import java.util.HashSet;
-import java.util.Set;
-
 /**
  * Coordinates shared playback logic for the whole application.
  */
 public class MusicPlayerController {
-
-    private static final int TARGET_AUTOPLAY_BUFFER = 12;
-    private static final int AUTOPLAY_TOPUP_BATCH   = 10;
 
     private static final MusicPlayerController instance = new MusicPlayerController();
 
@@ -65,9 +60,7 @@ public class MusicPlayerController {
     private ObservableList<Song> activePlaylistSongs = FXCollections.observableArrayList();
     private int activePlaylistIndex = -1;
 
-    private final ObservableList<Song> autoplaySuggestions = FXCollections.observableArrayList();
-    private int autoplaySuggestionIndex = -1;
-    private boolean playingAutoplaySuggestions = false;
+    private final AutoplayCoordinator autoplay;
 
     private final ObservableList<Song> userQueue = FXCollections.observableArrayList();
 
@@ -130,6 +123,56 @@ public class MusicPlayerController {
         timeline = new Timeline(new KeyFrame(Duration.seconds(1), e -> tick()));
         timeline.setCycleCount(Timeline.INDEFINITE);
 
+        autoplay =
+                new AutoplayCoordinator(
+                        new AutoplayCoordinator.Host() {
+                            @Override
+                            public PlaybackState state() {
+                                return MusicPlayerController.this.state;
+                            }
+
+                            @Override
+                            public PlaybackLifecycleService lifecycle() {
+                                return MusicPlayerController.this.lifecycleService;
+                            }
+
+                            @Override
+                            public RecommendationService recommendations() {
+                                return MusicPlayerController.this.recommendationService;
+                            }
+
+                            @Override
+                            public ObservableList<Song> activePlaylistSongs() {
+                                return MusicPlayerController.this.activePlaylistSongs;
+                            }
+
+                            @Override
+                            public int activePlaylistIndex() {
+                                return MusicPlayerController.this.activePlaylistIndex;
+                            }
+
+                            @Override
+                            public void setActivePlaylistIndex(int index) {
+                                MusicPlayerController.this.activePlaylistIndex = index;
+                            }
+
+                            @Override
+                            public void clearActivePlaylist() {
+                                MusicPlayerController.this.activePlaylistSongs.clear();
+                                MusicPlayerController.this.activePlaylistIndex = -1;
+                            }
+
+                            @Override
+                            public ObservableList<Song> userQueue() {
+                                return MusicPlayerController.this.userQueue;
+                            }
+
+                            @Override
+                            public void stopPlayback() {
+                                MusicPlayerController.this.stop();
+                            }
+                        });
+
         // Keep liked-state UI in sync whenever the currently playing song changes.
         state.currentSongProperty().addListener((obs, oldSong, newSong) -> refreshCurrentSongLikedFromTrackChange());
     }
@@ -141,12 +184,10 @@ public class MusicPlayerController {
     public void playQueue(ObservableList<Song> songs, int index, String playlistName) {
         activePlaylistSongs = songs == null ? FXCollections.observableArrayList() : FXCollections.observableArrayList(songs);
         activePlaylistIndex = index;
-        playingAutoplaySuggestions = false;
-        autoplaySuggestions.clear();
-        autoplaySuggestionIndex = -1;
+        autoplay.clearSuggestionContext();
 
         lifecycleService.playQueue(songs, index, playlistName);
-        primeAutoplayUpNextIfNoPlaylistTail();
+        autoplay.primeUpNextIfNoPlaylistTail();
     }
 
     public void playSingleSong(Song song) {
@@ -157,7 +198,7 @@ public class MusicPlayerController {
         boolean singleContext =
                 activePlaylistSongs.isEmpty()
                         && activePlaylistIndex < 0
-                        && !playingAutoplaySuggestions;
+                        && !autoplay.isPlayingSuggestions();
         if (singleContext
                 && cur != null
                 && cur.songId() == song.songId()) {
@@ -167,12 +208,10 @@ public class MusicPlayerController {
 
         activePlaylistSongs.clear();
         activePlaylistIndex = -1;
-        playingAutoplaySuggestions = false;
-        autoplaySuggestions.clear();
-        autoplaySuggestionIndex = -1;
+        autoplay.clearSuggestionContext();
 
         lifecycleService.playSingleSong(song);
-        primeAutoplayUpNextIfNoPlaylistTail();
+        autoplay.primeUpNextIfNoPlaylistTail();
     }
 
     public void togglePlayPause() {
@@ -188,8 +227,8 @@ public class MusicPlayerController {
             return;
         }
 
-        if (playingAutoplaySuggestions) {
-            playNextAutoplaySuggestion();
+        if (autoplay.isPlayingSuggestions()) {
+            autoplay.playNextSuggestion();
             return;
         }
 
@@ -201,8 +240,8 @@ public class MusicPlayerController {
             }
 
             if (!state.isLoopEnabled()) {
-                if (!beginAutoplayFromPrimedBufferIfPresent()) {
-                    startAutoplaySuggestions();
+                if (!autoplay.beginFromPrimedBufferIfPresent()) {
+                    autoplay.startSuggestions();
                 }
                 return;
             }
@@ -212,8 +251,8 @@ public class MusicPlayerController {
         // instead of silently stopping. This covers songs played from search,
         // recent searches, and any other one-off play.
         if (state.getCurrentSong() != null && !state.isLoopEnabled()) {
-            if (!beginAutoplayFromPrimedBufferIfPresent()) {
-                startAutoplaySuggestions();
+            if (!autoplay.beginFromPrimedBufferIfPresent()) {
+                autoplay.startSuggestions();
             }
             return;
         }
@@ -222,18 +261,19 @@ public class MusicPlayerController {
     }
 
     public void previous() {
-        if (playingAutoplaySuggestions) {
-            if (autoplaySuggestionIndex > 0) {
-                autoplaySuggestionIndex--;
-                Song previousSuggestion = autoplaySuggestions.get(autoplaySuggestionIndex);
+        if (autoplay.isPlayingSuggestions()) {
+            if (autoplay.suggestionIndex() > 0) {
+                autoplay.setSuggestionIndex(autoplay.suggestionIndex() - 1);
+                Song previousSuggestion =
+                        autoplay.suggestionsList().get(autoplay.suggestionIndex());
                 lifecycleService.playSingleSong(previousSuggestion);
                 return;
             }
 
-            playingAutoplaySuggestions = false;
-            autoplaySuggestionIndex = -1;
+            autoplay.setPlayingSuggestions(false);
+            autoplay.setSuggestionIndex(-1);
 
-            if (!activePlaylistSongs.isEmpty() && !activePlaylistSongs.isEmpty()) {
+            if (!activePlaylistSongs.isEmpty()) {
                 Song lastPlaylistSong = activePlaylistSongs.get(activePlaylistSongs.size() - 1);
                 activePlaylistIndex = activePlaylistSongs.size() - 1;
                 lifecycleService.playQueue(activePlaylistSongs, activePlaylistIndex, state.getCurrentSourcePlaylistName());
@@ -262,9 +302,7 @@ public class MusicPlayerController {
         timeline.stop();
         setExpandedPlayerVisible(false);
         currentSongLiked.set(false);
-        playingAutoplaySuggestions = false;
-        autoplaySuggestions.clear();
-        autoplaySuggestionIndex = -1;
+        autoplay.clearSuggestionContext();
     }
 
     public void onSongRemovedFromPlaylist(String playlistName, Song removedSong) {
@@ -302,9 +340,7 @@ public class MusicPlayerController {
 
         activePlaylistSongs.clear();
         activePlaylistIndex = -1;
-        autoplaySuggestions.clear();
-        autoplaySuggestionIndex = -1;
-        playingAutoplaySuggestions = false;
+        autoplay.clearSuggestionContext();
         userQueue.clear();
 
         currentSongLiked.set(false);
@@ -404,227 +440,16 @@ public class MusicPlayerController {
         Song next = userQueue.remove(0);
         activePlaylistSongs.clear();
         activePlaylistIndex = -1;
-        playingAutoplaySuggestions = false;
-        autoplaySuggestions.clear();
-        autoplaySuggestionIndex = -1;
+        autoplay.clearSuggestionContext();
         lifecycleService.playSingleSong(next);
-        primeAutoplayUpNextIfNoPlaylistTail();
-    }
-
-    /**
-     * When there is no in-playlist “up next”, preloads autoplay suggestions (index {@code -1}) so the
-     * queue panel shows upcoming audio before the current track ends.
-     */
-    private void primeAutoplayUpNextIfNoPlaylistTail() {
-        if (playingAutoplaySuggestions) {
-            return;
-        }
-        boolean hasPlaylistTail = !activePlaylistSongs.isEmpty()
-                && activePlaylistIndex >= 0
-                && activePlaylistIndex + 1 < activePlaylistSongs.size();
-        if (hasPlaylistTail) {
-            return;
-        }
-
-        ObservableList<Song> source = activePlaylistSongs.isEmpty()
-                ? (state.getCurrentSong() != null
-                        ? FXCollections.observableArrayList(state.getCurrentSong())
-                        : FXCollections.observableArrayList())
-                : activePlaylistSongs;
-
-        if (source.isEmpty()) {
-            return;
-        }
-
-        String playlistName = state.getCurrentSourcePlaylistName();
-        if (playlistName == null) {
-            playlistName = "";
-        }
-
-        ObservableList<Song> suggestions = recommendationService.getSuggestedSongsForPlaylist(
-                SessionManager.getCurrentUsername(),
-                playlistName,
-                source,
-                Math.max(8, TARGET_AUTOPLAY_BUFFER));
-
-        if (suggestions.isEmpty()) {
-            suggestions = recommendationService.getSuggestedSongsForUser(
-                    SessionManager.getCurrentUsername(), 10);
-        }
-        if (suggestions.isEmpty()) {
-            suggestions = recommendationService.getAutoplayContinuation(
-                    SessionManager.getCurrentUsername(),
-                    state.getCurrentSong(),
-                    collectExcludeIdsForAutoplayTopUp(),
-                    Math.max(TARGET_AUTOPLAY_BUFFER, AUTOPLAY_TOPUP_BATCH));
-        }
-
-        Song cur = state.getCurrentSong();
-        if (cur != null && cur.songId() > 0) {
-            suggestions.removeIf(s -> s != null && s.songId() == cur.songId());
-        }
-
-        if (suggestions.isEmpty()) {
-            return;
-        }
-
-        autoplaySuggestions.setAll(suggestions);
-        autoplaySuggestionIndex = -1;
-    }
-
-    /**
-     * When the current track ends (or user skips) with a primed autoplay buffer, start playback on
-     * the first suggestion without refetching.
-     */
-    private boolean beginAutoplayFromPrimedBufferIfPresent() {
-        if (autoplaySuggestions.isEmpty() || autoplaySuggestionIndex >= 0) {
-            return false;
-        }
-        activePlaylistSongs.clear();
-        activePlaylistIndex = -1;
-        playingAutoplaySuggestions = true;
-        autoplaySuggestionIndex = 0;
-        lifecycleService.playSingleSong(autoplaySuggestions.get(0));
-        topUpAutoplayBuffer();
-        return true;
-    }
-
-    private void startAutoplaySuggestions() {
-        ObservableList<Song> source = activePlaylistSongs.isEmpty()
-                ? (state.getCurrentSong() != null
-                    ? FXCollections.observableArrayList(state.getCurrentSong())
-                    : FXCollections.observableArrayList())
-                : activePlaylistSongs;
-
-        if (source.isEmpty()) {
-            fetchGlobalRecommendations();
-            return;
-        }
-
-        ObservableList<Song> suggestions = recommendationService.getSuggestedSongsForPlaylist(
-                SessionManager.getCurrentUsername(),
-                state.getCurrentSourcePlaylistName(),
-                source,
-                8);
-
-        if (suggestions.isEmpty()) {
-            fetchGlobalRecommendations();
-            return;
-        }
-
-        autoplaySuggestions.clear();
-        autoplaySuggestions.addAll(suggestions);
-        autoplaySuggestionIndex = 0;
-        playingAutoplaySuggestions = true;
-        lifecycleService.playSingleSong(autoplaySuggestions.get(0));
-        topUpAutoplayBuffer();
-    }
-
-    private void fetchGlobalRecommendations() {
-        String user = SessionManager.getCurrentUsername();
-        ObservableList<Song> global = recommendationService.getSuggestedSongsForUser(user, 10);
-
-        if (global.isEmpty()) {
-            global = recommendationService.getAutoplayContinuation(
-                    user,
-                    state.getCurrentSong(),
-                    collectExcludeIdsForAutoplayTopUp(),
-                    Math.max(TARGET_AUTOPLAY_BUFFER, AUTOPLAY_TOPUP_BATCH));
-        }
-
-        if (global.isEmpty()) {
-            Song anchor = state.getCurrentSong();
-            if (anchor != null) {
-                autoplaySuggestions.clear();
-                autoplaySuggestions.add(anchor);
-                autoplaySuggestionIndex = 0;
-                playingAutoplaySuggestions = true;
-                lifecycleService.playSingleSong(anchor);
-            } else {
-                stop();
-            }
-            return;
-        }
-
-        autoplaySuggestions.clear();
-        autoplaySuggestions.addAll(global);
-        autoplaySuggestionIndex = 0;
-        playingAutoplaySuggestions = true;
-        lifecycleService.playSingleSong(autoplaySuggestions.get(0));
-        topUpAutoplayBuffer();
-    }
-
-    private void playNextAutoplaySuggestion() {
-        if (autoplaySuggestions.isEmpty()) {
-            startAutoplaySuggestions();
-            return;
-        }
-
-        if (autoplaySuggestionIndex < autoplaySuggestions.size() - 1) {
-            autoplaySuggestionIndex++;
-            lifecycleService.playSingleSong(autoplaySuggestions.get(autoplaySuggestionIndex));
-            topUpAutoplayBuffer();
-        } else {
-            startAutoplaySuggestions();
-        }
-    }
-
-    /**
-     * Keeps a healthy tail of autoplay tracks so the queue rarely runs dry.
-     */
-    private void topUpAutoplayBuffer() {
-        if (!playingAutoplaySuggestions) {
-            return;
-        }
-
-        int upcoming = autoplaySuggestions.size() - (autoplaySuggestionIndex + 1);
-        if (upcoming >= TARGET_AUTOPLAY_BUFFER) {
-            return;
-        }
-
-        int need = TARGET_AUTOPLAY_BUFFER - upcoming;
-        ObservableList<Song> more = recommendationService.getAutoplayContinuation(
-                SessionManager.getCurrentUsername(),
-                state.getCurrentSong(),
-                collectExcludeIdsForAutoplayTopUp(),
-                Math.max(need, AUTOPLAY_TOPUP_BATCH));
-
-        for (Song s : more) {
-            if (s != null && s.songId() > 0) {
-                autoplaySuggestions.add(s);
-            }
-        }
-    }
-
-    private Set<Integer> collectExcludeIdsForAutoplayTopUp() {
-        HashSet<Integer> ids = new HashSet<>();
-        Song cur = state.getCurrentSong();
-        if (cur != null && cur.songId() > 0) {
-            ids.add(cur.songId());
-        }
-        for (Song s : userQueue) {
-            if (s != null && s.songId() > 0) {
-                ids.add(s.songId());
-            }
-        }
-        for (Song s : autoplaySuggestions) {
-            if (s != null && s.songId() > 0) {
-                ids.add(s.songId());
-            }
-        }
-        for (Song s : activePlaylistSongs) {
-            if (s != null && s.songId() > 0) {
-                ids.add(s.songId());
-            }
-        }
-        return ids;
+        autoplay.primeUpNextIfNoPlaylistTail();
     }
 
     /**
      * Observable tail used by the queue panel; mutations always go through this list.
      */
     public ObservableList<Song> getAutoplaySuggestionsList() {
-        return autoplaySuggestions;
+        return autoplay.suggestionsList();
     }
 
     // ── User queue management ─────────────────────────────────────
@@ -706,13 +531,7 @@ public class MusicPlayerController {
 
     /** How many upcoming tracks are shown from autoplay / primed suggestions. */
     public int getAutoplayUpcomingCount() {
-        if (playingAutoplaySuggestions) {
-            return Math.max(0, autoplaySuggestions.size() - autoplaySuggestionIndex - 1);
-        }
-        if (autoplaySuggestionIndex < 0 && !autoplaySuggestions.isEmpty()) {
-            return autoplaySuggestions.size();
-        }
-        return 0;
+        return autoplay.upcomingCount();
     }
 
     /**
@@ -782,24 +601,25 @@ public class MusicPlayerController {
             return;
         }
         if (fromDisplay >= uq + pl) {
-            int base = playingAutoplaySuggestions ? autoplaySuggestionIndex + 1 : 0;
+            var sug = autoplay.suggestionsList();
+            int base = autoplay.isPlayingSuggestions() ? autoplay.suggestionIndex() + 1 : 0;
             int segStart = uq + pl;
             if (insertBeforeDisplay >= segStart && insertBeforeDisplay <= segStart + ap) {
                 int relFrom = fromDisplay - segStart;
                 int absFrom = base + relFrom;
                 int absInsertBefore = base + (insertBeforeDisplay - segStart);
                 if (absFrom < base
-                        || absFrom >= autoplaySuggestions.size()
+                        || absFrom >= sug.size()
                         || absInsertBefore < base
-                        || absInsertBefore > autoplaySuggestions.size()) {
+                        || absInsertBefore > sug.size()) {
                     return;
                 }
-                Song moved = autoplaySuggestions.remove(absFrom);
+                Song moved = sug.remove(absFrom);
                 int i = absInsertBefore;
                 if (absFrom < absInsertBefore) {
                     i--;
                 }
-                autoplaySuggestions.add(i, moved);
+                sug.add(i, moved);
             }
         }
     }
@@ -819,12 +639,12 @@ public class MusicPlayerController {
             }
         }
 
-        if (playingAutoplaySuggestions) {
-            for (int i = autoplaySuggestionIndex + 1; i < autoplaySuggestions.size(); i++) {
-                upcoming.add(autoplaySuggestions.get(i));
+        if (autoplay.isPlayingSuggestions()) {
+            for (int i = autoplay.suggestionIndex() + 1; i < autoplay.suggestionsList().size(); i++) {
+                upcoming.add(autoplay.suggestionsList().get(i));
             }
-        } else if (autoplaySuggestionIndex < 0 && !autoplaySuggestions.isEmpty()) {
-            upcoming.addAll(autoplaySuggestions);
+        } else if (autoplay.suggestionIndex() < 0 && !autoplay.suggestionsList().isEmpty()) {
+            upcoming.addAll(autoplay.suggestionsList());
         }
 
         return upcoming;
@@ -870,35 +690,38 @@ public class MusicPlayerController {
             int playlistRemaining = activePlaylistSongs.size() - (activePlaylistIndex + 1);
             if (remaining < playlistRemaining) {
                 activePlaylistIndex = activePlaylistIndex + 1 + remaining;
-                playingAutoplaySuggestions = false;
-                autoplaySuggestions.clear();
-                autoplaySuggestionIndex = -1;
+                autoplay.clearSuggestionContext();
                 lifecycleService.playQueue(activePlaylistSongs, activePlaylistIndex, state.getCurrentSourcePlaylistName());
                 return;
             }
             remaining -= playlistRemaining;
         }
 
-        if (playingAutoplaySuggestions && !autoplaySuggestions.isEmpty()) {
-            int autoplayRemaining = autoplaySuggestions.size() - (autoplaySuggestionIndex + 1);
+        if (autoplay.isPlayingSuggestions() && !autoplay.suggestionsList().isEmpty()) {
+            int autoplayRemaining =
+                    autoplay.suggestionsList().size() - (autoplay.suggestionIndex() + 1);
             if (remaining < autoplayRemaining) {
-                autoplaySuggestionIndex = autoplaySuggestionIndex + 1 + remaining;
-                lifecycleService.playSingleSong(autoplaySuggestions.get(autoplaySuggestionIndex));
-                topUpAutoplayBuffer();
+                autoplay.setSuggestionIndex(autoplay.suggestionIndex() + 1 + remaining);
+                lifecycleService.playSingleSong(
+                        autoplay.suggestionsList().get(autoplay.suggestionIndex()));
+                autoplay.topUpBuffer();
                 return;
             }
             remaining -= autoplayRemaining;
         }
 
-        if (autoplaySuggestionIndex < 0 && !autoplaySuggestions.isEmpty()
-                && remaining >= 0 && remaining < autoplaySuggestions.size()) {
+        if (autoplay.suggestionIndex() < 0
+                && !autoplay.suggestionsList().isEmpty()
+                && remaining >= 0
+                && remaining < autoplay.suggestionsList().size()) {
             activePlaylistSongs.clear();
             activePlaylistIndex = -1;
-            playingAutoplaySuggestions = true;
-            autoplaySuggestionIndex = remaining;
+            autoplay.setPlayingSuggestions(true);
+            autoplay.setSuggestionIndex(remaining);
             state.setCurrentSourcePlaylistName("");
-            lifecycleService.playSingleSong(autoplaySuggestions.get(autoplaySuggestionIndex));
-            topUpAutoplayBuffer();
+            lifecycleService.playSingleSong(
+                    autoplay.suggestionsList().get(autoplay.suggestionIndex()));
+            autoplay.topUpBuffer();
         }
     }
 
@@ -920,8 +743,8 @@ public class MusicPlayerController {
         state.setCurrentSecond(state.getCurrentSecond() + 1);
         sessionTracker.tick(SessionManager.getCurrentUsername(), state.getCurrentSong());
 
-        if (playingAutoplaySuggestions) {
-            topUpAutoplayBuffer();
+        if (autoplay.isPlayingSuggestions()) {
+            autoplay.topUpBuffer();
         }
 
         if (state.getCurrentSecond() >= state.getCurrentDuration()) {

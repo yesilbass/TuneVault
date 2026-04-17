@@ -186,7 +186,8 @@ public class UserDAO {
     }
 
     /**
-     * Usernames matching {@code query} (contains, case-insensitive). Excludes {@code excludeUsername} if set.
+     * Usernames whose first characters match {@code query} (prefix, case-insensitive).
+     * Excludes {@code excludeUsername} if set.
      */
     public List<String> searchUsernames(String rawQuery, int limit, String excludeUsername)
             throws SQLException {
@@ -201,7 +202,7 @@ public class UserDAO {
         String sql =
                 """
                 SELECT username FROM app_user
-                WHERE LOWER(username) LIKE LOWER(CONCAT('%', ?, '%'))
+                WHERE LOWER(username) LIKE LOWER(CONCAT(?, '%'))
                 """
                         + (excludeUsername != null && !excludeUsername.isBlank()
                                 ? " AND LOWER(username) <> LOWER(?) "

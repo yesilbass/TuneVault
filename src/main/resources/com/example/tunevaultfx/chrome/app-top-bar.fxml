@@ -49,14 +49,22 @@
                     <Label text="⌂" styleClass="top-bar-home-glyph"/>
                 </graphic>
             </Button>
-            <TextField fx:id="globalSearchField"
-                       promptText="Search songs, artists, albums, genres…"
-                       styleClass="top-bar-search-field"
-                       prefWidth="400" maxWidth="560" prefHeight="40"/>
-            <Button fx:id="searchClearButton" text="✕  Clear"
-                    onAction="#handleClearSearchBar"
-                    styleClass="top-bar-search-clear-btn"
-                    focusTraversable="false"/>
+            <StackPane minWidth="200" maxWidth="560" prefWidth="400" HBox.hgrow="ALWAYS">
+                <TextField fx:id="globalSearchField"
+                           promptText="What do you want to play?"
+                           styleClass="top-bar-search-field"
+                           maxWidth="Infinity"
+                           prefHeight="40"
+                           StackPane.alignment="CENTER_LEFT"/>
+                <Button fx:id="searchInlineClearButton" text="✕"
+                        onAction="#handleInlineSearchClear"
+                        styleClass="top-bar-search-inline-clear"
+                        focusTraversable="false"
+                        mnemonicParsing="false"
+                        prefWidth="32" minWidth="32" maxWidth="32"
+                        prefHeight="32" minHeight="32" maxHeight="32"
+                        StackPane.alignment="CENTER_RIGHT"/>
+            </StackPane>
             <!-- Icons only: highlights / genre profile -->
             <Button fx:id="wrappedQuickBtn" onAction="#handleGoWrapped"
                     styleClass="top-bar-discovery-icon-btn" contentDisplay="GRAPHIC_ONLY"

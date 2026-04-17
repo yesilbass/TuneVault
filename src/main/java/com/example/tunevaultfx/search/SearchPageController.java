@@ -7,6 +7,7 @@ import com.example.tunevaultfx.db.PublicPlaylistSearchRow;
 import com.example.tunevaultfx.db.SongDAO;
 import com.example.tunevaultfx.db.UserDAO;
 import com.example.tunevaultfx.musicplayer.controller.MusicPlayerController;
+import com.example.tunevaultfx.recommendation.RankedSearchRow;
 import com.example.tunevaultfx.recommendation.RecommendationService;
 import com.example.tunevaultfx.session.SessionManager;
 import com.example.tunevaultfx.util.AlertUtil;
@@ -30,6 +31,8 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.layout.*;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.sql.SQLException;
 
 /**
@@ -43,18 +46,16 @@ public class SearchPageController {
     @FXML private VBox       recentSection;
     @FXML private ListView<SearchRecentItem> recentSearchesListView;
     @FXML private ScrollPane resultsScrollPane;
-    @FXML private VBox       songResultsSection;
-    @FXML private VBox       artistResultsSection;
+    @FXML private VBox       musicResultsSection;
     @FXML private VBox       userResultsSection;
     @FXML private VBox       publicPlaylistResultsSection;
-    @FXML private ListView<Song>   songResultsListView;
-    @FXML private ListView<String> artistResultsListView;
+    @FXML private ListView<RankedSearchRow> musicResultsListView;
     @FXML private ListView<String> userResultsListView;
     @FXML private ListView<PublicPlaylistSearchRow> publicPlaylistResultsListView;
 
     private final ObservableList<Song>   allSongs        = FXCollections.observableArrayList();
-    private final ObservableList<Song>   filteredSongs   = FXCollections.observableArrayList();
-    private final ObservableList<String> filteredArtists = FXCollections.observableArrayList();
+    private final ObservableList<Song>   musicResultSongsInOrder = FXCollections.observableArrayList();
+    private final ObservableList<RankedSearchRow> musicResultRows = FXCollections.observableArrayList();
     private final ObservableList<String> filteredUsers    = FXCollections.observableArrayList();
     private final ObservableList<PublicPlaylistSearchRow> filteredPublicPlaylists =
             FXCollections.observableArrayList();
@@ -71,28 +72,32 @@ public class SearchPageController {
     public void initialize() {
         loadSongs();
 
-        songResultsListView.setItems(filteredSongs);
-        artistResultsListView.setItems(filteredArtists);
+        musicResultsListView.setItems(musicResultRows);
         userResultsListView.setItems(filteredUsers);
         publicPlaylistResultsListView.setItems(filteredPublicPlaylists);
         recentSearchesListView.setItems(SessionManager.getRecentSearches());
 
-        songResultsListView.setPlaceholder(placeholder("No matching songs"));
-        artistResultsListView.setPlaceholder(placeholder("No matching artists"));
+        musicResultsListView.setPlaceholder(placeholder("No matching songs or artists"));
         userResultsListView.setPlaceholder(placeholder("No matching people"));
         publicPlaylistResultsListView.setPlaceholder(placeholder("No public playlists match"));
         recentSearchesListView.setPlaceholder(placeholder("No recent searches yet"));
 
-        setupSongCells();
-        setupArtistCells();
+        setupMusicResultCells();
         setupUserCells();
         setupPublicPlaylistCells();
         setupRecentCells();
-        setupDoubleClickActions();
         setupUserAndPlaylistClicks();
 
-        // Applies current bar text immediately (SearchBarState also stops any stale debounce).
-        SearchBarState.setSearchSubscriber(this::runSearch);
+        // Defer wiring: center initialize can run before the included top bar finishes
+        // bindTopBarSearchField. One pulse: subscribe + sync; next pulse: sync again so text/QUERY
+        // match after bidirectional bind (avoids empty or stale results after “See all results”).
+        Platform.runLater(
+                () -> {
+                    SearchBarState.setSearchSubscriber(this::runSearch);
+                    SearchBarState.clearSearchDropdownAutoOpenSuppress();
+                    syncResultsFromSearchBarText();
+                    Platform.runLater(this::syncResultsFromSearchBarText);
+                });
 
         Platform.runLater(() -> {
             UiMotionUtil.playStaggeredEntrance(java.util.List.of(searchSummaryCard, recentSection));
@@ -108,100 +113,209 @@ public class SearchPageController {
     }
 
     private void loadSongs() {
-        if (SessionManager.isSongLibraryReady()) { allSongs.setAll(SessionManager.getSongLibrary()); return; }
-        try { allSongs.setAll(songDAO.getAllSongs()); }
-        catch (Exception e) { e.printStackTrace(); AlertUtil.info("Database Error", "Could not load songs."); }
+        allSongs.setAll(catalogSnapshot());
+    }
+
+    /**
+     * Prefer the cached session library, but fall back to the database when it is empty (race at
+     * startup, failed background load, or stale UI). Search ranking needs a full catalog or songs
+     * never appear.
+     */
+    private List<Song> catalogSnapshot() {
+        List<Song> catalog = new ArrayList<>();
+        if (SessionManager.isSongLibraryReady()) {
+            catalog.addAll(SessionManager.getSongLibrary());
+        }
+        if (catalog.isEmpty()) {
+            try {
+                catalog.addAll(songDAO.getAllSongs());
+            } catch (SQLException e) {
+                e.printStackTrace();
+                AlertUtil.info("Database Error", "Could not load songs.");
+            }
+        }
+        return catalog;
     }
 
     // ── Cell factories ────────────────────────────────────────────
 
-    private void setupSongCells() {
-        songResultsListView.setCellFactory(lv -> new ListCell<>() {
-            private ContextMenu activeSongMenu;
+    private void setupMusicResultCells() {
+        musicResultsListView.setCellFactory(
+                lv ->
+                        new ListCell<>() {
+                            private ContextMenu activeSongMenu;
 
-            @Override
-            protected void updateItem(Song song, boolean empty) {
-                super.updateItem(song, empty);
-                if (activeSongMenu != null) {
-                    activeSongMenu.hide();
-                    activeSongMenu = null;
-                }
-                if (empty || song == null) {
-                    setText(null); setGraphic(null);
-                    setBackground(Background.EMPTY);
-                    setStyle("-fx-background-color: transparent;");
-                    return;
-                }
+                            @Override
+                            protected void updateItem(RankedSearchRow item, boolean empty) {
+                                super.updateItem(item, empty);
+                                if (activeSongMenu != null) {
+                                    activeSongMenu.hide();
+                                    activeSongMenu = null;
+                                }
+                                if (empty || item == null) {
+                                    setText(null);
+                                    setGraphic(null);
+                                    setBackground(Background.EMPTY);
+                                    setStyle("-fx-background-color: transparent;");
+                                    return;
+                                }
 
-                StackPane icon = CellStyleKit.iconBox("♫", CellStyleKit.Palette.PURPLE, false);
-                VBox      text = CellStyleKit.songTextBoxWithKind(
-                        song.title(), song.artist(), null, SearchPageController.this::openArtistProfile);
-                Label     dur  = CellStyleKit.duration(song.durationSeconds());
+                                if (item instanceof RankedSearchRow.SongHit songHit) {
+                                    Song song = songHit.song();
+                                    StackPane icon =
+                                            CellStyleKit.iconBox(
+                                                    "♫", CellStyleKit.Palette.PURPLE, false);
+                                    VBox text =
+                                            CellStyleKit.songTextBoxWithKind(
+                                                    song.title(),
+                                                    song.artist(),
+                                                    null,
+                                                    SearchPageController.this::openArtistProfile);
+                                    Label dur = CellStyleKit.duration(song.durationSeconds());
 
-                Button moreBtn = new Button("⋯");
-                moreBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: #58586e; -fx-font-size: 16px; -fx-font-weight: bold; -fx-background-radius: 16; -fx-padding: 0;");
-                moreBtn.setPrefSize(32, 32);
-                moreBtn.setMinSize(32, 32);
-                moreBtn.setMaxSize(32, 32);
-                moreBtn.setFocusTraversable(false);
-                moreBtn.setOnMouseEntered(e -> moreBtn.setStyle("-fx-background-color: rgba(255,255,255,0.09); -fx-text-fill: #a0a0c0; -fx-font-size: 16px; -fx-font-weight: bold; -fx-background-radius: 16; -fx-padding: 0;"));
-                moreBtn.setOnMouseExited(e -> moreBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: #58586e; -fx-font-size: 16px; -fx-font-weight: bold; -fx-background-radius: 16; -fx-padding: 0;"));
-                moreBtn.setOnAction(
-                        ev -> {
-                            javafx.geometry.Bounds b =
-                                    moreBtn.localToScreen(moreBtn.getBoundsInLocal());
-                            if (b != null) {
-                                showSongPopup(song, moreBtn, b.getMinX(), b.getMaxY() + 4);
+                                    Button moreBtn = new Button("⋯");
+                                    moreBtn.setStyle(
+                                            "-fx-background-color: transparent; -fx-text-fill: #58586e; -fx-font-size: 16px; -fx-font-weight: bold; -fx-background-radius: 16; -fx-padding: 0;");
+                                    moreBtn.setPrefSize(32, 32);
+                                    moreBtn.setMinSize(32, 32);
+                                    moreBtn.setMaxSize(32, 32);
+                                    moreBtn.setFocusTraversable(false);
+                                    moreBtn.setOnMouseEntered(
+                                            e ->
+                                                    moreBtn.setStyle(
+                                                            "-fx-background-color: rgba(255,255,255,0.09); -fx-text-fill: #a0a0c0; -fx-font-size: 16px; -fx-font-weight: bold; -fx-background-radius: 16; -fx-padding: 0;"));
+                                    moreBtn.setOnMouseExited(
+                                            e ->
+                                                    moreBtn.setStyle(
+                                                            "-fx-background-color: transparent; -fx-text-fill: #58586e; -fx-font-size: 16px; -fx-font-weight: bold; -fx-background-radius: 16; -fx-padding: 0;"));
+                                    moreBtn.setOnAction(
+                                            ev -> {
+                                                javafx.geometry.Bounds b =
+                                                        moreBtn.localToScreen(
+                                                                moreBtn.getBoundsInLocal());
+                                                if (b != null) {
+                                                    showSongPopup(
+                                                            song,
+                                                            moreBtn,
+                                                            b.getMinX(),
+                                                            b.getMaxY() + 4);
+                                                }
+                                                ev.consume();
+                                            });
+
+                                    HBox row =
+                                            CellStyleKit.row(
+                                                    icon,
+                                                    text,
+                                                    new Region() {
+                                                        {
+                                                            HBox.setHgrow(this, Priority.ALWAYS);
+                                                        }
+                                                    },
+                                                    dur,
+                                                    moreBtn);
+                                    CellStyleKit.addHover(row);
+
+                                    row.setOnMouseClicked(
+                                            ev -> {
+                                                if (ev.getButton() != MouseButton.PRIMARY
+                                                        || ev.getClickCount() != 1) {
+                                                    return;
+                                                }
+                                                if (isSongRowChromeTarget(ev.getTarget())) {
+                                                    return;
+                                                }
+                                                openSongFromSearchResults(song);
+                                                ev.consume();
+                                            });
+
+                                    row.addEventFilter(
+                                            ContextMenuEvent.CONTEXT_MENU_REQUESTED,
+                                            ev -> {
+                                                RankedSearchRow rowItem = getItem();
+                                                if (!(rowItem instanceof RankedSearchRow.SongHit sh)
+                                                        || isEmpty()) {
+                                                    return;
+                                                }
+                                                showSongPopup(
+                                                        sh.song(),
+                                                        row,
+                                                        ev.getScreenX(),
+                                                        ev.getScreenY());
+                                                ev.consume();
+                                            });
+
+                                    setText(null);
+                                    setGraphic(row);
+                                    setBackground(Background.EMPTY);
+                                    setStyle(
+                                            "-fx-background-color: transparent; -fx-padding: 2 0 2 0;");
+                                    return;
+                                }
+
+                                if (item instanceof RankedSearchRow.ArtistHit artistHit) {
+                                    String artist = artistHit.artistName();
+                                    StackPane avatar =
+                                            CellStyleKit.iconBox(
+                                                    artist.substring(0, 1).toUpperCase(),
+                                                    CellStyleKit.Palette.ROSE,
+                                                    true);
+
+                                    VBox text = CellStyleKit.textBox(artist, "Artist");
+                                    HBox row = CellStyleKit.row(avatar, text);
+                                    CellStyleKit.addHover(row);
+
+                                    row.setOnMouseClicked(
+                                            ev -> {
+                                                if (ev.getButton() != MouseButton.PRIMARY
+                                                        || ev.getClickCount() != 1) {
+                                                    return;
+                                                }
+                                                SessionManager.setSelectedArtist(artist);
+                                                SessionManager.addRecentSearch(
+                                                        SearchRecentItem.artist(artist));
+                                                try {
+                                                    SceneUtil.switchScene(
+                                                            musicResultsListView,
+                                                            FxmlResources.ARTIST_PROFILE);
+                                                } catch (IOException ex) {
+                                                    ex.printStackTrace();
+                                                }
+                                                ev.consume();
+                                            });
+
+                                    setText(null);
+                                    setGraphic(row);
+                                    setBackground(Background.EMPTY);
+                                    setStyle(
+                                            "-fx-background-color: transparent; -fx-padding: 2 0 2 0;");
+                                }
                             }
-                            ev.consume();
-                        });
 
-                HBox row = CellStyleKit.row(icon, text, new Region() {{ HBox.setHgrow(this, Priority.ALWAYS); }}, dur, moreBtn);
-                CellStyleKit.addHover(row);
-
-                row.setOnMouseClicked(ev -> {
-                    if (ev.getButton() != MouseButton.PRIMARY || ev.getClickCount() != 1) {
-                        return;
-                    }
-                    if (isSongRowChromeTarget(ev.getTarget())) {
-                        return;
-                    }
-                    openSongFromSearchResults(song);
-                    ev.consume();
-                });
-
-                row.addEventFilter(
-                        ContextMenuEvent.CONTEXT_MENU_REQUESTED,
-                        ev -> {
-                            Song s = getItem();
-                            if (s == null || isEmpty()) {
-                                return;
+                            @Override
+                            public void updateSelected(boolean s) {
+                                super.updateSelected(false);
                             }
-                            showSongPopup(s, row, ev.getScreenX(), ev.getScreenY());
-                            ev.consume();
+
+                            private void showSongPopup(
+                                    Song song,
+                                    javafx.scene.Node anchor,
+                                    double screenX,
+                                    double screenY) {
+                                if (activeSongMenu != null) {
+                                    activeSongMenu.hide();
+                                    activeSongMenu = null;
+                                }
+                                ContextMenu menu =
+                                        SongContextMenuBuilder.build(
+                                                song,
+                                                anchor,
+                                                SongContextMenuBuilder.Spec.general());
+                                menu.getStyleClass().add("tv-search-song-menu");
+                                activeSongMenu = menu;
+                                menu.show(anchor, screenX, screenY);
+                            }
                         });
-
-                setText(null); setGraphic(row);
-                setBackground(Background.EMPTY);
-                setStyle("-fx-background-color: transparent; -fx-padding: 2 0 2 0;");
-            }
-            @Override public void updateSelected(boolean s) { super.updateSelected(false); }
-
-            private void showSongPopup(Song song, javafx.scene.Node anchor, double screenX, double screenY) {
-                if (activeSongMenu != null) {
-                    activeSongMenu.hide();
-                    activeSongMenu = null;
-                }
-                ContextMenu menu =
-                        SongContextMenuBuilder.build(
-                                song,
-                                anchor,
-                                SongContextMenuBuilder.Spec.general());
-                menu.getStyleClass().add("tv-search-song-menu");
-                activeSongMenu = menu;
-                menu.show(anchor, screenX, screenY);
-            }
-        });
     }
 
     private void setupUserCells() {
@@ -275,34 +389,6 @@ public class SearchPageController {
                         });
     }
 
-    private void setupArtistCells() {
-        artistResultsListView.setCellFactory(lv -> new ListCell<>() {
-            @Override
-            protected void updateItem(String artist, boolean empty) {
-                super.updateItem(artist, empty);
-                if (empty || artist == null || artist.isBlank()) {
-                    setText(null); setGraphic(null);
-                    setBackground(Background.EMPTY);
-                    setStyle("-fx-background-color: transparent;");
-                    return;
-                }
-
-                StackPane avatar = CellStyleKit.iconBox(
-                        artist.substring(0, 1).toUpperCase(),
-                        CellStyleKit.Palette.ROSE, true);
-
-                VBox text = CellStyleKit.textBox(artist, "Artist");
-                HBox row  = CellStyleKit.row(avatar, text);
-                CellStyleKit.addHover(row);
-
-                setText(null); setGraphic(row);
-                setBackground(Background.EMPTY);
-                setStyle("-fx-background-color: transparent; -fx-padding: 2 0 2 0;");
-            }
-            @Override public void updateSelected(boolean s) { super.updateSelected(false); }
-        });
-    }
-
     private void setupRecentCells() {
         recentSearchesListView.setCellFactory(lv -> new ListCell<>() {
             @Override
@@ -365,12 +451,12 @@ public class SearchPageController {
         if (song == null) {
             return;
         }
-        int idx = filteredSongs.indexOf(song);
-        player.playQueue(filteredSongs, Math.max(idx, 0), "Search Results");
+        int idx = musicResultSongsInOrder.indexOf(song);
+        player.playQueue(musicResultSongsInOrder, Math.max(idx, 0), "Search Results");
         SessionManager.addRecentSearch(SearchRecentItem.song(song));
         SessionManager.setSelectedSong(song);
         try {
-            SceneUtil.switchScene(songResultsListView, FxmlResources.SONG_PROFILE);
+            SceneUtil.switchScene(musicResultsListView, FxmlResources.SONG_PROFILE);
         } catch (IOException ex) {
             ex.printStackTrace();
         }
@@ -393,24 +479,10 @@ public class SearchPageController {
         if (artist == null || artist.isBlank()) return;
         SessionManager.setSelectedArtist(artist.trim());
         try {
-            SceneUtil.switchScene(songResultsListView, FxmlResources.ARTIST_PROFILE);
+            SceneUtil.switchScene(musicResultsListView, FxmlResources.ARTIST_PROFILE);
         } catch (IOException ex) {
             ex.printStackTrace();
         }
-    }
-
-    private void setupDoubleClickActions() {
-        artistResultsListView.setOnMouseClicked(e -> {
-            if (e.getClickCount() == 2) {
-                String artist = artistResultsListView.getSelectionModel().getSelectedItem();
-                if (artist != null && !artist.isBlank()) {
-                    SessionManager.setSelectedArtist(artist);
-                    SessionManager.addRecentSearch(SearchRecentItem.artist(artist));
-                    try { SceneUtil.switchScene(artistResultsListView, FxmlResources.ARTIST_PROFILE); }
-                    catch (IOException ex) { ex.printStackTrace(); }
-                }
-            }
-        });
     }
 
     private void setupUserAndPlaylistClicks() {
@@ -464,11 +536,25 @@ public class SearchPageController {
 
     // ── Search logic ──────────────────────────────────────────────
 
+    /** Prefer the live TextField text over QUERY in case bidirectional bind lags one frame after nav. */
+    private void syncResultsFromSearchBarText() {
+        TextField f = SearchBarState.getBoundField();
+        String raw = "";
+        if (f != null && f.getText() != null) {
+            raw = f.getText();
+        } else {
+            String q = SearchBarState.queryProperty().get();
+            raw = q != null ? q : "";
+        }
+        runSearch(raw);
+    }
+
     private void runSearch(String rawQuery) {
         String query = rawQuery == null ? "" : rawQuery.trim();
         if (query.isBlank()) {
-            filteredSongs.clear();
-            filteredArtists.clear();
+            SearchBarState.consumeFullSearchPresentationRequest();
+            musicResultRows.clear();
+            musicResultSongsInOrder.clear();
             filteredUsers.clear();
             filteredPublicPlaylists.clear();
             resultsSummaryLabel.setText("");
@@ -477,8 +563,16 @@ public class SearchPageController {
         }
 
         String username = SessionManager.getCurrentUsername();
-        filteredSongs.setAll(recommendationService.getRankedSearchSongs(username, query, allSongs, 50));
-        filteredArtists.setAll(recommendationService.getRankedSearchArtists(username, query, allSongs, 20));
+        ObservableList<Song> catalog = FXCollections.observableArrayList(catalogSnapshot());
+        allSongs.setAll(catalog);
+        musicResultRows.setAll(
+                recommendationService.getRankedCatalogSearchRows(username, query, catalog, 55));
+        musicResultSongsInOrder.setAll(
+                musicResultRows.stream()
+                        .filter(RankedSearchRow.SongHit.class::isInstance)
+                        .map(RankedSearchRow.SongHit.class::cast)
+                        .map(RankedSearchRow.SongHit::song)
+                        .toList());
 
         try {
             filteredUsers.setAll(userDAO.searchUsernames(query, 30, username));
@@ -493,22 +587,31 @@ public class SearchPageController {
             filteredPublicPlaylists.clear();
         }
 
-        int sc = filteredSongs.size(),
-                ac = filteredArtists.size(),
-                uc = filteredUsers.size(),
+        long sc =
+                musicResultRows.stream()
+                        .filter(RankedSearchRow.SongHit.class::isInstance)
+                        .count();
+        long ac =
+                musicResultRows.stream()
+                        .filter(RankedSearchRow.ArtistHit.class::isInstance)
+                        .count();
+        int uc = filteredUsers.size(),
                 pc = filteredPublicPlaylists.size();
-        boolean any = sc > 0 || ac > 0 || uc > 0 || pc > 0;
+        boolean hasMusic = !musicResultRows.isEmpty();
+        boolean any = hasMusic || uc > 0 || pc > 0;
         resultsSummaryLabel.setText(
                 !any
                         ? "No results for \"" + query + "\""
-                        : sc
-                                + " song"
-                                + (sc != 1 ? "s" : "")
-                                + "  \u00B7  "
-                                + ac
-                                + " artist"
-                                + (ac != 1 ? "s" : "")
-                                + "  \u00B7  "
+                        : (hasMusic
+                                        ? (sc
+                                                + " song"
+                                                + (sc != 1 ? "s" : "")
+                                                + "  \u00B7  "
+                                                + ac
+                                                + " artist"
+                                                + (ac != 1 ? "s" : "")
+                                                + "  \u00B7  ")
+                                        : "")
                                 + uc
                                 + " "
                                 + (uc == 1 ? "person" : "people")
@@ -519,7 +622,35 @@ public class SearchPageController {
 
         // When there are zero matches, still leave the results area open so the summary + empty scroll
         // region read as "search ran" (all section cards stay hidden).
-        showResultsMode(any, sc > 0, ac > 0, uc > 0, pc > 0);
+        showResultsMode(any, hasMusic, uc > 0, pc > 0);
+
+        if (SearchBarState.consumeFullSearchPresentationRequest()) {
+            Platform.runLater(this::applyFullSearchPresentation);
+        }
+    }
+
+    /**
+     * After opening the full search page from the dropdown or top-bar Enter, reset scroll chrome and
+     * return keyboard focus to the search field so the flow feels deliberate.
+     */
+    private void applyFullSearchPresentation() {
+        if (resultsScrollPane != null) {
+            resultsScrollPane.setVvalue(0);
+        }
+        if (musicResultsListView != null && !musicResultRows.isEmpty()) {
+            musicResultsListView.scrollTo(0);
+        }
+        if (userResultsListView != null && !filteredUsers.isEmpty()) {
+            userResultsListView.scrollTo(0);
+        }
+        if (publicPlaylistResultsListView != null && !filteredPublicPlaylists.isEmpty()) {
+            publicPlaylistResultsListView.scrollTo(0);
+        }
+        TextField bar = SearchBarState.getBoundField();
+        if (bar != null && bar.getScene() != null) {
+            bar.requestFocus();
+            bar.end();
+        }
     }
 
     // ── Mode switching ────────────────────────────────────────────
@@ -535,8 +666,7 @@ public class SearchPageController {
      */
     private void showResultsMode(
             boolean anyMatch,
-            boolean hasSongs,
-            boolean hasArtists,
+            boolean hasMusic,
             boolean hasUsers,
             boolean hasPublicPlaylists) {
         recentSection.setVisible(false);
@@ -548,10 +678,8 @@ public class SearchPageController {
         userResultsSection.setManaged(showLists && hasUsers);
         publicPlaylistResultsSection.setVisible(showLists && hasPublicPlaylists);
         publicPlaylistResultsSection.setManaged(showLists && hasPublicPlaylists);
-        songResultsSection.setVisible(showLists && hasSongs);
-        songResultsSection.setManaged(showLists && hasSongs);
-        artistResultsSection.setVisible(showLists && hasArtists);
-        artistResultsSection.setManaged(showLists && hasArtists);
+        musicResultsSection.setVisible(showLists && hasMusic);
+        musicResultsSection.setManaged(showLists && hasMusic);
     }
 
     // ── FXML handlers ─────────────────────────────────────────────

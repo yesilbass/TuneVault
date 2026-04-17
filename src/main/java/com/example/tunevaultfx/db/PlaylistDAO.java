@@ -334,7 +334,7 @@ public class PlaylistDAO {
                 JOIN app_user u ON u.user_id = p.user_id
                 LEFT JOIN playlist_song ps ON ps.playlist_id = p.playlist_id
                 WHERE p.is_public = TRUE AND p.is_system_playlist = FALSE
-                  AND LOWER(p.name) LIKE LOWER(CONCAT('%', ?, '%'))
+                  AND LOWER(p.name) LIKE LOWER(CONCAT(?, '%'))
                 GROUP BY p.playlist_id, u.username, p.name
                 ORDER BY p.name ASC
                 LIMIT """
