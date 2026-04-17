@@ -18,11 +18,15 @@ import javafx.animation.Timeline;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.ReadOnlyIntegerProperty;
+import javafx.beans.property.ReadOnlyIntegerWrapper;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.util.Duration;
+
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Coordinates shared playback logic for the whole application.
@@ -63,6 +67,20 @@ public class MusicPlayerController {
     private final AutoplayCoordinator autoplay;
 
     private final ObservableList<Song> userQueue = FXCollections.observableArrayList();
+
+    /** User shuffle preference per playlist name (Liked Songs and library playlists). */
+    private final ConcurrentHashMap<String, Boolean> playlistShufflePreference = new ConcurrentHashMap<>();
+
+    /** Used when a playlist name has no explicit entry in {@link #playlistShufflePreference}. */
+    private volatile boolean defaultShufflePreference;
+
+    /**
+     * Last non-empty playlist name from {@link #playQueue}; kept while suggestion autoplay clears
+     * {@link PlaybackState#getCurrentSourcePlaylistName()} so resume/previous can restore shuffle prefs.
+     */
+    private String lastKnownPlaylistQueueName = "";
+
+    private final ReadOnlyIntegerWrapper shufflePreferenceRevision = new ReadOnlyIntegerWrapper(0);
 
     private MusicPlayerController() {
         PlaybackLifecycleService.PlayerRuntime lifecycleRuntime = new PlaybackLifecycleService.PlayerRuntime() {
@@ -186,6 +204,7 @@ public class MusicPlayerController {
         activePlaylistIndex = index;
         autoplay.clearSuggestionContext();
 
+        prepareShuffleForIncomingQueue(playlistName);
         lifecycleService.playQueue(songs, index, playlistName);
         autoplay.primeUpNextIfNoPlaylistTail();
     }
@@ -210,6 +229,7 @@ public class MusicPlayerController {
         activePlaylistIndex = -1;
         autoplay.clearSuggestionContext();
 
+        lastKnownPlaylistQueueName = "";
         lifecycleService.playSingleSong(song);
         autoplay.primeUpNextIfNoPlaylistTail();
     }
@@ -274,9 +294,10 @@ public class MusicPlayerController {
             autoplay.setSuggestionIndex(-1);
 
             if (!activePlaylistSongs.isEmpty()) {
-                Song lastPlaylistSong = activePlaylistSongs.get(activePlaylistSongs.size() - 1);
                 activePlaylistIndex = activePlaylistSongs.size() - 1;
-                lifecycleService.playQueue(activePlaylistSongs, activePlaylistIndex, state.getCurrentSourcePlaylistName());
+                String resumeName = resolvePlaylistNameForQueuePlayback(state.getCurrentSourcePlaylistName());
+                prepareShuffleForIncomingQueue(resumeName);
+                lifecycleService.playQueue(activePlaylistSongs, activePlaylistIndex, resumeName);
                 return;
             }
         }
@@ -298,6 +319,7 @@ public class MusicPlayerController {
     }
 
     public void stop() {
+        lastKnownPlaylistQueueName = "";
         lifecycleService.stop();
         timeline.stop();
         setExpandedPlayerVisible(false);
@@ -342,6 +364,11 @@ public class MusicPlayerController {
         activePlaylistIndex = -1;
         autoplay.clearSuggestionContext();
         userQueue.clear();
+
+        playlistShufflePreference.clear();
+        defaultShufflePreference = false;
+        lastKnownPlaylistQueueName = "";
+        shufflePreferenceRevision.set(0);
 
         currentSongLiked.set(false);
         expandedPlayerVisible.set(false);
@@ -406,12 +433,76 @@ public class MusicPlayerController {
     }
 
     public void toggleShuffle() {
-        setShuffleEnabled(!state.isShuffleEnabled());
+        String src = normalizedPlaylistKey(state.getCurrentSourcePlaylistName());
+        if (src.isEmpty()) {
+            return;
+        }
+        boolean next = !playlistShufflePreference.getOrDefault(src, defaultShufflePreference);
+        playlistShufflePreference.put(src, next);
+        bumpShufflePreferenceRevision();
+        setShuffleEnabled(next);
+    }
+
+    /**
+     * Default shuffle for playlist names that have no explicit preference yet (settings + login).
+     */
+    public void setDefaultShufflePreference(boolean enabled) {
+        defaultShufflePreference = enabled;
+        String src = normalizedPlaylistKey(state.getCurrentSourcePlaylistName());
+        if (!src.isEmpty() && !playlistShufflePreference.containsKey(src)) {
+            setShuffleEnabled(enabled);
+        }
+        bumpShufflePreferenceRevision();
+    }
+
+    public boolean getShufflePreferenceForPlaylist(String playlistName) {
+        String key = normalizedPlaylistKey(playlistName);
+        if (key.isEmpty()) {
+            return false;
+        }
+        return playlistShufflePreference.getOrDefault(key, defaultShufflePreference);
+    }
+
+    public void toggleShufflePreferenceForPlaylist(String playlistName) {
+        String key = normalizedPlaylistKey(playlistName);
+        if (key.isEmpty()) {
+            return;
+        }
+        boolean next = !playlistShufflePreference.getOrDefault(key, defaultShufflePreference);
+        playlistShufflePreference.put(key, next);
+        bumpShufflePreferenceRevision();
+        if (key.equals(normalizedPlaylistKey(state.getCurrentSourcePlaylistName()))) {
+            setShuffleEnabled(next);
+        }
+    }
+
+    public ReadOnlyIntegerProperty shufflePreferenceRevisionProperty() {
+        return shufflePreferenceRevision.getReadOnlyProperty();
+    }
+
+    /**
+     * Mini/expanded shuffle highlight: on only when playback is tied to a named queue source
+     * (not suggestion/single-track contexts where the property may be stale).
+     */
+    public boolean isShuffleActiveForCurrentPlayback() {
+        return !normalizedPlaylistKey(state.getCurrentSourcePlaylistName()).isEmpty()
+                && state.isShuffleEnabled();
     }
 
     /** Applies shuffle on/off and refreshes the shuffle order when turning on. */
     public void setShuffleEnabled(boolean enabled) {
+        String src = normalizedPlaylistKey(state.getCurrentSourcePlaylistName());
+        if (src.isEmpty()) {
+            if (!enabled && state.isShuffleEnabled()) {
+                state.setShuffleEnabled(false);
+                shuffleManager.reset();
+            }
+            return;
+        }
         if (state.isShuffleEnabled() == enabled) {
+            if (!enabled) {
+                shuffleManager.reset();
+            }
             return;
         }
         state.setShuffleEnabled(enabled);
@@ -441,6 +532,7 @@ public class MusicPlayerController {
         activePlaylistSongs.clear();
         activePlaylistIndex = -1;
         autoplay.clearSuggestionContext();
+        lastKnownPlaylistQueueName = "";
         lifecycleService.playSingleSong(next);
         autoplay.primeUpNextIfNoPlaylistTail();
     }
@@ -481,7 +573,10 @@ public class MusicPlayerController {
         if (playlistName == null || playlistName.isBlank()) {
             return;
         }
-        if (playlistName.equals(state.getCurrentSourcePlaylistName())) {
+        String key = normalizedPlaylistKey(playlistName);
+        playlistShufflePreference.remove(key);
+        bumpShufflePreferenceRevision();
+        if (key.equals(normalizedPlaylistKey(state.getCurrentSourcePlaylistName()))) {
             stop();
         }
     }
@@ -691,7 +786,9 @@ public class MusicPlayerController {
             if (remaining < playlistRemaining) {
                 activePlaylistIndex = activePlaylistIndex + 1 + remaining;
                 autoplay.clearSuggestionContext();
-                lifecycleService.playQueue(activePlaylistSongs, activePlaylistIndex, state.getCurrentSourcePlaylistName());
+                String resumeName = resolvePlaylistNameForQueuePlayback(state.getCurrentSourcePlaylistName());
+                prepareShuffleForIncomingQueue(resumeName);
+                lifecycleService.playQueue(activePlaylistSongs, activePlaylistIndex, resumeName);
                 return;
             }
             remaining -= playlistRemaining;
@@ -725,6 +822,34 @@ public class MusicPlayerController {
         }
     }
 
+    private static String normalizedPlaylistKey(String playlistName) {
+        return playlistName == null ? "" : playlistName.trim();
+    }
+
+    private void prepareShuffleForIncomingQueue(String playlistName) {
+        String key = normalizedPlaylistKey(playlistName);
+        if (key.isEmpty()) {
+            lastKnownPlaylistQueueName = "";
+            state.setShuffleEnabled(false);
+            return;
+        }
+        lastKnownPlaylistQueueName = key;
+        boolean want = playlistShufflePreference.getOrDefault(key, defaultShufflePreference);
+        state.setShuffleEnabled(want);
+    }
+
+    private String resolvePlaylistNameForQueuePlayback(String candidateFromState) {
+        String c = normalizedPlaylistKey(candidateFromState);
+        if (!c.isEmpty()) {
+            return c;
+        }
+        return normalizedPlaylistKey(lastKnownPlaylistQueueName);
+    }
+
+    private void bumpShufflePreferenceRevision() {
+        shufflePreferenceRevision.set(shufflePreferenceRevision.get() + 1);
+    }
+
     private void setPlaying(boolean value) {
         state.setPlaying(value);
 
@@ -755,7 +880,12 @@ public class MusicPlayerController {
     private void loadCurrentQueueSong() {
         Song song = queue.getCurrentSong();
         state.setCurrentSong(song);
-        state.setCurrentSourcePlaylistName(queue.getSourcePlaylistName());
+        String src = queue.getSourcePlaylistName();
+        String key = normalizedPlaylistKey(src);
+        if (!key.isEmpty()) {
+            lastKnownPlaylistQueueName = key;
+        }
+        state.setCurrentSourcePlaylistName(src);
         // Liked state: handled by currentSongProperty listener → refreshCurrentSongLikedFromTrackChange
     }
 

@@ -19,7 +19,7 @@ public class PlaylistSelectionService {
                     FXCollections.observableArrayList(),
                     0,
                     0,
-                    "0:00"
+                    "0 minutes"
             );
         }
 
@@ -35,7 +35,7 @@ public class PlaylistSelectionService {
                 songs,
                 songs.size(),
                 totalSeconds,
-                TimeUtil.formatTime(totalSeconds)
+                TimeUtil.formatPlaylistTotalDuration(totalSeconds)
         );
     }
 }

@@ -1691,6 +1691,54 @@
     -fx-border-radius: 16;
     -fx-border-width: 1;
 }
+
+/* Playlist track grid header (aligns with PlayableSongCell columns) */
+.playlist-tracks-grid-header {
+    -fx-padding: 2 8 8 8;
+    -fx-alignment: CENTER_LEFT;
+    -fx-border-color: transparent transparent rgba(255, 255, 255, 0.08) transparent;
+    -fx-border-width: 0 0 1 0;
+}
+.playlist-tracks-grid-hdr-primary {
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #8b8ba8;
+    -fx-letter-spacing: 0.06em;
+}
+.playlist-tracks-grid-hdr-muted {
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #6c6c88;
+    -fx-letter-spacing: 0.08em;
+}
+
+/* Per-track art tile (reuses .playlist-cover-palette-* for gradient) */
+.playlist-track-art {
+    -fx-background-radius: 10;
+    -fx-padding: 0;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.35), 6, 0.2, 0, 1);
+}
+.playlist-track-art .playlist-track-art-glyph {
+    -fx-text-fill: rgba(255, 255, 255, 0.96);
+    -fx-font-weight: bold;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.55), 2, 0, 0, 0.5);
+}
+
+.playlist-track-index {
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #6c6c88;
+}
+.playlist-track-album {
+    -fx-font-size: 12px;
+    -fx-text-fill: #9d9db8;
+}
+.playlist-track-duration {
+    -fx-font-size: 12px;
+    -fx-font-family: "SF Mono", "Menlo", "Consolas", monospace;
+    -fx-text-fill: #7c7c9a;
+}
+
 .playlist-tracks-list .list-cell:filled:hover {
     -fx-background-color: rgba(139, 92, 246, 0.09);
 }
@@ -2162,6 +2210,25 @@
     -fx-background-color: rgba(220,38,38,0.10);
 }
 
+/*
+ * Light popup menus: Modena still paints the checkmark using -fx-mark-color from a dark context,
+ * so the glyph can read as white on a pale hover row. Force a readable mark for checked items.
+ */
+.context-menu.tv-context-light .check-menu-item:checked > .left-container > .check {
+    -fx-background-color: #5b21b6;
+}
+.context-menu.tv-context-light .check-menu-item:hover:checked > .left-container > .check,
+.context-menu.tv-context-light .check-menu-item:focused:checked > .left-container > .check {
+    -fx-background-color: #4c1d95;
+}
+.context-menu.tv-context-light .radio-menu-item:checked > .left-container > .radio {
+    -fx-background-color: #5b21b6;
+}
+.context-menu.tv-context-light .radio-menu-item:hover:checked > .left-container > .radio,
+.context-menu.tv-context-light .radio-menu-item:focused:checked > .left-container > .radio {
+    -fx-background-color: #4c1d95;
+}
+
 .menu-item.tv-menu-destructive { -fx-text-fill: #fda4af; }
 .menu-item.tv-menu-destructive .label { -fx-text-fill: #fda4af; }
 .menu-item.tv-menu-destructive:hover { -fx-background-color: rgba(244,63,94,0.12); }
@@ -2183,6 +2250,21 @@
 .root.theme-light .menu-item.tv-menu-destructive,
 .root.theme-light .menu-item.tv-menu-destructive .label { -fx-text-fill: #b91c1c; }
 .root.theme-light .menu-item.tv-menu-destructive:hover { -fx-background-color: rgba(220,38,38,0.10); }
+
+.root.theme-light .context-menu .check-menu-item:checked > .left-container > .check {
+    -fx-background-color: #5b21b6;
+}
+.root.theme-light .context-menu .check-menu-item:hover:checked > .left-container > .check,
+.root.theme-light .context-menu .check-menu-item:focused:checked > .left-container > .check {
+    -fx-background-color: #4c1d95;
+}
+.root.theme-light .context-menu .radio-menu-item:checked > .left-container > .radio {
+    -fx-background-color: #5b21b6;
+}
+.root.theme-light .context-menu .radio-menu-item:hover:checked > .left-container > .radio,
+.root.theme-light .context-menu .radio-menu-item:focused:checked > .left-container > .radio {
+    -fx-background-color: #4c1d95;
+}
 
 /* ═══════════════════════════════════════════════════════════════════
    DIALOGS
@@ -3844,6 +3926,27 @@
 }
 .root.theme-light .playlist-tracks-head-title {
     -fx-text-fill: #0f172a;
+}
+.root.theme-light .playlist-tracks-grid-header {
+    -fx-border-color: transparent transparent rgba(15, 23, 42, 0.1) transparent;
+}
+.root.theme-light .playlist-tracks-grid-hdr-primary {
+    -fx-text-fill: #64748b;
+}
+.root.theme-light .playlist-tracks-grid-hdr-muted {
+    -fx-text-fill: #94a3b8;
+}
+.root.theme-light .playlist-track-index {
+    -fx-text-fill: #94a3b8;
+}
+.root.theme-light .playlist-track-album {
+    -fx-text-fill: #64748b;
+}
+.root.theme-light .playlist-track-duration {
+    -fx-text-fill: #64748b;
+}
+.root.theme-light .playlist-track-art {
+    -fx-effect: dropshadow(gaussian, rgba(15, 23, 42, 0.18), 5, 0.15, 0, 1);
 }
 
 .root.theme-light .player-btn-like,

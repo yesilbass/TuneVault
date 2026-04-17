@@ -3,6 +3,7 @@ package com.example.tunevaultfx.playlist.cell;
 import com.example.tunevaultfx.core.PlaylistNames;
 import com.example.tunevaultfx.core.Song;
 import com.example.tunevaultfx.musicplayer.controller.MusicPlayerController;
+import com.example.tunevaultfx.playlist.SongRowArtGraphic;
 import com.example.tunevaultfx.util.AppTheme;
 import com.example.tunevaultfx.util.CellStyleKit;
 import com.example.tunevaultfx.util.SongContextMenuBuilder;
@@ -13,8 +14,9 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
-import javafx.scene.Node;
 import javafx.scene.control.ListCell;
+import javafx.scene.control.OverrunStyle;
+import javafx.scene.Node;
 import javafx.scene.input.ContextMenuEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.*;
@@ -30,14 +32,23 @@ import java.util.function.Supplier;
  */
 public class PlayableSongCell extends ListCell<Song> {
 
-    private final Button   playButton = new Button("▶");
-    private final Button   moreButton = new Button("⋯");
-    private final VBox     textBox     = new VBox(3);
-    private final Region   spacer      = new Region();
-    private final HBox     row         = new HBox(12);
+    private static final double ROW_ART_SIZE = 48;
+    private static final double INDEX_COL = 28;
+    private static final double ALBUM_MIN = 120;
+    private static final double ALBUM_PREF = 188;
+    private static final double ALBUM_MAX = 220;
+    private static final double DUR_COL = 52;
 
-    // Now-playing indicator — thin left-edge bar
-    private final Region   nowPlayingBar = new Region();
+    private final Button playButton = new Button("▶");
+    private final Button moreButton = new Button("⋯");
+    private final VBox textBox = new VBox(4);
+    private final HBox row = new HBox(12);
+
+    private final Region nowPlayingBar = new Region();
+    private final Label indexLabel = new Label();
+    private final StackPane artHost = new StackPane();
+    private final Label albumLabel = new Label();
+    private final Label durationLabel = new Label();
 
     private final Consumer<Song>    onPlay;
     private final Consumer<Song>    onAddToPlaylist;
@@ -183,14 +194,44 @@ public class PlayableSongCell extends ListCell<Song> {
         moreButton.setMaxSize(36, 36);
         moreButton.setFocusTraversable(false);
 
+        indexLabel.setMinWidth(INDEX_COL);
+        indexLabel.setPrefWidth(INDEX_COL);
+        indexLabel.setMaxWidth(INDEX_COL);
+        indexLabel.setAlignment(Pos.CENTER_RIGHT);
+        indexLabel.getStyleClass().add("playlist-track-index");
+
+        artHost.setMinSize(ROW_ART_SIZE, ROW_ART_SIZE);
+        artHost.setPrefSize(ROW_ART_SIZE, ROW_ART_SIZE);
+        artHost.setMaxSize(ROW_ART_SIZE, ROW_ART_SIZE);
+
         textBox.setMaxWidth(Double.MAX_VALUE);
         HBox.setHgrow(textBox, Priority.ALWAYS);
-        HBox.setHgrow(spacer,  Priority.ALWAYS);
+
+        albumLabel.setMinWidth(ALBUM_MIN);
+        albumLabel.setPrefWidth(ALBUM_PREF);
+        albumLabel.setMaxWidth(ALBUM_MAX);
+        albumLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
+        albumLabel.getStyleClass().add("playlist-track-album");
+
+        durationLabel.setMinWidth(DUR_COL);
+        durationLabel.setPrefWidth(DUR_COL);
+        durationLabel.setMaxWidth(DUR_COL);
+        durationLabel.setAlignment(Pos.CENTER_RIGHT);
+        durationLabel.getStyleClass().add("playlist-track-duration");
 
         row.setAlignment(Pos.CENTER_LEFT);
-        row.setPadding(new Insets(9, 12, 9, 12));
+        row.setPadding(new Insets(10, 14, 10, 12));
         row.setStyle(CellStyleKit.getRowDefault());
-        row.getChildren().addAll(nowPlayingBar, playButton, textBox, spacer, moreButton);
+        row.getChildren()
+                .addAll(
+                        nowPlayingBar,
+                        indexLabel,
+                        artHost,
+                        textBox,
+                        albumLabel,
+                        durationLabel,
+                        playButton,
+                        moreButton);
 
         // Row hover
         row.setOnMouseEntered(e -> {
@@ -273,7 +314,8 @@ public class PlayableSongCell extends ListCell<Song> {
         hideActionMenu();
 
         if (empty || song == null) {
-            setText(null); setGraphic(null);
+            setText(null);
+            setGraphic(null);
             setBackground(Background.EMPTY);
             setStyle("-fx-background-color: transparent;");
             return;
@@ -282,30 +324,53 @@ public class PlayableSongCell extends ListCell<Song> {
         boolean isCurrent = isCurrentSongRow(song);
         boolean audioPlaying = isCurrent && player.isPlaying();
 
+        int idx = getIndex();
+        indexLabel.setText(idx >= 0 ? String.format("%02d", idx + 1) : "");
+
+        artHost.getChildren().clear();
+        artHost.getChildren().add(SongRowArtGraphic.create(ROW_ART_SIZE, song));
+
         textBox.getChildren().clear();
         if (onOpenSong != null) {
             Hyperlink titleLink =
                     CellStyleKit.primaryTitleLink(song.title(), () -> onOpenSong.accept(song));
+            titleLink.setWrapText(false);
+            titleLink.setTextOverrun(OverrunStyle.ELLIPSIS);
+            titleLink.setMaxWidth(Double.MAX_VALUE);
             if (isCurrent) {
                 titleLink.setStyle(
-                        "-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: "
+                        "-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: "
                                 + CellStyleKit.getAccentTitle()
+                                + "; -fx-border-width: 0; -fx-background-color: transparent;");
+            } else {
+                titleLink.setStyle(
+                        "-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: "
+                                + CellStyleKit.getTextPrimary()
                                 + "; -fx-border-width: 0; -fx-background-color: transparent;");
             }
             textBox.getChildren().add(titleLink);
         } else {
             Label titleLabel = new Label(song.title());
+            titleLabel.setWrapText(false);
+            titleLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
+            titleLabel.setMaxWidth(Double.MAX_VALUE);
             titleLabel.setStyle(
-                    "-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: "
+                    "-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: "
                             + (isCurrent ? CellStyleKit.getAccentTitle() : CellStyleKit.getTextPrimary())
                             + ";");
             textBox.getChildren().add(titleLabel);
         }
-        // Genre omitted on playlist page UI; search still matches genre in SongSearchService.
-        HBox meta = CellStyleKit.songMetaLine(song.artist(), null, onOpenArtist);
+        HBox meta = CellStyleKit.songMetaLine(song.artist(), song.genre(), onOpenArtist);
         if (!meta.getChildren().isEmpty()) {
             textBox.getChildren().add(meta);
         }
+
+        String album = song.album();
+        albumLabel.setText(album != null && !album.isBlank() ? album.trim() : "—");
+        albumLabel.setOpacity(album != null && !album.isBlank() ? 1 : 0.55);
+
+        int sec = Math.max(0, song.durationSeconds());
+        durationLabel.setText(sec > 0 ? (sec / 60) + ":" + String.format("%02d", sec % 60) : "—");
 
         nowPlayingBar.setVisible(isCurrent);
         nowPlayingBar.setManaged(isCurrent);
@@ -318,9 +383,9 @@ public class PlayableSongCell extends ListCell<Song> {
             playButton.setStyle(playPausedOnCurrentRowStyle());
         }
         row.setStyle(isCurrent ? CellStyleKit.getRowPlaying() : CellStyleKit.getRowDefault());
-        CellStyleKit.markPlaying(row, isCurrent);
 
-        setText(null); setGraphic(row);
+        setText(null);
+        setGraphic(row);
         setBackground(Background.EMPTY);
         setStyle("-fx-background-color: transparent; -fx-padding: 2 0 2 0;");
     }

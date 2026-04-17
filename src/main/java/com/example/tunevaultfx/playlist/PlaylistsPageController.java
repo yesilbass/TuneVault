@@ -17,6 +17,7 @@ import com.example.tunevaultfx.recommendation.RecommendationConstants;
 import com.example.tunevaultfx.recommendation.RecommendationService;
 import com.example.tunevaultfx.session.SessionManager;
 import com.example.tunevaultfx.user.UserProfile;
+import com.example.tunevaultfx.util.ContextMenuPopupSupport;
 import com.example.tunevaultfx.util.SceneUtil;
 import com.example.tunevaultfx.util.ToastUtil;
 import com.example.tunevaultfx.view.FxmlResources;
@@ -79,7 +80,7 @@ public class PlaylistsPageController {
     }
 
     /** Row height aligned with PlayableSongCell so the page ScrollPane owns vertical scroll. */
-    private static final double PLAYLIST_SONG_ROW_HEIGHT = 58;
+    private static final double PLAYLIST_SONG_ROW_HEIGHT = 72;
     /** Row height aligned with SuggestedSongCell / playlists-page list density. */
     private static final double SUGGESTED_SONG_ROW_HEIGHT = 66;
     private static final double PLAYLIST_LIST_EMPTY_HEIGHT = 168;
@@ -154,6 +155,8 @@ public class PlaylistsPageController {
             c -> Platform.runLater(this::onPlaylistsMapChanged);
 
     private PlaylistSortOrder playlistSortOrder = PlaylistSortOrder.CUSTOM;
+    /** For non-{@link PlaylistSortOrder#CUSTOM} sorts: {@code true} = ascending (A→Z, short→long). */
+    private boolean playlistSortAscending = true;
     /** Sorted view of the active playlist; null when no playlist selected. */
     private SortedList<Song> playlistSongsSorted;
 
@@ -359,6 +362,7 @@ public class PlaylistsPageController {
             return;
         }
         playlistToolbarMoreMenu.setPopupSide(Side.BOTTOM);
+        ContextMenuPopupSupport.installThemedMenuButtonPopup(playlistToolbarMoreMenu, playlistToolbarMoreMenu);
         playlistToolbarMoreMenu.setOnShowing(
                 e ->
                         PlaylistLibraryContextMenu.populateMenuItems(
@@ -377,6 +381,10 @@ public class PlaylistsPageController {
     private void setupPlaylistToolbarTransport() {
         player.shuffleEnabledProperty()
                 .addListener((obs, o, n) -> Platform.runLater(this::refreshPlaylistToolbarShuffle));
+        player.shufflePreferenceRevisionProperty()
+                .addListener((obs, o, n) -> Platform.runLater(this::refreshPlaylistToolbarShuffle));
+        selectedPlaylistName.addListener(
+                (obs, o, n) -> Platform.runLater(this::refreshPlaylistToolbarShuffle));
         refreshPlaylistToolbarTransport();
     }
 
@@ -416,12 +424,17 @@ public class PlaylistsPageController {
         if (playlistToolbarShuffleButton == null) {
             return;
         }
+        String sel = selectedPlaylistName.get();
+        boolean on =
+                sel != null
+                        && !sel.isBlank()
+                        && player.getShufflePreferenceForPlaylist(sel);
         playlistToolbarShuffleButton.setText("\u21C4");
         playlistToolbarShuffleButton
                 .getStyleClass()
                 .setAll(
                         "button",
-                        player.isShuffleEnabled()
+                        on
                                 ? PlayerStyleConstants.modeActiveClass()
                                 : PlayerStyleConstants.modeInactiveClass());
     }
@@ -448,7 +461,11 @@ public class PlaylistsPageController {
 
     @FXML
     private void handlePlaylistToolbarShuffle() {
-        player.toggleShuffle();
+        String sel = selectedPlaylistName.get();
+        if (sel == null || sel.isBlank()) {
+            return;
+        }
+        player.toggleShufflePreferenceForPlaylist(sel);
     }
 
     /**
@@ -776,7 +793,7 @@ public class PlaylistsPageController {
             }
             selectedPlaylistLabel.setText("No playlist selected");
             songCountLabel.setText("0 tracks");
-            totalDurationLabel.setText("0:00");
+            totalDurationLabel.setText("0 minutes");
             hideSuggestionsSection();
             refreshPlaylistHeaderCover(null);
             applyPlaylistVisibilityBadge(null);
@@ -801,7 +818,7 @@ public class PlaylistsPageController {
         PlaylistSummary summary = selectionService.buildSummary(profile, selected);
         selectedPlaylistLabel.setText(summary.getPlaylistName());
         ObservableList<Song> source = summary.getSongs();
-        playlistSongsSorted = new SortedList<>(source, comparatorFor(playlistSortOrder));
+        playlistSongsSorted = new SortedList<>(source, comparatorFor(playlistSortOrder, playlistSortAscending));
         playlistSongsListView.setItems(playlistSongsSorted);
         playlistSongsListView.getSelectionModel().clearSelection();
         songCountLabel.setText(trackCountPhrase(summary.getSongCount()));
@@ -816,54 +833,107 @@ public class PlaylistsPageController {
         if (playlistOrderMenu == null) {
             return;
         }
+        ContextMenuPopupSupport.installThemedMenuButtonPopup(playlistOrderMenu, playlistOrderMenu);
         playlistOrderMenu.getItems().clear();
         MenuItem header = new MenuItem("Sort by");
         header.setDisable(true);
         playlistOrderMenu.getItems().add(header);
-        ToggleGroup sortGroup = new ToggleGroup();
         for (PlaylistSortOrder order : PlaylistSortOrder.values()) {
-            RadioMenuItem item = new RadioMenuItem(order.menuLabel());
-            item.setToggleGroup(sortGroup);
-            item.setSelected(order == playlistSortOrder);
-            item.setOnAction(
-                    e -> {
-                        if (item.isSelected()) {
-                            applyPlaylistSortOrder(order);
-                        }
-                    });
+            MenuItem item = new MenuItem();
+            item.setUserData(order);
+            item.setOnAction(e -> handlePlaylistSortOrderChosen(order));
             playlistOrderMenu.getItems().add(item);
         }
-        playlistOrderMenu.setText(playlistSortOrder.menuLabel());
+        refreshPlaylistOrderMenuLabels();
     }
 
-    private void applyPlaylistSortOrder(PlaylistSortOrder order) {
-        playlistSortOrder = order;
-        if (playlistOrderMenu != null) {
-            playlistOrderMenu.setText(order.menuLabel());
+    private void handlePlaylistSortOrderChosen(PlaylistSortOrder order) {
+        if (playlistSortOrder == order && order != PlaylistSortOrder.CUSTOM) {
+            playlistSortAscending = !playlistSortAscending;
+        } else {
+            playlistSortOrder = order;
+            if (order != PlaylistSortOrder.CUSTOM) {
+                playlistSortAscending = true;
+            }
         }
+        applyPlaylistSortState();
+    }
+
+    private void applyPlaylistSortState() {
+        refreshPlaylistOrderMenuLabels();
         if (playlistSongsSorted != null) {
-            playlistSongsSorted.setComparator(comparatorFor(order));
+            playlistSongsSorted.setComparator(comparatorFor(playlistSortOrder, playlistSortAscending));
             syncPlaylistListHeight();
         }
     }
 
-    private Comparator<Song> comparatorFor(PlaylistSortOrder order) {
+    private void refreshPlaylistOrderMenuLabels() {
+        if (playlistOrderMenu == null) {
+            return;
+        }
+        for (MenuItem mi : playlistOrderMenu.getItems()) {
+            if (mi.getUserData() instanceof PlaylistSortOrder order) {
+                mi.setText(formatPlaylistSortMenuRow(order));
+            }
+        }
+        playlistOrderMenu.setText(formatPlaylistSortMenuButtonText());
+    }
+
+    private String formatPlaylistSortMenuButtonText() {
+        if (playlistSortOrder == PlaylistSortOrder.CUSTOM) {
+            return playlistSortOrder.menuLabel();
+        }
+        return playlistSortOrder.menuLabel() + " · " + sortDirectionHint(playlistSortOrder, playlistSortAscending);
+    }
+
+    private String formatPlaylistSortMenuRow(PlaylistSortOrder order) {
+        boolean selected = order == playlistSortOrder;
+        String base = order.menuLabel();
+        if (!selected) {
+            return base;
+        }
+        if (order == PlaylistSortOrder.CUSTOM) {
+            return "✓  " + base;
+        }
+        return "✓  " + base + " · " + sortDirectionHint(order, playlistSortAscending);
+    }
+
+    private static String sortDirectionHint(PlaylistSortOrder order, boolean ascending) {
+        return switch (order) {
+            case CUSTOM -> "";
+            case TITLE, ARTIST, ALBUM, GENRE -> ascending ? "A → Z" : "Z → A";
+            case DURATION -> ascending ? "Short → long" : "Long → short";
+        };
+    }
+
+    private Comparator<Song> comparatorFor(PlaylistSortOrder order, boolean ascending) {
         return switch (order) {
             case CUSTOM -> null;
-            case TITLE ->
-                    Comparator.comparing((Song s) -> normKey(s.title()))
-                            .thenComparingInt(Song::songId);
-            case ARTIST ->
-                    Comparator.comparing((Song s) -> normKey(s.artist()))
-                            .thenComparingInt(Song::songId);
-            case ALBUM ->
-                    Comparator.comparing((Song s) -> normKey(s.album()))
-                            .thenComparingInt(Song::songId);
-            case GENRE ->
-                    Comparator.comparing((Song s) -> normKey(s.genre()))
-                            .thenComparingInt(Song::songId);
-            case DURATION ->
-                    Comparator.comparingInt(Song::durationSeconds).thenComparingInt(Song::songId);
+            case TITLE -> {
+                Comparator<Song> c =
+                        Comparator.comparing((Song s) -> normKey(s.title())).thenComparingInt(Song::songId);
+                yield ascending ? c : c.reversed();
+            }
+            case ARTIST -> {
+                Comparator<Song> c =
+                        Comparator.comparing((Song s) -> normKey(s.artist())).thenComparingInt(Song::songId);
+                yield ascending ? c : c.reversed();
+            }
+            case ALBUM -> {
+                Comparator<Song> c =
+                        Comparator.comparing((Song s) -> normKey(s.album())).thenComparingInt(Song::songId);
+                yield ascending ? c : c.reversed();
+            }
+            case GENRE -> {
+                Comparator<Song> c =
+                        Comparator.comparing((Song s) -> normKey(s.genre())).thenComparingInt(Song::songId);
+                yield ascending ? c : c.reversed();
+            }
+            case DURATION -> {
+                Comparator<Song> c =
+                        Comparator.comparingInt(Song::durationSeconds).thenComparingInt(Song::songId);
+                yield ascending ? c : c.reversed();
+            }
         };
     }
 

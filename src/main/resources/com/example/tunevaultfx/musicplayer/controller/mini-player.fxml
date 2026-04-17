@@ -33,7 +33,7 @@
                        text="No song playing"
                        maxWidth="190"
                        styleClass="heading-sm"
-                       onMouseClicked="#handleOpenNowPlaying"
+                       onMouseClicked="#handleOpenSongProfile"
                        style="-fx-cursor: hand;" />
                 <Hyperlink fx:id="miniArtistLink"
                            text=""
@@ -105,6 +105,12 @@
                         text="☰"
                         onAction="#handleOpenQueue"
                         styleClass="player-btn-queue"
+                        prefWidth="60" prefHeight="38" />
+
+                <Button fx:id="miniExpandedPlayerButton"
+                        text="⤢"
+                        onAction="#handleOpenExpandedPlayer"
+                        styleClass="player-btn"
                         prefWidth="60" prefHeight="38" />
 
                 </HBox>

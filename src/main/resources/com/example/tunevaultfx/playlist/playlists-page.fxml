@@ -60,7 +60,7 @@
                                                    styleClass="playlist-page-stat"/>
                                             <Label text="·" styleClass="playlist-page-stat-sep"/>
                                             <Label fx:id="totalDurationLabel"
-                                                   text="0:00"
+                                                   text="0 minutes"
                                                    styleClass="playlist-page-stat"/>
                                             <Label fx:id="playlistVisibilityLabel"
                                                    text="Private"
@@ -113,8 +113,20 @@
                                 <HBox alignment="CENTER_LEFT" spacing="16" styleClass="playlist-tracks-section-head">
                                     <Label text="Tracks" styleClass="heading-sm, playlist-tracks-head-title"/>
                                     <Region HBox.hgrow="ALWAYS"/>
-                                    <Label text="Double-click to play · ⋯ for song options"
+                                    <Label text="Double-click a row to play · ⋯ for options"
                                            styleClass="caption, text-muted"/>
+                                </HBox>
+                                <HBox alignment="CENTER_LEFT" spacing="12" styleClass="playlist-tracks-grid-header">
+                                    <Region prefWidth="3" minWidth="3" maxWidth="3"/>
+                                    <Label text="#" minWidth="28" prefWidth="28" maxWidth="28" alignment="CENTER_RIGHT"
+                                           styleClass="playlist-tracks-grid-hdr-muted"/>
+                                    <Region prefWidth="48" minWidth="48" maxWidth="48"/>
+                                    <Label text="TITLE" styleClass="playlist-tracks-grid-hdr-primary" HBox.hgrow="ALWAYS"/>
+                                    <Label text="ALBUM" minWidth="120" prefWidth="188" maxWidth="220"
+                                           styleClass="playlist-tracks-grid-hdr-muted"/>
+                                    <Label text="TIME" minWidth="52" prefWidth="52" maxWidth="52" alignment="CENTER_RIGHT"
+                                           styleClass="playlist-tracks-grid-hdr-muted"/>
+                                    <Region minWidth="78" prefWidth="78" maxWidth="78"/>
                                 </HBox>
                                 <ListView fx:id="playlistSongsListView"
                                           minHeight="160"

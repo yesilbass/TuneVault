@@ -4,10 +4,16 @@ import javafx.application.Platform;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.event.Event;
+import javafx.event.EventHandler;
 import javafx.scene.control.ContextMenu;
+import javafx.scene.control.MenuButton;
+import javafx.scene.control.Skin;
 import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
+
+import java.lang.reflect.Field;
 
 /**
  * Context menus render in a separate
@@ -26,6 +32,89 @@ public final class ContextMenuPopupSupport {
     }
 
     private ContextMenuPopupSupport() {}
+
+    private static final String THEMED_MENU_BUTTON_KEY = "tunevault.themedMenuButtonPopup";
+    private static final String MENU_BUTTON_LISTENERS_KEY = "tunevault.menuButtonPopupListeners";
+
+    /**
+     * {@link MenuButton} uses an internal {@link ContextMenu} (see {@code MenuButtonSkinBase}) that
+     * never gets {@link #installThemedPopupHandlers(ContextMenu, Node)} — popup scenes keep the
+     * default black fill and show dark corners behind rounded menu skins in light mode.
+     */
+    public static void installThemedMenuButtonPopup(MenuButton menuButton, Node anchor) {
+        if (menuButton == null) {
+            return;
+        }
+        Node sceneAnchor = anchor != null ? anchor : menuButton;
+        Runnable attach =
+                () -> {
+                    ContextMenu cm = contextMenuFromMenuButtonSkin(menuButton);
+                    if (cm == null) {
+                        return;
+                    }
+                    if (Boolean.TRUE.equals(cm.getProperties().get(THEMED_MENU_BUTTON_KEY))) {
+                        return;
+                    }
+                    cm.getProperties().put(THEMED_MENU_BUTTON_KEY, Boolean.TRUE);
+                    installThemedPopupHandlers(cm, sceneAnchor);
+                };
+        if (!Boolean.TRUE.equals(menuButton.getProperties().get(MENU_BUTTON_LISTENERS_KEY))) {
+            menuButton.getProperties().put(MENU_BUTTON_LISTENERS_KEY, Boolean.TRUE);
+            menuButton.skinProperty().addListener((obs, oldSkin, newSkin) -> attach.run());
+            /*
+             * ContextMenu show/shown can race the popup Scene on some controls; the MenuButton's
+             * ON_SHOWN always runs after the popup window exists — re-sync fill, light styles, clip.
+             */
+            EventHandler<Event> onMenuButtonShown =
+                    e -> {
+                        ContextMenu cm = contextMenuFromMenuButtonSkin(menuButton);
+                        if (cm == null) {
+                            return;
+                        }
+                        syncTvContextLightStyleClass(cm);
+                        Runnable polish =
+                                () -> {
+                                    preparePopupScene(cm, sceneAnchor);
+                                    syncPopupSceneFill(cm);
+                                    clipMenuRootToRoundedCorners(cm);
+                                };
+                        polish.run();
+                        Platform.runLater(polish);
+                        Platform.runLater(() -> Platform.runLater(polish));
+                    };
+            menuButton.addEventHandler(MenuButton.ON_SHOWN, onMenuButtonShown);
+        }
+        if (menuButton.getSkin() != null) {
+            attach.run();
+        }
+        Platform.runLater(attach);
+    }
+
+    private static ContextMenu contextMenuFromMenuButtonSkin(MenuButton menuButton) {
+        Skin skin = menuButton.getSkin();
+        if (skin == null) {
+            return null;
+        }
+        for (Class<?> cl = skin.getClass(); cl != null; cl = cl.getSuperclass()) {
+            final Field popupField;
+            try {
+                popupField = cl.getDeclaredField("popup");
+            } catch (NoSuchFieldException e) {
+                continue;
+            }
+            if (!ContextMenu.class.isAssignableFrom(popupField.getType())) {
+                continue;
+            }
+            try {
+                popupField.setAccessible(true);
+                Object raw = popupField.get(skin);
+                return raw instanceof ContextMenu contextMenu ? contextMenu : null;
+            } catch (ReflectiveOperationException e) {
+                return null;
+            }
+        }
+        return null;
+    }
 
     public static void preparePopupScene(ContextMenu menu, Node anchor) {
         Scene popupScene = menu.getScene();

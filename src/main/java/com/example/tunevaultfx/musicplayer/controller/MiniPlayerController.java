@@ -15,11 +15,14 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.Cursor;
 import javafx.scene.control.Button;
 import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
+import javafx.scene.control.Tooltip;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.StackPane;
 
 import java.io.IOException;
@@ -55,6 +58,8 @@ public class MiniPlayerController {
     private Button miniAddButton;
     @FXML
     private Button miniQueueButton;
+    @FXML
+    private Button miniExpandedPlayerButton;
 
     @FXML
     private Slider miniProgressSlider;
@@ -98,10 +103,14 @@ public class MiniPlayerController {
             refreshPlaylistLink();
             refreshAddButton();
             refreshQueueButton();
+            refreshTrackNavAffordances();
         });
         player.currentSecondProperty().addListener((obs, o, n) -> refreshTime());
         player.currentDurationProperty().addListener((obs, o, n) -> refreshTime());
-        player.currentSourcePlaylistNameProperty().addListener((obs, o, n) -> refreshPlaylistLink());
+        player.currentSourcePlaylistNameProperty().addListener((obs, o, n) -> {
+            refreshPlaylistLink();
+            refreshModeButtons();
+        });
         player.shuffleEnabledProperty().addListener((obs, o, n) -> refreshModeButtons());
         player.loopEnabledProperty().addListener((obs, o, n) -> refreshModeButtons());
         player.currentSongLikedProperty().addListener((obs, o, n) -> refreshLikeButton());
@@ -113,6 +122,9 @@ public class MiniPlayerController {
         refreshModeButtons();
         refreshAddButton();
         refreshQueueButton();
+        refreshTrackNavAffordances();
+
+        Tooltip.install(miniExpandedPlayerButton, new Tooltip("Now playing"));
     }
 
     // ── Handlers ──────────────────────────────────────────────────
@@ -185,7 +197,27 @@ public class MiniPlayerController {
     }
 
     @FXML
-    private void handleOpenNowPlaying(javafx.scene.input.MouseEvent event) {
+    private void handleOpenSongProfile(MouseEvent event) throws IOException {
+        Song current = player.getCurrentSong();
+        if (current == null) {
+            return;
+        }
+        SessionManager.setSelectedSong(current);
+        SceneUtil.switchScene((Node) event.getSource(), FxmlResources.SONG_PROFILE);
+    }
+
+    @FXML
+    private void handleOpenExpandedPlayer(ActionEvent event) {
+        if (player.getCurrentSong() == null) {
+            return;
+        }
+        ensureExpandedPlayerAttached((Node) event.getSource());
+        player.setExpandedPlayerVisible(true);
+    }
+
+    /** Album-art tile: opens the full-screen now playing overlay. */
+    @FXML
+    private void handleOpenNowPlaying(MouseEvent event) {
         if (player.getCurrentSong() == null) return;
         ensureExpandedPlayerAttached((Node) event.getSource());
         player.setExpandedPlayerVisible(true);
@@ -223,7 +255,7 @@ public class MiniPlayerController {
         miniShuffleButton.setText("⇄");
         miniLoopButton.setText("↻");
         miniShuffleButton.getStyleClass().setAll("button",
-                player.isShuffleEnabled()
+                player.isShuffleActiveForCurrentPlayback()
                         ? PlayerStyleConstants.modeActiveClass()
                         : PlayerStyleConstants.modeInactiveClass());
         miniLoopButton.getStyleClass().setAll("button",
@@ -296,6 +328,13 @@ public class MiniPlayerController {
             miniQueueButton.getStyleClass().setAll("button",
                     PlayerStyleConstants.queueInactiveClass());
         }
+    }
+
+    private void refreshTrackNavAffordances() {
+        boolean has = player.getCurrentSong() != null;
+        miniSongLabel.setDisable(!has);
+        miniSongLabel.setCursor(has ? Cursor.HAND : Cursor.DEFAULT);
+        miniExpandedPlayerButton.setDisable(!has);
     }
 
     // ── Expanded player overlay ────────────────────────────────────

@@ -132,7 +132,7 @@ public final class SessionManager {
 
         boolean shuffleOnLogin =
                 UiPrefs.prefs().getBoolean(UiPrefs.KEY_DEFAULT_SHUFFLE_ON_LOGIN, false);
-        MusicPlayerController.getInstance().setShuffleEnabled(shuffleOnLogin);
+        MusicPlayerController.getInstance().setDefaultShufflePreference(shuffleOnLogin);
     }
 
     /**

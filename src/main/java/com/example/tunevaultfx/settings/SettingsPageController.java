@@ -86,7 +86,7 @@ public class SettingsPageController {
         }
         boolean on = defaultShuffleCheckBox.isSelected();
         UiPrefs.prefs().putBoolean(UiPrefs.KEY_DEFAULT_SHUFFLE_ON_LOGIN, on);
-        MusicPlayerController.getInstance().setShuffleEnabled(on);
+        MusicPlayerController.getInstance().setDefaultShufflePreference(on);
     }
 
     private void syncThemeUi() {

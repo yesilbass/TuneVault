@@ -61,6 +61,7 @@ public class PlaybackLifecycleService {
 
         queue.setSingleSong(song);
         state.setCurrentSourcePlaylistName("");
+        state.setShuffleEnabled(false);
 
         resetShuffleStateIfNeeded();
         state.setCurrentSong(song);

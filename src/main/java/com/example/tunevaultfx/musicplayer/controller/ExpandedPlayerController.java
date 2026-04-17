@@ -90,6 +90,7 @@ public class ExpandedPlayerController {
         });
 
         player.shuffleEnabledProperty().addListener((obs, o, n) -> refreshModeButtons());
+        player.currentSourcePlaylistNameProperty().addListener((obs, o, n) -> refreshModeButtons());
         player.loopEnabledProperty().addListener((obs, o, n)    -> refreshModeButtons());
         player.expandedPlayerVisibleProperty().addListener((obs, o, n) -> {
             if (n) openOverlay(); else closeOverlay();
@@ -196,7 +197,7 @@ public class ExpandedPlayerController {
         shuffleButton.setText("⇄");
         loopButton.setText("↻");
         shuffleButton.getStyleClass().setAll("button",
-                player.isShuffleEnabled()
+                player.isShuffleActiveForCurrentPlayback()
                         ? PlayerStyleConstants.modeActiveClass()
                         : PlayerStyleConstants.modeInactiveClass());
         loopButton.getStyleClass().setAll("button",

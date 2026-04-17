@@ -42,6 +42,7 @@ public class PlaybackState {
         currentDuration.set(0);
         currentSourcePlaylistName.set("");
         playing.set(false);
+        shuffleEnabled.set(false);
     }
 
     public Song getCurrentSong() {
