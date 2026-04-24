@@ -27,10 +27,6 @@ CREATE TABLE IF NOT EXISTS app_user (
     CONSTRAINT uq_app_user_email    UNIQUE (email)
 ) ENGINE=InnoDB;
 
--- Existing databases: run once if columns are missing (ignore errors if already applied):
--- ALTER TABLE app_user ADD COLUMN profile_avatar_key VARCHAR(512) NULL COMMENT 'Relative path under ~/.tunevaultfx/profile-media';
--- ALTER TABLE playlist ADD COLUMN pin_order TINYINT UNSIGNED NULL COMMENT '1–3 user pins; NULL = unpinned';
-
 CREATE TABLE IF NOT EXISTS artist (
     artist_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     name      VARCHAR(255) NOT NULL
@@ -132,27 +128,56 @@ CREATE TABLE IF NOT EXISTS search_history (
     INDEX idx_sh_user_searched (user_id, searched_at)
 ) ENGINE=InnoDB;
 
--- Genre Discovery quiz — boosts recommendation genre affinity (merged in RecommendationEngine)
--- Note: No FOREIGN KEY on user_id — Error 3780 appears if app_user.user_id type differs (e.g. legacy INT
--- vs INT UNSIGNED). The app enforces user_id via DAO; delete orphans manually if you drop users in SQL.
+-- ---------------------------------------------------------------------------
+-- Genre Discovery quiz results
+--   quiz_session_count: incremented each completion so the next run serves
+--   a fresh session (cycles 1–5 via mod in QuizQuestionDAO).
+--   weights_boost: pipe-separated normalized boosts merged across all sessions.
+--   Resetting via Settings deletes this row entirely, wiping both weights
+--   and the session counter.
+-- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS user_genre_discovery (
-    user_id       INT UNSIGNED PRIMARY KEY,
-    top_genre     VARCHAR(128) NOT NULL,
-    second_genre  VARCHAR(128) NULL,
-    third_genre   VARCHAR(128) NULL,
-    quiz_mode     VARCHAR(16)  NOT NULL DEFAULT 'FULL' COMMENT 'QUICK or FULL',
-    weights_boost VARCHAR(768) NOT NULL COMMENT 'pipe-separated normalized boosts, e.g. pop:0.9|rock:0.4',
-    updated_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    user_id            INT UNSIGNED PRIMARY KEY,
+    top_genre          VARCHAR(128) NOT NULL,
+    second_genre       VARCHAR(128) NULL,
+    third_genre        VARCHAR(128) NULL,
+    quiz_mode          VARCHAR(16)  NOT NULL DEFAULT 'FULL' COMMENT 'QUICK or FULL',
+    weights_boost      VARCHAR(768) NOT NULL COMMENT 'pipe-separated normalized boosts, e.g. pop:0.9|rock:0.4',
+    quiz_session_count TINYINT UNSIGNED NOT NULL DEFAULT 0
+                       COMMENT 'Number of completions; determines next session (mod 5)',
+    updated_at         TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_ugd_user (user_id)
 ) ENGINE=InnoDB;
 
 -- ---------------------------------------------------------------------------
--- Optional demo catalog (uncomment to seed one track for local testing)
+-- Genre Discovery Quiz — question bank
+--   session_number: 1–5, groups 10 questions per session.
+--   Both QUICK and FULL draw from the same session; QUICK picks 5 at random.
+--   display_order: sort within a session (1–10).
+--   is_active: set to 0 to hide a question without deleting it.
 -- ---------------------------------------------------------------------------
---
--- INSERT INTO artist (name) VALUES ('Demo Artist');
--- SET @demo_artist_id = LAST_INSERT_ID();
--- INSERT INTO genre (genre_name) VALUES ('Pop');
--- SET @demo_genre_id = LAST_INSERT_ID();
--- INSERT INTO song (title, artist_id, genre_id, duration_seconds)
---     VALUES ('Demo Track', @demo_artist_id, @demo_genre_id, 180);
+CREATE TABLE IF NOT EXISTS quiz_question (
+    question_id    INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    prompt         VARCHAR(512) NOT NULL,
+    quiz_mode      ENUM('QUICK','FULL') NOT NULL DEFAULT 'FULL'
+                   COMMENT 'Kept for legacy compatibility; session + shuffle replaces mode filtering',
+    display_order  TINYINT UNSIGNED NOT NULL DEFAULT 0,
+    is_active      TINYINT(1) NOT NULL DEFAULT 1,
+    session_number TINYINT UNSIGNED NOT NULL DEFAULT 1
+                   COMMENT '1–5 question session group; cycles back after 5 completions'
+) ENGINE=InnoDB;
+
+-- quiz_answer: four answers per question, each mapped to a genre name.
+--   genre_name must match genre.genre_name (case-insensitive compare in app).
+--   weight: scoring multiplier (1 = normal, 2 = double-scored).
+CREATE TABLE IF NOT EXISTS quiz_answer (
+    answer_id    INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    question_id  INT UNSIGNED NOT NULL,
+    answer_text  VARCHAR(255) NOT NULL,
+    genre_name   VARCHAR(128) NOT NULL COMMENT 'Must match a genre.genre_name value',
+    weight       TINYINT UNSIGNED NOT NULL DEFAULT 1 COMMENT '1 = normal, 2 = double-scored',
+    answer_order TINYINT UNSIGNED NOT NULL DEFAULT 1 COMMENT '1–4 display order within the question',
+    CONSTRAINT fk_qa_question FOREIGN KEY (question_id) REFERENCES quiz_question (question_id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    INDEX idx_qa_question (question_id)
+) ENGINE=InnoDB;

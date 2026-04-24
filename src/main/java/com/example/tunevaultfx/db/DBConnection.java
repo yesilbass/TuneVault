@@ -35,7 +35,7 @@ public final class DBConnection {
                     "&prepStmtCacheSqlLimit=2048";
 
     private static final String DEFAULT_USER     = "root";
-    private static final String DEFAULT_PASSWORD = "mysqlpassword";
+    private static final String DEFAULT_PASSWORD = "sql_password";
 
     private static final HikariDataSource dataSource;
 
