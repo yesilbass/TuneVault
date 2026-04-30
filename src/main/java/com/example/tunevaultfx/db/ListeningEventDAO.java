@@ -242,6 +242,35 @@ public class ListeningEventDAO {
         }
     }
 
+    /**
+     * Counts the number of listening events where the user genuinely engaged with a song
+     * (count_as_play = 1). Used by RecommendationEngine to determine how much weight
+     * the quiz results should still carry vs. real listening behaviour.
+     *
+     * @return number of qualified plays, or 0 if the user has no history yet
+     */
+    public int countQualifiedPlays(String username) {
+        if (username == null || username.isBlank()) {
+            return 0;
+        }
+        String sql = """
+                SELECT COUNT(*) AS play_count
+                FROM listening_event le
+                JOIN app_user u ON u.user_id = le.user_id
+                WHERE u.username = ? AND le.count_as_play = 1
+                """;
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, username.trim());
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next() ? rs.getInt("play_count") : 0;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return 0;
+        }
+    }
+
     public record UserBehaviorEvent(
             int songId,
             String artistName,
@@ -275,7 +304,7 @@ public class ListeningEventDAO {
                 """;
         List<String> out = new ArrayList<>();
         try (Connection conn = DBConnection.getConnection();
-                PreparedStatement stmt = conn.prepareStatement(sql)) {
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, username.trim());
             stmt.setInt(2, limit);
             try (ResultSet rs = stmt.executeQuery()) {

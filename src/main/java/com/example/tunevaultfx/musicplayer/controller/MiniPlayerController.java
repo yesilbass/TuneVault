@@ -191,7 +191,7 @@ public class MiniPlayerController {
     @FXML
     private void handleOpenCurrentPlaylist(ActionEvent event) throws IOException {
         String name = player.getCurrentSourcePlaylistName();
-        if (name == null || name.isBlank()) return;
+        if (isInvalidPlaylistSource(name)) return;
         SessionManager.requestPlaylistToOpen(name);
         SceneUtil.switchScene((Node) event.getSource(), FxmlResources.PLAYLISTS);
     }
@@ -227,7 +227,7 @@ public class MiniPlayerController {
 
     private void refreshPlaylistLink() {
         String name = player.getCurrentSourcePlaylistName();
-        if (name == null || name.isBlank()) {
+        if (isInvalidPlaylistSource(name)) {
             miniPlaylistLink.setText("");
             miniPlaylistLink.setVisible(false);
             miniPlaylistLink.setManaged(false);
@@ -236,6 +236,16 @@ public class MiniPlayerController {
             miniPlaylistLink.setVisible(true);
             miniPlaylistLink.setManaged(true);
         }
+    }
+
+    private boolean isInvalidPlaylistSource(String name) {
+        if (name == null || name.isBlank()) {
+            return true;
+        }
+        Song current = player.getCurrentSong();
+        return current != null
+                && current.title() != null
+                && name.trim().equalsIgnoreCase(current.title().trim());
     }
 
     private void refreshLikeButton() {

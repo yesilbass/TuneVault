@@ -1,19 +1,31 @@
 package com.example.tunevaultfx.findyourgenre;
 
+import com.example.tunevaultfx.db.QuizQuestionDAO;
+
+import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
  * Find Your Genre — question bank, scoring, and boost conversion for recommendations.
+ *
+ * <p>Questions are loaded from the {@code quiz_question} / {@code quiz_answer} database
+ * tables via {@link QuizQuestionDAO}. If the tables are absent or empty (e.g. a pre-migration
+ * schema), the built-in hardcoded bank is used as a fallback so the quiz always works.</p>
  *
  * <p>Design goals: short readable prompts (ADHD-friendly), no timers, clear progress,
  * optional skip, Quick vs Full length. Genre labels align with typical catalog spellings
  * and {@link com.example.tunevaultfx.recommendation.RecommendationEngine#normalize(String)}.</p>
  */
 public final class GenreQuiz {
+
+    private static final Logger LOG = Logger.getLogger(GenreQuiz.class.getName());
 
     public enum QuizMode {
         /** Five questions — same flow, faster win. */
@@ -24,12 +36,42 @@ public final class GenreQuiz {
 
     private GenreQuiz() {}
 
-    public static List<Question> questionsFor(QuizMode mode) {
-        List<Question> all = allQuestions();
+    /**
+     * Returns shuffled questions for the given mode and session number, loaded from the DB.
+     * Falls back to the built-in hardcoded bank only if the quiz tables are missing or empty.
+     *
+     * @param mode          QUICK (5 random questions) or FULL (all 10, shuffled)
+     * @param sessionNumber 1–5; determines which set of 10 questions is served
+     */
+    public static List<Question> questionsFor(QuizMode mode, int sessionNumber) {
+        try {
+            QuizQuestionDAO dao = new QuizQuestionDAO();
+            List<Question> dbQuestions = dao.loadQuestions(mode, sessionNumber);
+            if (!dbQuestions.isEmpty()) {
+                return dbQuestions;
+            }
+            LOG.warning("quiz_question table is empty or missing — using built-in fallback questions.");
+        } catch (SQLException e) {
+            LOG.log(Level.WARNING,
+                    "Could not load quiz questions from DB (table may not exist yet). Using built-in fallback.",
+                    e);
+        }
+        // Fallback: hardcoded bank, shuffled
+        List<Question> all = new ArrayList<>(allQuestions());
+        Collections.shuffle(all);
         if (mode == QuizMode.QUICK) {
             return List.copyOf(all.subList(0, Math.min(5, all.size())));
         }
-        return all;
+        return List.copyOf(all);
+    }
+
+    /** Convenience overload — uses session 1 (e.g. for fallback/testing). */
+    public static List<Question> questionsFor(QuizMode mode) {
+        return questionsFor(mode, 1);
+    }
+
+    public static int questionCount(QuizMode mode, int sessionNumber) {
+        return questionsFor(mode, sessionNumber).size();
     }
 
     public static int questionCount(QuizMode mode) {

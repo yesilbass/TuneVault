@@ -19,6 +19,7 @@ import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
@@ -28,8 +29,10 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.layout.*;
 
 import java.sql.SQLException;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Artist Profile page controller.
@@ -38,10 +41,16 @@ import java.util.Optional;
  */
 public class ArtistProfileController {
 
+    @FXML private Label          artistAvatarInitialLabel;
     @FXML private Label          artistNameLabel;
     @FXML private Label          artistSummaryLabel;
+    @FXML private Label          artistStatTracksLabel;
+    @FXML private Label          artistStatRuntimeLabel;
+    @FXML private Label          artistStatAlbumsLabel;
     @FXML private Button         playDiscographyButton;
+    @FXML private Button         shuffleDiscographyButton;
     @FXML private Button         followArtistButton;
+    @FXML private ComboBox<String> sortComboBox;
     @FXML private ListView<Song> artistSongsListView;
 
     private final ObservableList<Song> artistSongs = FXCollections.observableArrayList();
@@ -61,12 +70,26 @@ public class ArtistProfileController {
 
         if (artistName == null || artistName.isBlank()) {
             artistNameLabel.setText("Unknown Artist");
-            artistSummaryLabel.setText("No artist selected.");
+            if (artistSummaryLabel != null) {
+                artistSummaryLabel.setText("No artist selected.");
+                artistSummaryLabel.setVisible(true);
+                artistSummaryLabel.setManaged(true);
+            }
             artistSongsListView.setItems(artistSongs);
+            applyAvatarInitial("?");
+            clearStatsPlaceholders();
             if (playDiscographyButton != null) {
                 playDiscographyButton.setDisable(true);
                 playDiscographyButton.setVisible(false);
                 playDiscographyButton.setManaged(false);
+            }
+            if (shuffleDiscographyButton != null) {
+                shuffleDiscographyButton.setDisable(true);
+                shuffleDiscographyButton.setVisible(false);
+                shuffleDiscographyButton.setManaged(false);
+            }
+            if (sortComboBox != null) {
+                sortComboBox.setDisable(true);
             }
             hideFollowArtistButton();
             return;
@@ -76,15 +99,173 @@ public class ArtistProfileController {
             playDiscographyButton.setManaged(true);
             playDiscographyButton.setDisable(true);
         }
+        if (shuffleDiscographyButton != null) {
+            shuffleDiscographyButton.setVisible(true);
+            shuffleDiscographyButton.setManaged(true);
+            shuffleDiscographyButton.setDisable(true);
+        }
+        if (sortComboBox != null) {
+            sortComboBox.setDisable(false);
+        }
 
         artistNameLabel.setText(artistName);
-        artistSummaryLabel.setText("Loading\u2026");
+        if (artistSummaryLabel != null) {
+            artistSummaryLabel.setText("Loading\u2026");
+            artistSummaryLabel.setVisible(true);
+            artistSummaryLabel.setManaged(true);
+        }
+        applyAvatarInitial(artistName);
         artistSongsListView.setItems(artistSongs);
 
+        setupSortCombo();
         setupCells();
         installArtistPlayerRefreshListeners();
         loadArtistSongs();
         resolveArtistIdAsync();
+    }
+
+    private void setupSortCombo() {
+        if (sortComboBox == null) {
+            return;
+        }
+        if (sortComboBox.getItems().isEmpty()) {
+            sortComboBox.setItems(
+                    FXCollections.observableArrayList(
+                            "Title A–Z",
+                            "Title Z–A",
+                            "Album A–Z",
+                            "Duration (longest)",
+                            "Duration (shortest)"));
+            sortComboBox.getSelectionModel().selectFirst();
+            sortComboBox
+                    .valueProperty()
+                    .addListener(
+                            (obs, o, n) -> {
+                                if (n != null) {
+                                    applySort();
+                                }
+                            });
+        }
+    }
+
+    private void applySort() {
+        if (sortComboBox == null || artistSongs.isEmpty()) {
+            return;
+        }
+        String key = sortComboBox.getValue();
+        if (key == null) {
+            return;
+        }
+        Comparator<Song> cmp =
+                switch (key) {
+                    case "Title Z–A" ->
+                            Comparator.comparing(
+                                            (Song s) -> nullToEmpty(s.title()),
+                                            String.CASE_INSENSITIVE_ORDER)
+                                    .reversed();
+                    case "Album A–Z" ->
+                            Comparator.comparing(
+                                    (Song s) -> nullToEmpty(s.album()), String.CASE_INSENSITIVE_ORDER);
+                    case "Duration (longest)" ->
+                            Comparator.comparingInt(Song::durationSeconds).reversed();
+                    case "Duration (shortest)" ->
+                            Comparator.comparingInt(Song::durationSeconds);
+                    default ->
+                            Comparator.comparing(
+                                    (Song s) -> nullToEmpty(s.title()), String.CASE_INSENSITIVE_ORDER);
+                };
+        List<Song> sorted = artistSongs.stream().sorted(cmp).collect(Collectors.toList());
+        artistSongs.setAll(sorted);
+    }
+
+    private static String nullToEmpty(String s) {
+        return s == null ? "" : s;
+    }
+
+    private void applyAvatarInitial(String name) {
+        if (artistAvatarInitialLabel == null) {
+            return;
+        }
+        if (name == null || name.isBlank()) {
+            artistAvatarInitialLabel.setText("♫");
+            return;
+        }
+        String t = name.trim();
+        for (int i = 0; i < t.length(); i++) {
+            char c = t.charAt(i);
+            if (Character.isLetterOrDigit(c)) {
+                artistAvatarInitialLabel.setText(String.valueOf(Character.toUpperCase(c)));
+                return;
+            }
+        }
+        artistAvatarInitialLabel.setText("♫");
+    }
+
+    private void clearStatsPlaceholders() {
+        if (artistStatTracksLabel != null) {
+            artistStatTracksLabel.setText("—");
+        }
+        if (artistStatRuntimeLabel != null) {
+            artistStatRuntimeLabel.setText("—");
+        }
+        if (artistStatAlbumsLabel != null) {
+            artistStatAlbumsLabel.setText("—");
+        }
+    }
+
+    private void refreshDiscographyDerivedUi() {
+        int n = artistSongs.size();
+        if (artistStatTracksLabel != null) {
+            artistStatTracksLabel.setText(String.valueOf(n));
+        }
+        int totalSec =
+                artistSongs.stream().mapToInt(Song::durationSeconds).filter(d -> d > 0).sum();
+        if (artistStatRuntimeLabel != null) {
+            artistStatRuntimeLabel.setText(formatTotalRuntime(totalSec));
+        }
+        long albumCount =
+                artistSongs.stream()
+                        .map(Song::album)
+                        .filter(a -> a != null && !a.isBlank())
+                        .distinct()
+                        .count();
+        if (artistStatAlbumsLabel != null) {
+            artistStatAlbumsLabel.setText(albumCount > 0 ? String.valueOf(albumCount) : "—");
+        }
+
+        applyHeroSummaryAfterLoad(n);
+    }
+
+    /** Shown only while loading, on error, or when there are zero tracks — never “library” framing. */
+    private void applyHeroSummaryAfterLoad(int trackCount) {
+        if (artistSummaryLabel == null) {
+            return;
+        }
+        if (trackCount > 0) {
+            artistSummaryLabel.setText("");
+            artistSummaryLabel.setVisible(false);
+            artistSummaryLabel.setManaged(false);
+        } else {
+            artistSummaryLabel.setText("No tracks to show yet.");
+            artistSummaryLabel.setVisible(true);
+            artistSummaryLabel.setManaged(true);
+        }
+    }
+
+    private static String formatTotalRuntime(int totalSeconds) {
+        if (totalSeconds <= 0) {
+            return "—";
+        }
+        int h = totalSeconds / 3600;
+        int m = (totalSeconds % 3600) / 60;
+        if (h > 0) {
+            return h + "h " + m + "m";
+        }
+        if (m > 0) {
+            return m + "m";
+        }
+        int s = totalSeconds % 60;
+        return s + "s";
     }
 
     private void installArtistPlayerRefreshListeners() {
@@ -232,20 +413,32 @@ public class ArtistProfileController {
 
         task.setOnSucceeded(e -> {
             artistSongs.setAll(task.getValue());
+            refreshDiscographyDerivedUi();
+            applySort();
             int count = task.getValue().size();
-            artistSummaryLabel.setText(count + " song" + (count != 1 ? "s" : ""));
             if (playDiscographyButton != null) {
                 playDiscographyButton.setDisable(count == 0);
+            }
+            if (shuffleDiscographyButton != null) {
+                shuffleDiscographyButton.setDisable(count == 0);
             }
             tryResolveArtistIdFromLoadedSongs();
         });
 
         task.setOnFailed(e -> {
             task.getException().printStackTrace();
-            artistSummaryLabel.setText("Could not load songs.");
+            if (artistSummaryLabel != null) {
+                artistSummaryLabel.setText("Could not load songs.");
+                artistSummaryLabel.setVisible(true);
+                artistSummaryLabel.setManaged(true);
+            }
+            clearStatsPlaceholders();
             AlertUtil.info("Error", "Could not load songs for this artist.");
             if (playDiscographyButton != null) {
                 playDiscographyButton.setDisable(true);
+            }
+            if (shuffleDiscographyButton != null) {
+                shuffleDiscographyButton.setDisable(true);
             }
         });
 
@@ -505,9 +698,25 @@ public class ArtistProfileController {
             }
             return;
         }
+        player.setShuffleEnabled(false);
         player.playQueue(artistSongs, 0, artistName.trim());
         if (artistSongsListView != null && artistSongsListView.getScene() != null) {
             ToastUtil.success(artistSongsListView.getScene(), "Playing discography");
+        }
+    }
+
+    @FXML
+    private void handleShuffleDiscography() {
+        if (artistName == null || artistName.isBlank() || artistSongs.isEmpty()) {
+            if (artistSongsListView != null && artistSongsListView.getScene() != null) {
+                ToastUtil.info(artistSongsListView.getScene(), "No songs to shuffle for this artist.");
+            }
+            return;
+        }
+        player.playQueue(artistSongs, 0, artistName.trim());
+        player.setShuffleEnabled(true);
+        if (artistSongsListView != null && artistSongsListView.getScene() != null) {
+            ToastUtil.success(artistSongsListView.getScene(), "Shuffling discography");
         }
     }
 

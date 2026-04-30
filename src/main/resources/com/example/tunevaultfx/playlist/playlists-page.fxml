@@ -42,18 +42,19 @@
                                 <HBox alignment="TOP_LEFT" spacing="24" styleClass="playlist-page-header-row">
                                     <StackPane fx:id="selectedPlaylistCover"
                                                styleClass="playlist-page-cover-host"
-                                               minWidth="120" minHeight="120"
-                                               prefWidth="120" prefHeight="120"
-                                               maxWidth="120" maxHeight="120"/>
+                                               minWidth="132" minHeight="132"
+                                               prefWidth="132" prefHeight="132"
+                                               maxWidth="132" maxHeight="132"/>
                                     <VBox spacing="12" HBox.hgrow="ALWAYS" styleClass="playlist-page-title-stack">
-                                        <Label text="PLAYLIST"
-                                               styleClass="overline, playlist-page-eyebrow"
-                                               maxWidth="Infinity"/>
+                                        <HBox spacing="10" alignment="CENTER_LEFT">
+                                            <Label text="PLAYLIST" styleClass="playlist-page-eyebrow"/>
+                                            <Label text="COLLECTION" styleClass="playlist-page-pill"/>
+                                        </HBox>
                                         <Label fx:id="selectedPlaylistLabel"
                                                text="No playlist selected"
                                                wrapText="true"
                                                maxWidth="Infinity"
-                                               styleClass="playlist-page-title, heading-xl"/>
+                                               styleClass="playlist-page-title"/>
                                         <HBox spacing="10" alignment="CENTER_LEFT" styleClass="playlist-page-stats-row">
                                             <Label fx:id="songCountLabel"
                                                    text="0 tracks"
@@ -70,7 +71,7 @@
                                     </VBox>
                                     <Button text="+ Add songs"
                                             onAction="#handleShowSearchSongs"
-                                            styleClass="btn-accent-soft, playlist-page-add-btn"
+                                            styleClass="playlist-page-add-btn"
                                             mnemonicParsing="false"/>
                                 </HBox>
                             </VBox>
@@ -89,21 +90,21 @@
                                 <Button fx:id="playlistToolbarShuffleButton"
                                         text="⇄"
                                         onAction="#handlePlaylistToolbarShuffle"
-                                        styleClass="player-btn"
+                                        styleClass="playlist-toolbar-secondary"
                                         prefWidth="48" prefHeight="48"
                                         minWidth="48" minHeight="48"
                                         mnemonicParsing="false"/>
                                 <MenuButton fx:id="playlistToolbarMoreMenu"
                                             text="⋯"
                                             mnemonicParsing="false"
-                                            styleClass="btn-ghost, playlist-toolbar-more"
+                                            styleClass="playlist-toolbar-secondary, playlist-toolbar-more"
                                             prefWidth="48" prefHeight="48"
                                             minWidth="48" minHeight="48"/>
                                 <Region HBox.hgrow="ALWAYS"/>
                                 <MenuButton fx:id="playlistOrderMenu"
                                             text="Playlist order"
                                             mnemonicParsing="false"
-                                            styleClass="btn-ghost, playlist-order-menu"/>
+                                            styleClass="playlist-order-menu"/>
                             </HBox>
 
                             <Separator styleClass="playlist-page-separator"/>
@@ -111,10 +112,10 @@
                             <!-- Track list region -->
                             <VBox spacing="10" styleClass="playlist-page-tracks-wrap">
                                 <HBox alignment="CENTER_LEFT" spacing="16" styleClass="playlist-tracks-section-head">
-                                    <Label text="Tracks" styleClass="heading-sm, playlist-tracks-head-title"/>
+                                    <Label text="Tracks" styleClass="playlist-tracks-head-title"/>
                                     <Region HBox.hgrow="ALWAYS"/>
                                     <Label text="Double-click a row to play · ⋯ for options"
-                                           styleClass="caption, text-muted"/>
+                                           styleClass="playlist-tracks-head-subtitle"/>
                                 </HBox>
                                 <HBox alignment="CENTER_LEFT" spacing="12" styleClass="playlist-tracks-grid-header">
                                     <Region prefWidth="3" minWidth="3" maxWidth="3"/>
@@ -143,10 +144,10 @@
 
                                 <HBox alignment="CENTER_LEFT" spacing="12" styleClass="playlist-suggestions-head">
                                     <VBox spacing="6" HBox.hgrow="ALWAYS">
-                                        <Label text="Suggested for you" styleClass="heading-md"/>
+                                        <Label text="Suggested for you" styleClass="playlist-suggestions-title"/>
                                         <Label fx:id="suggestionSubtitleLabel"
                                                text="From your library — ranked by fit to this playlist and your taste."
-                                               styleClass="caption"/>
+                                               styleClass="playlist-suggestions-subtitle"/>
                                     </VBox>
                                     <Label text="✦ Smart picks" styleClass="badge, badge-accent"/>
                                 </HBox>

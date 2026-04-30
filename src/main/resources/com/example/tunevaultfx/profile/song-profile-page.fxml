@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
@@ -21,61 +22,145 @@
         <ScrollPane fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED"
                     styleClass="song-profile-scroll">
             <content>
-                <VBox spacing="20" style="-fx-padding: 20 32 28 32;" maxWidth="Infinity">
+                <VBox spacing="24" styleClass="song-profile-content" maxWidth="Infinity">
                     <children>
 
-                        <HBox spacing="28" alignment="CENTER_LEFT" styleClass="hero-gradient">
+                        <VBox fx:id="songHeroShell" spacing="22" maxWidth="Infinity"
+                              styleClass="song-hero-shell, song-hero-tint-0">
                             <children>
-                                <StackPane prefWidth="100" prefHeight="100"
-                                           minWidth="100" minHeight="100"
-                                           styleClass="artist-avatar">
-                                    <Label text="♪"
-                                           style="-fx-font-size: 40px; -fx-text-fill: rgba(255,255,255,0.5);"/>
-                                </StackPane>
-                                <VBox spacing="8" HBox.hgrow="ALWAYS">
-                                    <Label text="TRACK" styleClass="overline"/>
-                                    <Label fx:id="songTitleLabel" text="—"
-                                           styleClass="heading-xl"
-                                           wrapText="true"
-                                           style="-fx-font-size: 34px;"/>
-                                    <HBox alignment="CENTER_LEFT" spacing="0">
-                                        <Hyperlink fx:id="songArtistLink" onAction="#handleArtistNameClick"
-                                                   styleClass="body-sm, song-profile-artist-link"
-                                                   wrapText="false" focusTraversable="true"/>
-                                        <Label fx:id="songMetaTailLabel" text=""
-                                               styleClass="body-sm" wrapText="true"/>
-                                    </HBox>
-                                    <HBox spacing="12" alignment="CENTER_LEFT">
-                                        <Button fx:id="playSongButton" text="Play"
-                                                onAction="#handlePlay"
-                                                styleClass="btn-primary"
-                                                minHeight="40" prefHeight="40"
-                                                maxWidth="200" focusTraversable="false"/>
-                                        <Button fx:id="likeSongButton" text="♡ Save"
-                                                onAction="#handleLike"
-                                                styleClass="btn-ghost"
-                                                minHeight="40" prefHeight="40"
-                                                focusTraversable="false"/>
-                                        <Button fx:id="addSongButton" text="Add to playlist"
-                                                onAction="#handleAddToPlaylist"
-                                                styleClass="btn-ghost"
-                                                minHeight="40" prefHeight="40"
-                                                focusTraversable="false"/>
-                                    </HBox>
-                                </VBox>
+                                <HBox spacing="30" alignment="CENTER_LEFT" maxWidth="Infinity">
+                                    <children>
+                                        <StackPane styleClass="song-art-large">
+                                            <children>
+                                                <Label fx:id="songArtGlyphLabel" text="♪"
+                                                       styleClass="song-art-glyph"/>
+                                            </children>
+                                        </StackPane>
+                                        <VBox spacing="14" HBox.hgrow="ALWAYS" maxWidth="Infinity">
+                                            <children>
+                                                <HBox spacing="10" alignment="CENTER_LEFT">
+                                                    <children>
+                                                        <Label text="TRACK" styleClass="song-profile-kicker"/>
+                                                        <Label text="DETAILS" styleClass="song-profile-pill"/>
+                                                    </children>
+                                                </HBox>
+                                                <Label fx:id="songTitleLabel" text="—"
+                                                       styleClass="song-profile-title"
+                                                       wrapText="true"
+                                                       maxWidth="Infinity"/>
+                                                <FlowPane fx:id="songMetaPillsFlow" styleClass="song-meta-pill-row"/>
+                                                <Label fx:id="songLedeLabel" text=""
+                                                       styleClass="song-details-lede" wrapText="true"/>
+                                                <Region styleClass="song-hero-soundwave"
+                                                        minHeight="36" prefHeight="36" maxHeight="36"/>
+                                                <HBox styleClass="song-hero-actions" maxWidth="Infinity">
+                                                    <children>
+                                                        <Button fx:id="playSongButton" text="Play"
+                                                                onAction="#handlePlay"
+                                                                styleClass="song-action-primary"
+                                                                minHeight="46" prefHeight="46"
+                                                                focusTraversable="false"/>
+                                                        <Button fx:id="shufflePicksButton" text="Shuffle picks"
+                                                                onAction="#handleShufflePicks"
+                                                                styleClass="song-action-secondary"
+                                                                minHeight="46" prefHeight="46"
+                                                                focusTraversable="false"/>
+                                                        <Button fx:id="likeSongButton" text="♡ Save"
+                                                                onAction="#handleLike"
+                                                                styleClass="song-action-secondary"
+                                                                minHeight="46" prefHeight="46"
+                                                                focusTraversable="false"/>
+                                                        <Button fx:id="addSongButton" text="Add to playlist"
+                                                                onAction="#handleAddToPlaylist"
+                                                                styleClass="song-action-secondary"
+                                                                minHeight="46" prefHeight="46"
+                                                                focusTraversable="false"/>
+                                                        <Button fx:id="viewArtistButton" text="View artist"
+                                                                onAction="#handleViewArtist"
+                                                                styleClass="song-action-secondary"
+                                                                minHeight="46" prefHeight="46"
+                                                                focusTraversable="false"/>
+                                                    </children>
+                                                </HBox>
+                                                <HBox alignment="CENTER_LEFT" spacing="0">
+                                                    <children>
+                                                        <Hyperlink fx:id="songArtistLink" onAction="#handleArtistNameClick"
+                                                                   styleClass="body-sm, song-profile-artist-link"
+                                                                   wrapText="false" focusTraversable="true"/>
+                                                        <Label fx:id="songMetaTailLabel" text=""
+                                                               styleClass="body-sm" wrapText="true"/>
+                                                    </children>
+                                                </HBox>
+                                            </children>
+                                        </VBox>
+                                    </children>
+                                </HBox>
                             </children>
-                        </HBox>
+                        </VBox>
 
-                        <VBox fx:id="relatedSection" spacing="14" styleClass="card" maxWidth="Infinity">
+                        <VBox fx:id="detailsSection" spacing="16" styleClass="song-details-card" maxWidth="Infinity">
+                            <children>
+                                <Label text="Credits &amp; details" styleClass="song-section-title"/>
+                                <GridPane hgap="18" vgap="12" maxWidth="Infinity" styleClass="song-details-grid">
+                                    <columnConstraints>
+                                        <ColumnConstraints minWidth="96" prefWidth="120" hgrow="NEVER"/>
+                                        <ColumnConstraints hgrow="ALWAYS" minWidth="200"/>
+                                    </columnConstraints>
+                                    <children>
+                                        <Label text="ALBUM" styleClass="song-details-label"
+                                               GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                                        <Label fx:id="detailAlbumValue" text="—" styleClass="song-details-value"
+                                               wrapText="true"
+                                               GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+                                        <Label text="GENRE" styleClass="song-details-label"
+                                               GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                                        <Label fx:id="detailGenreValue" text="—" styleClass="song-details-value"
+                                               wrapText="true"
+                                               GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                                        <Label text="LENGTH" styleClass="song-details-label"
+                                               GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+                                        <Label fx:id="detailDurationValue" text="—" styleClass="song-details-value"
+                                               GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+                                    </children>
+                                </GridPane>
+                            </children>
+                        </VBox>
+
+                        <VBox fx:id="lyricsSection" spacing="10" styleClass="song-lyrics-card" maxWidth="Infinity">
+                            <children>
+                                <Label text="Lyrics" styleClass="song-section-title"/>
+                                <Label text="Lyrics are not available in TuneVault yet. Stay in the flow with picks below."
+                                       styleClass="song-lyrics-placeholder" wrapText="true"/>
+                            </children>
+                        </VBox>
+
+                        <VBox fx:id="relatedSection" spacing="14" styleClass="song-related-card" maxWidth="Infinity">
                             <children>
                                 <HBox alignment="CENTER_LEFT" spacing="10">
-                                    <StackPane styleClass="icon-box-sm, icon-box-violet">
-                                        <Label text="≋" styleClass="text-accent"/>
-                                    </StackPane>
-                                    <Label fx:id="relatedHeadingLabel" text="More in this genre"
-                                           styleClass="heading-lg"/>
+                                    <children>
+                                        <StackPane styleClass="song-related-icon">
+                                            <children>
+                                                <Label text="≋" styleClass="text-accent"/>
+                                            </children>
+                                        </StackPane>
+                                        <VBox spacing="2">
+                                            <children>
+                                                <Label fx:id="relatedHeadingLabel" text="More in this genre"
+                                                       styleClass="song-section-title"/>
+                                                <Label text="From your library · hover to play · double-click a row"
+                                                       styleClass="song-section-subtitle"/>
+                                            </children>
+                                        </VBox>
+                                    </children>
                                 </HBox>
                                 <Separator/>
+                                <HBox styleClass="tracklist-column-header" spacing="12" alignment="CENTER_LEFT">
+                                    <children>
+                                        <Label text="#" minWidth="36" styleClass="tracklist-col-label"/>
+                                        <Label text="TITLE" styleClass="tracklist-col-label" HBox.hgrow="ALWAYS"/>
+                                        <Label text="TIME" minWidth="52" styleClass="tracklist-col-label"/>
+                                    </children>
+                                </HBox>
                                 <Label fx:id="relatedEmptyLabel"
                                        text=""
                                        styleClass="caption"

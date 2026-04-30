@@ -34,6 +34,8 @@ class RecommendationEngine {
     /**
      * @param genreDiscoveryBoost normalized genre keys (e.g. from Find Your Genre quiz); merged into
      *                            genre affinity so recommendations reflect declared taste even with thin history.
+     *                            The quiz weight decays as real listening data accumulates — at
+     *                            {@value #QUIZ_HANDOFF_PLAYS} qualified plays the quiz has faded out entirely.
      */
     RecommendationProfile buildProfileForUser(String username, Map<String, Double> genreDiscoveryBoost) {
         List<UserBehaviorEvent> events = listeningEventDAO.getUserBehaviorEvents(username);
@@ -42,18 +44,70 @@ class RecommendationEngine {
         if (genreDiscoveryBoost == null || genreDiscoveryBoost.isEmpty()) {
             return base;
         }
-        return mergeGenreDiscovery(base, genreDiscoveryBoost);
+        int qualifiedPlays = listeningEventDAO.countQualifiedPlays(username);
+        return mergeGenreDiscovery(base, genreDiscoveryBoost, qualifiedPlays);
     }
 
+    /**
+     * Number of qualified plays (count_as_play = 1) at which listening history reaches its
+     * maximum influence. Beyond this point the quiz floor still applies.
+     */
+    private static final int QUIZ_HANDOFF_PLAYS = 50;
+
+    /**
+     * Minimum quiz contribution regardless of how much listening history exists.
+     * The quiz never drops below this weight so it always has influence — the user
+     * can retake the quiz at any time to steer recommendations, and resets wipe the
+     * profile entirely. Value of 0.30 means listening history caps at 70%.
+     */
+    private static final double QUIZ_FLOOR = 0.30;
+
+    /**
+     * Blends the quiz genre boost with the listening-derived genre affinity.
+     *
+     * <p>The quiz acts as a strong prior when the user is new, then its weight decays
+     * linearly as real listening data accumulates — but never below {@value #QUIZ_FLOOR}:</p>
+     * <ul>
+     *   <li>0 qualified plays  → 100% quiz, 0% listening</li>
+     *   <li>25 qualified plays → 65% quiz, 35% listening</li>
+     *   <li>50+ qualified plays → 30% quiz (floor), 70% listening</li>
+     * </ul>
+     *
+     * <p>This keeps the quiz permanently relevant — retaking it always has an impact,
+     * and resetting it via Settings gives a clean slate.</p>
+     *
+     * @param qualifiedPlays number of songs the user has genuinely listened to (count_as_play = 1)
+     */
     private RecommendationProfile mergeGenreDiscovery(RecommendationProfile base,
-                                                        Map<String, Double> boost) {
+                                                      Map<String, Double> boost,
+                                                      int qualifiedPlays) {
+        // listeningWeight grows from 0.0 → (1 - QUIZ_FLOOR) as qualified plays accumulate
+        double maxListeningWeight = 1.0 - QUIZ_FLOOR;
+        double listeningWeight    = Math.min(maxListeningWeight,
+                (double) qualifiedPlays / QUIZ_HANDOFF_PLAYS * maxListeningWeight);
+        double quizWeight         = 1.0 - listeningWeight;
+
         Map<String, Double> genres = new HashMap<>(base.genreAffinity());
+
+        // Scale down the quiz contribution proportionally — when listeningWeight = 1.0
+        // quizWeight = 0.0 so the boost adds nothing and listening history wins entirely.
         for (var e : boost.entrySet()) {
             String k = normalize(e.getKey());
             if (!k.isEmpty()) {
-                genres.merge(k, e.getValue(), Double::sum);
+                genres.merge(k, e.getValue() * quizWeight, Double::sum);
             }
         }
+
+        // Scale down listening history contribution when quiz should dominate
+        // (new users with 0 plays get a pure quiz-driven profile)
+        if (listeningWeight < 1.0) {
+            genres.replaceAll((k, v) -> {
+                double listeningPart = base.genreAffinity().getOrDefault(k, 0.0) * listeningWeight;
+                double quizPart      = boost.getOrDefault(k, 0.0) * quizWeight;
+                return listeningPart + quizPart;
+            });
+        }
+
         normalizeMap(genres);
         return new RecommendationProfile(
                 new HashMap<>(base.songAffinity()),

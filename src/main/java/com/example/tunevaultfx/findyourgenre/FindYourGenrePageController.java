@@ -2,6 +2,7 @@ package com.example.tunevaultfx.findyourgenre;
 
 import com.example.tunevaultfx.core.Song;
 import com.example.tunevaultfx.db.SongDAO;
+import com.example.tunevaultfx.db.QuizQuestionDAO;
 import com.example.tunevaultfx.db.UserGenreDiscoveryDAO;
 import com.example.tunevaultfx.musicplayer.controller.MusicPlayerController;
 import com.example.tunevaultfx.session.SessionManager;
@@ -84,6 +85,10 @@ public class FindYourGenrePageController {
     private final ToggleGroup modeGroup = new ToggleGroup();
 
     private final UserGenreDiscoveryDAO genreDiscoveryDAO = new UserGenreDiscoveryDAO();
+    private final QuizQuestionDAO quizQuestionDAO = new QuizQuestionDAO();
+
+    /** Session number (1–5) for the current quiz run, loaded from DB on start. */
+    private int currentSessionNumber = 1;
     private final SongDAO songDAO = new SongDAO();
     private final MusicPlayerController player = MusicPlayerController.getInstance();
 
@@ -226,7 +231,10 @@ public class FindYourGenrePageController {
     }
 
     @FXML private void handleRestartQuiz() {
-        enterPickLengthState();
+        // Do NOT clear scores — quiz results stack across sessions.
+        // The next session will serve a fresh set of questions.
+        // Use Settings > Reset Quiz Results to wipe the profile entirely.
+        enterPickLengthState(false);
     }
 
     @FXML
@@ -234,7 +242,17 @@ public class FindYourGenrePageController {
         if (!awaitingStart) {
             return;
         }
-        questions = GenreQuiz.questionsFor(currentMode());
+        // Load the session number for this user from the DB
+        String user = SessionManager.getCurrentUsername();
+        if (user != null && !user.isBlank()) {
+            try {
+                currentSessionNumber = quizQuestionDAO.nextSessionFor(user);
+            } catch (java.sql.SQLException e) {
+                e.printStackTrace();
+                currentSessionNumber = 1;
+            }
+        }
+        questions = GenreQuiz.questionsFor(currentMode(), currentSessionNumber);
         if (questions.isEmpty()) {
             questionLabel.setText("No questions loaded for this mode.");
             return;
@@ -452,7 +470,17 @@ public class FindYourGenrePageController {
     }
 
     private void enterPickLengthState() {
-        scores.clear();
+        enterPickLengthState(true);
+    }
+
+    /**
+     * @param clearScores true on first load / full reset; false on Try Again
+     *                    so this session's scores are not lost before they are persisted.
+     */
+    private void enterPickLengthState(boolean clearScores) {
+        if (clearScores) {
+            scores.clear();
+        }
         currentIndex = 0;
         quizComplete = false;
         awaitingStart = true;

@@ -148,8 +148,10 @@ public final class ContextMenuPopupSupport {
     public static void syncPopupSceneFill(ContextMenu menu) {
         Scene popupScene = menu.getScene();
         if (popupScene != null) {
-            popupScene.setFill(
-                    AppTheme.isLightMode() ? Color.web("#ffffff") : Color.web("#161628"));
+            popupScene.setFill(Color.TRANSPARENT);
+            if (popupScene.getRoot() instanceof Region reg) {
+                reg.setStyle("-fx-background-color: transparent;");
+            }
         }
     }
 

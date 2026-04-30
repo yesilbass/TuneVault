@@ -10,9 +10,9 @@
       fx:id="sidebarRoot"
       fx:controller="com.example.tunevaultfx.chrome.AppSidebarController"
       styleClass="sidebar-outer"
-      prefWidth="400.0"
+      prefWidth="380.0"
       minWidth="320.0"
-      maxWidth="560.0"
+      maxWidth="520.0"
       spacing="0"
       VBox.vgrow="ALWAYS">
 
@@ -25,18 +25,17 @@
             <Insets top="16" right="12" bottom="14" left="14"/>
         </padding>
 
-        <Button text="+ Create playlist"
-                onAction="#handleCreatePlaylistClick"
-                maxWidth="Infinity"
-                styleClass="sidebar-create-playlist"/>
-
-        <Region prefHeight="12"/>
-
-        <!-- Library header (Spotify "Your Library" emphasis) -->
-        <VBox spacing="6" styleClass="sidebar-library-header">
-            <Label text="Your Library" styleClass="sidebar-library-title"/>
-            <Label text="Playlists" styleClass="sidebar-library-subtitle"/>
-        </VBox>
+        <HBox spacing="10" alignment="CENTER_LEFT" styleClass="sidebar-library-header">
+            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                <Label text="Your Library" styleClass="sidebar-library-title"/>
+                <Label text="Playlists" styleClass="sidebar-library-subtitle"/>
+            </VBox>
+            <Button text="+"
+                    onAction="#handleCreatePlaylistClick"
+                    prefWidth="42" prefHeight="42"
+                    minWidth="42" minHeight="42"
+                    styleClass="sidebar-create-playlist"/>
+        </HBox>
 
         <Region prefHeight="12"/>
 

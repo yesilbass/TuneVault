@@ -21,13 +21,17 @@
     <center>
         <ScrollPane fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED"
                     maxWidth="Infinity" maxHeight="Infinity" styleClass="home-root-scroll">
-            <VBox fx:id="menuContent" spacing="18" styleClass="page-content home-center-fill"
+            <VBox fx:id="menuContent" spacing="24" styleClass="home-dashboard-content"
                   maxWidth="Infinity"
-                  style="-fx-padding: 16 32 12 32;">
+                  style="-fx-padding: 24 34 36 34;">
 
                 <!-- Greeting + vibe (stats live in footer) -->
-                <VBox fx:id="homeHeroSection" spacing="8" styleClass="home-hero">
-                    <Label fx:id="homeGreetingLabel" text="Welcome back" styleClass="heading-2xl"/>
+                <VBox fx:id="homeHeroSection" spacing="12" styleClass="home-hero">
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <Label text="HOME" styleClass="home-hero-kicker"/>
+                        <Label text="DASHBOARD" styleClass="home-hero-pill"/>
+                    </HBox>
+                    <Label fx:id="homeGreetingLabel" text="Welcome back" styleClass="home-hero-title"/>
                     <Label fx:id="homeVibeLabel" wrapText="true" maxWidth="Infinity"
                            managed="false" visible="false"/>
                     <Label fx:id="homeVibeSubLabel" wrapText="true" maxWidth="Infinity"
@@ -35,11 +39,11 @@
                 </VBox>
 
                 <!-- Playlists first: 5 tiles per row (TilePane) -->
-                <VBox fx:id="homeLibrariesSection" spacing="12" styleClass="home-libraries" VBox.vgrow="NEVER">
+                <VBox fx:id="homeLibrariesSection" spacing="14" styleClass="home-libraries" VBox.vgrow="NEVER">
                     <VBox spacing="4">
-                        <Label text="Jump back in" styleClass="heading-md"/>
+                        <Label text="Jump back in" styleClass="home-section-title"/>
                         <Label text="Up to five playlists per row — your full library stays in the left column."
-                               styleClass="caption" wrapText="true" maxWidth="Infinity"/>
+                               styleClass="home-section-subtitle" wrapText="true" maxWidth="Infinity"/>
                     </VBox>
                     <TilePane fx:id="playlistChipsContainer" styleClass="home-playlist-grid"
                               hgap="12" vgap="12" prefColumns="5" tileAlignment="TOP_LEFT"/>
@@ -51,19 +55,19 @@
                 <!-- Suggestions: fixed band height so the page scrolls under the top bar instead of stretching -->
                 <HBox fx:id="homeFeedRow" spacing="20" alignment="TOP_LEFT" fillHeight="true"
                        minHeight="220" prefHeight="380" maxHeight="480">
-                    <VBox fx:id="forYouFeedCard" spacing="12" styleClass="card home-feed-card" HBox.hgrow="ALWAYS"
+                    <VBox fx:id="forYouFeedCard" spacing="12" styleClass="home-feed-card" HBox.hgrow="ALWAYS"
                           minWidth="280" maxHeight="Infinity" VBox.vgrow="ALWAYS">
                         <VBox spacing="4" VBox.vgrow="NEVER">
-                            <Label text="Picked for you" styleClass="heading-md"/>
-                            <Label text="Five songs picked from your taste profile" styleClass="caption"/>
+                            <Label text="Picked for you" styleClass="home-section-title"/>
+                            <Label text="Five songs picked from your taste profile" styleClass="home-section-subtitle"/>
                         </VBox>
                         <ListView fx:id="forYouListView" minHeight="160" maxHeight="Infinity" VBox.vgrow="ALWAYS"/>
                     </VBox>
-                    <VBox fx:id="freshTracksFeedCard" spacing="12" styleClass="card home-feed-card" HBox.hgrow="ALWAYS"
+                    <VBox fx:id="freshTracksFeedCard" spacing="12" styleClass="home-feed-card" HBox.hgrow="ALWAYS"
                           minWidth="280" maxHeight="Infinity" VBox.vgrow="ALWAYS">
                         <VBox spacing="4" VBox.vgrow="NEVER">
-                            <Label text="Artist shortcuts" styleClass="heading-md"/>
-                            <Label text="Same names as your chart — jump into profiles." styleClass="caption"/>
+                            <Label text="Artist shortcuts" styleClass="home-section-title"/>
+                            <Label text="Same names as your chart — jump into profiles." styleClass="home-section-subtitle"/>
                         </VBox>
                         <ListView fx:id="freshTracksListView" minHeight="160" maxHeight="Infinity" VBox.vgrow="ALWAYS"/>
                     </VBox>
