@@ -16,71 +16,125 @@
     <left>
         <fx:include source="../chrome/app-sidebar.fxml"/>
     </left>
-    <!-- ── CENTER ────────────────────────────────── -->
+
     <center>
-        <ScrollPane fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED">
+        <ScrollPane fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED"
+                    styleClass="artist-profile-scroll">
             <content>
-                <VBox spacing="20" style="-fx-padding: 20 32 20 32;">
+                <VBox spacing="24" styleClass="artist-profile-content" maxWidth="Infinity">
                     <children>
 
-                        <!-- Hero card -->
-                        <HBox spacing="28" alignment="CENTER_LEFT" styleClass="hero-gradient">
+                        <VBox styleClass="artist-profile-hero" spacing="22" maxWidth="Infinity">
                             <children>
-
-                                <!-- Artist avatar (large initial) -->
-                                <StackPane prefWidth="100" prefHeight="100"
-                                           minWidth="100" minHeight="100"
-                                           styleClass="artist-avatar">
-                                    <Label text="♫"
-                                           style="-fx-font-size: 42px; -fx-text-fill: rgba(255,255,255,0.5);"/>
-                                </StackPane>
-
-                                <!-- Artist info -->
-                                <VBox spacing="8" HBox.hgrow="ALWAYS">
-                                    <Label text="ARTIST" styleClass="overline"/>
-                                    <Label fx:id="artistNameLabel"
-                                           text="Artist Name"
-                                           styleClass="heading-xl"
-                                           style="-fx-font-size: 38px;"/>
-                                    <Label fx:id="artistSummaryLabel"
-                                           text="Songs available: 0"
-                                           styleClass="body-sm"/>
-                                    <HBox spacing="12" alignment="CENTER_LEFT">
-                                        <Button fx:id="playDiscographyButton" text="Play discography"
-                                                onAction="#handlePlayDiscography"
-                                                styleClass="btn-primary"
-                                                minHeight="40" prefHeight="40"
-                                                maxWidth="220" focusTraversable="false"/>
-                                        <Button fx:id="followArtistButton" text="Follow"
-                                                onAction="#handleFollowArtist"
-                                                styleClass="btn-ghost"
-                                                minHeight="40" prefHeight="40"
-                                                managed="false" visible="false"
-                                                focusTraversable="false"/>
-                                    </HBox>
-                                </VBox>
-
-                            </children>
-                        </HBox>
-
-                        <!-- Songs card -->
-                        <VBox spacing="14" VBox.vgrow="ALWAYS" styleClass="card">
-                            <children>
-
-                                <HBox alignment="CENTER_LEFT" spacing="10">
-                                    <StackPane styleClass="icon-box-sm, icon-box-violet">
-                                        <Label text="♫" styleClass="text-accent"/>
-                                    </StackPane>
-                                    <Label text="Discography" styleClass="heading-lg"/>
-                                    <Label text="Play button or double-click · Right-click for more" styleClass="caption"/>
+                                <HBox spacing="28" alignment="CENTER_LEFT" maxWidth="Infinity">
+                                    <children>
+                                        <StackPane styleClass="artist-avatar-xl">
+                                            <children>
+                                                <Label fx:id="artistAvatarInitialLabel" text="♫"
+                                                       styleClass="artist-avatar-initial"/>
+                                            </children>
+                                        </StackPane>
+                                        <VBox spacing="14" HBox.hgrow="ALWAYS" maxWidth="Infinity">
+                                            <children>
+                                                <HBox spacing="10" alignment="CENTER_LEFT">
+                                                    <children>
+                                                        <Label text="ARTIST" styleClass="artist-profile-kicker"/>
+                                                        <Label text="PROFILE" styleClass="artist-profile-pill"/>
+                                                    </children>
+                                                </HBox>
+                                                <Label fx:id="artistNameLabel" text="Artist Name"
+                                                       styleClass="artist-profile-name"
+                                                       wrapText="true"
+                                                       maxWidth="Infinity"/>
+                                                <Label fx:id="artistSummaryLabel" text=""
+                                                       styleClass="profile-hero-lede" wrapText="true"
+                                                       managed="false" visible="false"/>
+                                                <HBox spacing="12" alignment="CENTER_LEFT" styleClass="artist-stats-row">
+                                                    <children>
+                                                        <VBox styleClass="profile-stat-block">
+                                                            <children>
+                                                                <Label fx:id="artistStatTracksLabel" text="—"
+                                                                       styleClass="profile-stat-value"/>
+                                                                <Label text="TRACKS" styleClass="profile-stat-caption"/>
+                                                            </children>
+                                                        </VBox>
+                                                        <VBox styleClass="profile-stat-block">
+                                                            <children>
+                                                                <Label fx:id="artistStatRuntimeLabel" text="—"
+                                                                       styleClass="profile-stat-value"/>
+                                                                <Label text="TOTAL RUNTIME" styleClass="profile-stat-caption"/>
+                                                            </children>
+                                                        </VBox>
+                                                        <VBox styleClass="profile-stat-block">
+                                                            <children>
+                                                                <Label fx:id="artistStatAlbumsLabel" text="—"
+                                                                       styleClass="profile-stat-value"/>
+                                                                <Label text="ALBUMS" styleClass="profile-stat-caption"/>
+                                                            </children>
+                                                        </VBox>
+                                                    </children>
+                                                </HBox>
+                                            </children>
+                                        </VBox>
+                                    </children>
                                 </HBox>
 
-                                <Separator/>
+                                <HBox styleClass="artist-profile-toolbar" maxWidth="Infinity" alignment="CENTER_LEFT">
+                                    <children>
+                                        <Button fx:id="playDiscographyButton" text="Play"
+                                                onAction="#handlePlayDiscography"
+                                                styleClass="artist-action-primary"
+                                                minHeight="44" prefHeight="44"
+                                                focusTraversable="false"/>
+                                        <Button fx:id="shuffleDiscographyButton" text="Shuffle"
+                                                onAction="#handleShuffleDiscography"
+                                                styleClass="artist-action-secondary"
+                                                minHeight="44" prefHeight="44"
+                                                focusTraversable="false"/>
+                                        <Button fx:id="followArtistButton" text="Follow"
+                                                onAction="#handleFollowArtist"
+                                                styleClass="artist-action-secondary"
+                                                minHeight="44" prefHeight="44"
+                                                managed="false" visible="false"
+                                                focusTraversable="false"/>
+                                        <Region HBox.hgrow="ALWAYS"/>
+                                        <Label text="SORT BY" styleClass="artist-sort-label"/>
+                                        <ComboBox fx:id="sortComboBox" styleClass="combo-sort-profile"
+                                                  prefWidth="210" focusTraversable="false"/>
+                                    </children>
+                                </HBox>
+                            </children>
+                        </VBox>
 
+                        <VBox spacing="14" VBox.vgrow="ALWAYS" styleClass="artist-discography-card" maxWidth="Infinity">
+                            <children>
+                                <HBox alignment="CENTER_LEFT" spacing="10">
+                                    <children>
+                                        <StackPane styleClass="artist-discography-icon">
+                                            <children>
+                                                <Label text="♫" styleClass="text-accent"/>
+                                            </children>
+                                        </StackPane>
+                                        <VBox spacing="3">
+                                            <children>
+                                                <Label text="Discography" styleClass="artist-section-title"/>
+                                                <Label text="Hover for play · Double-click a row · Right-click for more"
+                                                       styleClass="artist-section-subtitle"/>
+                                            </children>
+                                        </VBox>
+                                    </children>
+                                </HBox>
+                                <Separator/>
+                                <HBox styleClass="tracklist-column-header" spacing="12" alignment="CENTER_LEFT">
+                                    <children>
+                                        <Label text="#" minWidth="36" styleClass="tracklist-col-label"/>
+                                        <Label text="TITLE" styleClass="tracklist-col-label" HBox.hgrow="ALWAYS"/>
+                                        <Label text="TIME" minWidth="52" styleClass="tracklist-col-label"/>
+                                    </children>
+                                </HBox>
                                 <ListView fx:id="artistSongsListView"
                                           VBox.vgrow="ALWAYS"
-                                          prefHeight="480"/>
-
+                                          minHeight="420" prefHeight="640" maxHeight="Infinity"/>
                             </children>
                         </VBox>
 
@@ -90,7 +144,6 @@
         </ScrollPane>
     </center>
 
-    <!-- ── BOTTOM ─────────────────────────────────── -->
     <bottom>
         <fx:include source="../musicplayer/controller/mini-player.fxml"/>
     </bottom>

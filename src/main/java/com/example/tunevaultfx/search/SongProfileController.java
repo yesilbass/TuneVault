@@ -11,6 +11,7 @@ import com.example.tunevaultfx.util.CellStyleKit;
 import com.example.tunevaultfx.util.SceneUtil;
 import com.example.tunevaultfx.util.SongContextMenuBuilder;
 import com.example.tunevaultfx.util.TimeUtil;
+import com.example.tunevaultfx.util.ToastUtil;
 import com.example.tunevaultfx.view.FxmlResources;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -39,12 +40,25 @@ import java.util.Locale;
  */
 public class SongProfileController {
 
+    @FXML private VBox songHeroShell;
+    @FXML private Label songArtGlyphLabel;
+    @FXML private FlowPane songMetaPillsFlow;
+    @FXML private Label songLedeLabel;
     @FXML private Label songTitleLabel;
     @FXML private Hyperlink songArtistLink;
     @FXML private Label songMetaTailLabel;
     @FXML private Button playSongButton;
+    @FXML private Button shufflePicksButton;
     @FXML private Button likeSongButton;
     @FXML private Button addSongButton;
+    @FXML private Button viewArtistButton;
+
+    @FXML private VBox detailsSection;
+    @FXML private Label detailAlbumValue;
+    @FXML private Label detailGenreValue;
+    @FXML private Label detailDurationValue;
+
+    @FXML private VBox lyricsSection;
 
     @FXML private VBox relatedSection;
     @FXML private Label relatedHeadingLabel;
@@ -92,6 +106,15 @@ public class SongProfileController {
 
     private void showEmptyState(String message) {
         songTitleLabel.setText("Song");
+        if (songArtGlyphLabel != null) {
+            songArtGlyphLabel.setText("♪");
+        }
+        if (songMetaPillsFlow != null) {
+            songMetaPillsFlow.getChildren().clear();
+        }
+        if (songLedeLabel != null) {
+            songLedeLabel.setText("");
+        }
         if (songArtistLink != null) {
             songArtistLink.setVisible(false);
             songArtistLink.setManaged(false);
@@ -104,6 +127,11 @@ public class SongProfileController {
             playSongButton.setVisible(false);
             playSongButton.setManaged(false);
         }
+        if (shufflePicksButton != null) {
+            shufflePicksButton.setDisable(true);
+            shufflePicksButton.setVisible(false);
+            shufflePicksButton.setManaged(false);
+        }
         if (likeSongButton != null) {
             likeSongButton.setDisable(true);
             likeSongButton.setVisible(false);
@@ -113,6 +141,18 @@ public class SongProfileController {
             addSongButton.setDisable(true);
             addSongButton.setVisible(false);
             addSongButton.setManaged(false);
+        }
+        if (viewArtistButton != null) {
+            viewArtistButton.setVisible(false);
+            viewArtistButton.setManaged(false);
+        }
+        if (detailsSection != null) {
+            detailsSection.setVisible(false);
+            detailsSection.setManaged(false);
+        }
+        if (lyricsSection != null) {
+            lyricsSection.setVisible(false);
+            lyricsSection.setManaged(false);
         }
         if (relatedSection != null) {
             relatedSection.setVisible(false);
@@ -124,6 +164,11 @@ public class SongProfileController {
         if (song == null) {
             return;
         }
+        applyHeroTint();
+        if (songArtGlyphLabel != null) {
+            songArtGlyphLabel.setText(titleArtGlyph(song.title()));
+        }
+
         songTitleLabel.setText(song.title() == null || song.title().isBlank() ? "Untitled" : song.title());
 
         String album = song.album();
@@ -144,41 +189,106 @@ public class SongProfileController {
             }
         }
 
-        StringBuilder tail = new StringBuilder();
-        if (hasAlbum) {
-            tail.append(" · ").append(album);
+        if (viewArtistButton != null) {
+            viewArtistButton.setVisible(hasArtist);
+            viewArtistButton.setManaged(hasArtist);
+            viewArtistButton.setDisable(!hasArtist);
         }
-        if (hasGenre) {
-            tail.append(" · ").append(genre);
+
+        populateMetaPills(hasAlbum, album, hasGenre, genre, dur);
+        populateDetailGrid(hasAlbum, album, hasGenre, genre, dur);
+
+        if (songLedeLabel != null) {
+            songLedeLabel.setText(buildHeroLede(hasAlbum, album, hasGenre, genre));
         }
-        tail.append(" · ").append(dur);
 
         if (songMetaTailLabel != null) {
-            if (hasArtist) {
-                songMetaTailLabel.setText(tail.toString());
-            } else {
-                StringBuilder meta = new StringBuilder();
-                if (hasAlbum) {
-                    meta.append(album);
-                }
-                if (hasGenre) {
-                    if (meta.length() > 0) {
-                        meta.append(" · ");
-                    }
-                    meta.append(genre);
-                }
-                if (meta.length() > 0) {
-                    meta.append(" · ");
-                }
-                meta.append(dur);
-                songMetaTailLabel.setText(meta.toString());
-            }
+            songMetaTailLabel.setText("");
         }
 
         if (relatedHeadingLabel != null) {
             relatedHeadingLabel.setText(
-                    hasGenre ? "More in " + genre : "More from your library");
+                    hasGenre ? "Because you like " + genre : "Hand-picked from your library");
         }
+
+        if (shufflePicksButton != null) {
+            shufflePicksButton.setVisible(true);
+            shufflePicksButton.setManaged(true);
+            shufflePicksButton.setDisable(true);
+        }
+    }
+
+    private void applyHeroTint() {
+        if (songHeroShell == null || song == null) {
+            return;
+        }
+        songHeroShell
+                .getStyleClass()
+                .removeIf(styleClass -> styleClass.startsWith("song-hero-tint-"));
+        int idx = Math.floorMod(song.songId(), 6);
+        songHeroShell.getStyleClass().add("song-hero-tint-" + idx);
+    }
+
+    private static String titleArtGlyph(String title) {
+        if (title == null || title.isBlank()) {
+            return "♪";
+        }
+        String t = title.trim();
+        for (int i = 0; i < t.length(); i++) {
+            char c = t.charAt(i);
+            if (Character.isLetterOrDigit(c)) {
+                return String.valueOf(Character.toUpperCase(c));
+            }
+        }
+        return "♪";
+    }
+
+    private void populateMetaPills(
+            boolean hasAlbum, String album, boolean hasGenre, String genre, String durationLabel) {
+        if (songMetaPillsFlow == null) {
+            return;
+        }
+        songMetaPillsFlow.getChildren().clear();
+        if (hasAlbum) {
+            songMetaPillsFlow.getChildren().add(metaPill(album.trim()));
+        }
+        if (hasGenre) {
+            songMetaPillsFlow.getChildren().add(metaPill(genre.trim()));
+        }
+        songMetaPillsFlow.getChildren().add(metaPill(durationLabel));
+    }
+
+    private static Label metaPill(String text) {
+        Label l = new Label(text);
+        l.getStyleClass().add("song-meta-pill");
+        return l;
+    }
+
+    private void populateDetailGrid(
+            boolean hasAlbum, String album, boolean hasGenre, String genre, String durationLabel) {
+        if (detailsSection != null) {
+            detailsSection.setVisible(true);
+            detailsSection.setManaged(true);
+        }
+        if (detailAlbumValue != null) {
+            detailAlbumValue.setText(hasAlbum ? album.trim() : "Single or unknown album");
+        }
+        if (detailGenreValue != null) {
+            detailGenreValue.setText(hasGenre ? genre.trim() : "Unspecified");
+        }
+        if (detailDurationValue != null) {
+            detailDurationValue.setText(durationLabel);
+        }
+    }
+
+    private static String buildHeroLede(boolean hasAlbum, String album, boolean hasGenre, String genre) {
+        if (hasAlbum) {
+            return "From “" + album.trim() + "” — curated in your personal library.";
+        }
+        if (hasGenre) {
+            return "A " + genre.trim().toLowerCase(Locale.ROOT) + " cut worth revisiting.";
+        }
+        return "A saved favorite in your collection — press play and settle in.";
     }
 
     private void loadRelatedSongs() {
@@ -221,6 +331,9 @@ public class SongProfileController {
                 e -> {
                     relatedSongs.setAll(task.getValue());
                     boolean empty = relatedSongs.isEmpty();
+                    if (shufflePicksButton != null) {
+                        shufflePicksButton.setDisable(empty);
+                    }
                     if (relatedEmptyLabel != null) {
                         relatedEmptyLabel.setVisible(empty);
                         relatedEmptyLabel.setManaged(empty);
@@ -240,6 +353,9 @@ public class SongProfileController {
                 e -> {
                     task.getException().printStackTrace();
                     relatedSongs.clear();
+                    if (shufflePicksButton != null) {
+                        shufflePicksButton.setDisable(true);
+                    }
                     if (relatedEmptyLabel != null) {
                         relatedEmptyLabel.setText("Could not load related songs.");
                         relatedEmptyLabel.setVisible(true);
@@ -513,11 +629,39 @@ public class SongProfileController {
 
     @FXML
     private void handleArtistNameClick(ActionEvent event) throws IOException {
+        navigateToArtistProfile(event != null ? (Node) event.getSource() : null);
+    }
+
+    @FXML
+    private void handleViewArtist() throws IOException {
+        navigateToArtistProfile(viewArtistButton);
+    }
+
+    @FXML
+    private void handleShufflePicks() {
+        if (relatedSongs.isEmpty()) {
+            return;
+        }
+        player.playQueue(relatedSongs, 0, relatedQueueSourceLabel);
+        player.setShuffleEnabled(true);
+        Node anchor = shufflePicksButton != null ? shufflePicksButton : relatedSongsListView;
+        if (anchor != null && anchor.getScene() != null) {
+            ToastUtil.success(anchor.getScene(), "Shuffling related picks");
+        }
+    }
+
+    private void navigateToArtistProfile(Node preferredSource) throws IOException {
         if (song == null || song.artist() == null || song.artist().isBlank()) {
             return;
         }
         SessionManager.setSelectedArtist(song.artist().trim());
-        Node src = songArtistLink != null ? songArtistLink : (Node) event.getSource();
+        Node src = preferredSource;
+        if (src == null) {
+            src = songArtistLink;
+        }
+        if (src == null) {
+            src = songTitleLabel;
+        }
         SceneUtil.switchScene(src, FxmlResources.ARTIST_PROFILE);
     }
 }
